@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { projectAPI, billingAPI, collectionAPI } from '../services/api';
 import { formatCurrency } from '../utils/currency';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import {
   PieChart,
   Pie,
@@ -19,6 +20,7 @@ import toast from 'react-hot-toast';
 const ProjectsBillingCollections = () => {
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [billings, setBillings] = useState([]);
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +75,19 @@ const ProjectsBillingCollections = () => {
     { name: 'Uncollectible', value: collections.filter(c => c.status === 'uncollectible').length },
   ].filter(item => item.value > 0);
 
+  // Filter projects by search query
+  const filteredProjects = useMemo(() => {
+    if (!searchQuery || searchQuery.trim() === '') return projects;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return projects.filter((project) => {
+      const projectName = (project.projectName || '').toLowerCase();
+      const projectCode = (project.projectCode || '').toLowerCase();
+      const clientName = (project.clientName || '').toLowerCase();
+      return projectName.includes(query) || projectCode.includes(query) || clientName.includes(query);
+    });
+  }, [projects, searchQuery]);
+
   const totalBilled = billings.reduce((sum, b) => sum + (b.amount || 0), 0);
   const totalCollected = collections.reduce((sum, c) => sum + (c.amount || 0), 0);
   const outstanding = totalBilled - totalCollected;
@@ -99,21 +114,47 @@ const ProjectsBillingCollections = () => {
         </div>
       ) : (
         <>
-          <div className="card">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Select Project
-            </label>
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
-            >
-              {projects.map((project) => (
-                <option key={project._id} value={project._id}>
-                  {project.projectName} ({project.projectCode})
-                </option>
-              ))}
-            </select>
+          <div className="card space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Search Project
+              </label>
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by project name, code, or client..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Select Project
+              </label>
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
+              >
+                {filteredProjects.length === 0 ? (
+                  <option value="">No projects match your search</option>
+                ) : (
+                  filteredProjects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.projectName} ({project.projectCode})
+                    </option>
+                  ))
+                )}
+              </select>
+              {searchQuery && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Showing {filteredProjects.length} of {projects.length} projects
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Summary Cards */}

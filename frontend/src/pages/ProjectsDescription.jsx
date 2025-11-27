@@ -13,6 +13,7 @@ import {
   ArrowDownTrayIcon,
   PencilIcon,
   TrashIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { exportAPI } from '../services/api';
 
@@ -20,6 +21,7 @@ const ProjectsDescription = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
 
@@ -39,17 +41,33 @@ const ProjectsDescription = () => {
     }
   };
 
-  // Filter projects by year
+  // Filter projects by year and search query
   const filteredProjects = useMemo(() => {
-    if (!year || year === '') return projects;
-    
-    const yearNum = parseInt(year);
-    return projects.filter((project) => {
-      const startYear = new Date(project.startDate).getFullYear();
-      const endYear = new Date(project.endDate).getFullYear();
-      return startYear === yearNum || endYear === yearNum || (startYear <= yearNum && endYear >= yearNum);
-    });
-  }, [projects, year]);
+    let filtered = projects;
+
+    // Filter by year
+    if (year && year !== '') {
+      const yearNum = parseInt(year);
+      filtered = filtered.filter((project) => {
+        const startYear = new Date(project.startDate).getFullYear();
+        const endYear = new Date(project.endDate).getFullYear();
+        return startYear === yearNum || endYear === yearNum || (startYear <= yearNum && endYear >= yearNum);
+      });
+    }
+
+    // Filter by search query (project name, code, client name)
+    if (searchQuery && searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((project) => {
+        const projectName = (project.projectName || '').toLowerCase();
+        const projectCode = (project.projectCode || '').toLowerCase();
+        const clientName = (project.clientName || '').toLowerCase();
+        return projectName.includes(query) || projectCode.includes(query) || clientName.includes(query);
+      });
+    }
+
+    return filtered;
+  }, [projects, year, searchQuery]);
 
   // Get status badge styling
   const getStatusBadge = (status) => {
@@ -143,13 +161,25 @@ const ProjectsDescription = () => {
         </div>
         
         <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
+          {/* Search Input */}
+          <div className="flex items-center gap-2 flex-1 sm:flex-initial min-w-[200px]">
+            <MagnifyingGlassIcon className="w-5 h-5 text-gray-600 flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Search by project name, code, or client..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white"
+            />
+          </div>
+
           {/* Year Filter */}
           <div className="flex items-center gap-2 flex-1 sm:flex-initial">
             <CalendarIcon className="w-5 h-5 text-gray-600" />
             <select
               value={year}
               onChange={(e) => setYear(e.target.value)}
-              className="border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white"
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white"
             >
               <option value="">All Years</option>
               {availableYears.map((y) => (
@@ -337,12 +367,15 @@ const ProjectsDescription = () => {
                 <span className="font-semibold text-gray-900">{projects.length}</span> projects
                 {year && ` for ${year}`}
               </span>
-              {year && (
+              {(year || searchQuery) && (
                 <button
-                  onClick={() => setYear('')}
+                  onClick={() => {
+                    setYear('');
+                    setSearchQuery('');
+                  }}
                   className="text-primary hover:text-red-700 font-medium transition-colors duration-200"
                 >
-                  Clear Year Filter
+                  Clear Filters
                 </button>
               )}
             </div>
