@@ -133,7 +133,7 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
                 alt="n2 RevCon Logo" 
                 className="h-6 sm:h-8 w-auto flex-shrink-0"
               />
-              <h2 className="text-base sm:text-lg font-semibold text-gray-800 truncate">n2 RevCon</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800 truncate">N2 RevCon</h2>
             </div>
           </div>
 

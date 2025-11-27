@@ -147,7 +147,7 @@ const LandingPage = () => {
             <div className="flex items-center gap-2 md:gap-3">
               <img 
                 src="/n2RevConLogo.png" 
-                alt="n2 RevCon Logo" 
+                alt="N2 RevCon Logo" 
                 className="h-8 md:h-10 w-auto"
               />
               <h1 className="text-lg md:text-2xl font-bold text-accent">N2 RevCon</h1>

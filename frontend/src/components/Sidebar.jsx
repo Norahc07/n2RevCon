@@ -195,7 +195,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                 alt="n2 RevCon Logo" 
                 className="h-8 w-auto"
               />
-              <h1 className="text-xl font-bold text-accent">n2 RevCon</h1>
+              <h1 className="text-xl font-bold text-accent">N2 RevCon</h1>
             </div>
             <button onClick={onClose} className="lg:hidden">
               <XMarkIcon className="w-6 h-6" />
