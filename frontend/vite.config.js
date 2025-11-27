@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'n2 RevCon',
-        short_name: 'n2 RevCon',
-        description: 'n2 RevCon - Company Monitoring System',
+        name: 'N2 RevCon',
+        short_name: 'N2 RevCon',
+        description: 'N2 RevCon - Company Monitoring System',
         theme_color: '#DC2626',
         background_color: '#FFFFFF',
         display: 'standalone',

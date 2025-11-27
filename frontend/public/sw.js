@@ -25,7 +25,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification('n2 RevCon', options)
+    self.registration.showNotification('N2 RevCon', options)
   );
 });
 

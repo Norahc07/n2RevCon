@@ -1,7 +1,7 @@
 {
-  "name": "n2 RevCon",
-  "short_name": "n2 RevCon",
-  "description": "n2 RevCon - Company Monitoring System",
+  "name": "N2 RevCon",
+  "short_name": "N2 RevCon",
+  "description": "N2 RevCon - Company Monitoring System",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",

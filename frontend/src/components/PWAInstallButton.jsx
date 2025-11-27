@@ -164,7 +164,7 @@ const PWAInstallButton = () => {
               <ArrowDownTrayIcon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-800 text-sm">Install n2 RevCon</h3>
+              <h3 className="font-semibold text-gray-800 text-sm">Install N2 RevCon</h3>
               <p className="text-xs text-gray-600 mt-0.5">
                 {isIOS 
                   ? 'Tap Share → Add to Home Screen' 
