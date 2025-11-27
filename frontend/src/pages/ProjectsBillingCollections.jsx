@@ -630,37 +630,39 @@ const ProjectsBillingCollections = () => {
         <div className="card shadow-md p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4">Billing Status</h2>
           {billingStatusChartData.length > 0 ? (
-            <div className="w-full flex flex-col">
-              {/* Chart Container - True Responsive Wrapper */}
-              <div className="w-full" style={{ height: 'clamp(280px, 40vw, 400px)' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                    <Pie
-                      data={billingStatusChartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={false}
-                      outerRadius="60%"
-                      innerRadius="20%"
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {billingStatusChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
-                  </PieChart>
-                </ResponsiveContainer>
+            <div className="w-full flex flex-col items-center">
+              {/* Chart Container - Centered and Responsive */}
+              <div className="w-full flex justify-center items-center py-4">
+                <div className="w-full max-w-md mx-auto" style={{ height: '300px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={billingStatusChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={false}
+                        outerRadius="70%"
+                        innerRadius="30%"
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {billingStatusChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => formatCurrency(value)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-              {/* Legend - Stacked Under Chart on All Screens */}
+              {/* Legend - Centered Under Chart */}
               <div className="w-full mt-4 flex justify-center">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
                   {billingStatusChartData.map((entry, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <div 
-                        className="w-4 h-4 rounded-full" 
+                        className="w-4 h-4 rounded-full flex-shrink-0" 
                         style={{ backgroundColor: entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled }}
                       ></div>
                       <span className="text-sm font-medium text-gray-700">{entry.name}</span>
