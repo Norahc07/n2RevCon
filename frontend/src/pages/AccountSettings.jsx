@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { userAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import {
@@ -20,7 +20,6 @@ import {
 const AccountSettings = () => {
   const { user, updateUser } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   
   // Get active tab from route
   const getActiveTab = () => {
@@ -194,25 +193,12 @@ const AccountSettings = () => {
     setProfileData({ ...profileData, avatar: '' });
   };
 
-  const tabs = [
-    { id: 'profile', label: 'Profile', icon: UserIcon, path: '/settings/account/profile' },
-    { id: 'password', label: 'Password & Security', icon: LockClosedIcon, path: '/settings/account/password' },
-    { id: 'sessions', label: 'Sessions', icon: DevicePhoneMobileIcon, path: '/settings/account/sessions' },
-    { id: 'account', label: 'Account Status', icon: ShieldCheckIcon, path: '/settings/account/status' },
-  ];
-  
-  const handleTabClick = (tab) => {
-    navigate(tab.path);
-  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-700 rounded-lg p-6 shadow-lg">
+      <div className="card space-y-6 shadow-md">
         <div className="flex items-center gap-4">
-          <div className="bg-white bg-opacity-20 rounded-lg p-3">
-            <UserIcon className="w-8 h-8 text-white" />
-          </div>
           <div>
             <h1 className="text-3xl font-bold text-white">Account Settings</h1>
             <p className="text-red-100 mt-1">Manage your personal account information and preferences</p>
@@ -220,32 +206,8 @@ const AccountSettings = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar Tabs */}
-        <div className="lg:col-span-1">
-          <div className="card space-y-2 p-3 shadow-md">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabClick(tab)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium text-sm">{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="lg:col-span-3">
+      {/* Content Area */}
+      <div>
           {/* Profile Information */}
           {activeTab === 'profile' && (
             <div className="card space-y-6 shadow-md">
@@ -577,7 +539,6 @@ const AccountSettings = () => {
               </div>
             </div>
           )}
-        </div>
       </div>
     </div>
   );

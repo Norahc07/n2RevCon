@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -18,7 +18,6 @@ import {
 const SystemSettings = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   
   // Get active tab from route
   const getActiveTab = () => {
@@ -39,19 +38,6 @@ const SystemSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const tabs = [
-    { id: 'company', label: 'Company Information', icon: BuildingOfficeIcon, path: '/settings/system/company' },
-    { id: 'users', label: 'User Management', icon: UserGroupIcon, path: '/settings/system/users' },
-    { id: 'project', label: 'Project Configuration', icon: Cog6ToothIcon, path: '/settings/system/project' },
-    { id: 'notifications', label: 'Notifications', icon: BellIcon, path: '/settings/system/notifications' },
-    { id: 'backup', label: 'Data & Backup', icon: CloudArrowDownIcon, path: '/settings/system/backup' },
-    { id: 'audit', label: 'Audit Logs', icon: ClipboardDocumentListIcon, path: '/settings/system/audit' },
-    { id: 'pwa', label: 'PWA & Offline', icon: DevicePhoneMobileIcon, path: '/settings/system/pwa' },
-  ];
-  
-  const handleTabClick = (tab) => {
-    navigate(tab.path);
-  };
 
   useEffect(() => {
     fetchCompany();
@@ -137,33 +123,8 @@ const SystemSettings = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar Tabs */}
-        <div className="lg:col-span-1">
-          <div className="card space-y-2 p-3 shadow-md">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabClick(tab)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium text-sm">{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="lg:col-span-3">
-          <div className="card shadow-md">
+      {/* Main Content */}
+      <div className="card shadow-md">
             {/* Company Information */}
             {activeTab === 'company' && company && (
               <CompanyInformationTab company={company} onSave={handleSave} saving={saving} />
@@ -199,8 +160,6 @@ const SystemSettings = () => {
               <PWATab company={company} onSave={handleSave} saving={saving} />
             )}
           </div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -237,9 +196,6 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-        <div className="bg-red-50 rounded-lg p-2">
-          <BuildingOfficeIcon className="w-6 h-6 text-red-600" />
-        </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Company Information</h2>
           <p className="text-sm text-gray-500">Manage your company details and contact information</p>
