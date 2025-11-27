@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { projectAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '../utils/currency';
 import {
   BuildingOfficeIcon,
   DocumentTextIcon,
@@ -437,7 +438,7 @@ const AddProject = () => {
                 <div className="space-y-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Budget</span>
                   <p className="text-lg font-semibold text-green-600">
-                    {formData.budget ? `$${parseFloat(formData.budget).toLocaleString()}` : '$0.00'}
+                    {formData.budget ? formatCurrency(parseFloat(formData.budget)) : formatCurrency(0)}
                   </p>
                 </div>
                 <div className="space-y-1">

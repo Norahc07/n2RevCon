@@ -4,6 +4,7 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { BarChart } from '@mui/x-charts/BarChart';
 import toast from 'react-hot-toast';
+import { formatCurrency, formatCurrencyForChart } from '../utils/currency';
 import {
   CurrencyDollarIcon,
   ArrowTrendingDownIcon,
@@ -168,7 +169,7 @@ const Dashboard = () => {
             </div>
           </div>
           <p className="text-2xl font-bold text-green-600">
-            ${(summary.totals?.revenue || 0).toLocaleString()}
+            {formatCurrency(summary.totals?.revenue || 0)}
           </p>
         </div>
 
@@ -181,7 +182,7 @@ const Dashboard = () => {
             </div>
           </div>
           <p className="text-2xl font-bold text-red-600">
-            ${(summary.totals?.expenses || 0).toLocaleString()}
+            {formatCurrency(summary.totals?.expenses || 0)}
           </p>
         </div>
 
@@ -194,7 +195,7 @@ const Dashboard = () => {
             </div>
           </div>
           <p className={`text-2xl font-bold ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)).toLocaleString()}
+            {formatCurrency((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0))}
           </p>
         </div>
 
@@ -329,10 +330,10 @@ const Dashboard = () => {
                 series={[{
                   data: paymentStatusData.map(item => item.amount),
                   color: COLORS.primary,
-                  valueFormatter: (value) => `$${value.toLocaleString()}`,
+                  valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}
                 yAxis={[{
-                  valueFormatter: (value) => `$${value.toLocaleString()}`,
+                  valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}
                 width={undefined}
                 height={300}

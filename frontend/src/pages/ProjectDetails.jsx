@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectAPI, revenueAPI, expenseAPI, billingAPI, collectionAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '../utils/currency';
 
 const ProjectDetails = () => {
   const { id } = useParams();
@@ -116,7 +117,7 @@ const ProjectDetails = () => {
         </div>
         <div>
           <span className="text-sm text-gray-600">Budget</span>
-          <p className="font-semibold">${project.budget.toLocaleString()}</p>
+          <p className="font-semibold">{formatCurrency(project.budget)}</p>
         </div>
       </div>
 
@@ -195,11 +196,11 @@ const ProjectDetails = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="card">
                 <h3 className="text-sm text-gray-600 mb-1">Total Revenue</h3>
-                <p className="text-2xl font-bold text-green-600">${totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
               </div>
               <div className="card">
                 <h3 className="text-sm text-gray-600 mb-1">Total Expenses</h3>
-                <p className="text-2xl font-bold text-red-600">${totalExpenses.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
               </div>
             </div>
             <div>
@@ -219,7 +220,7 @@ const ProjectDetails = () => {
                       <tr key={rev._id} className="border-b">
                         <td className="p-2">{rev.revenueCode}</td>
                         <td className="p-2">{rev.description}</td>
-                        <td className="p-2">${rev.amount.toLocaleString()}</td>
+                        <td className="p-2">{formatCurrency(rev.amount)}</td>
                         <td className="p-2">{new Date(rev.date).toLocaleDateString()}</td>
                       </tr>
                     ))}
@@ -244,7 +245,7 @@ const ProjectDetails = () => {
                       <tr key={exp._id} className="border-b">
                         <td className="p-2">{exp.expenseCode}</td>
                         <td className="p-2">{exp.description}</td>
-                        <td className="p-2">${exp.amount.toLocaleString()}</td>
+                        <td className="p-2">{formatCurrency(exp.amount)}</td>
                         <td className="p-2">{new Date(exp.date).toLocaleDateString()}</td>
                       </tr>
                     ))}
@@ -276,7 +277,7 @@ const ProjectDetails = () => {
                         <td className="p-2">{bill.invoiceNumber}</td>
                         <td className="p-2">{new Date(bill.billingDate).toLocaleDateString()}</td>
                         <td className="p-2">{new Date(bill.dueDate).toLocaleDateString()}</td>
-                        <td className="p-2">${bill.totalAmount.toLocaleString()}</td>
+                        <td className="p-2">{formatCurrency(bill.totalAmount)}</td>
                         <td className="p-2 capitalize">{bill.status}</td>
                       </tr>
                     ))}
@@ -302,7 +303,7 @@ const ProjectDetails = () => {
                       <tr key={col._id} className="border-b">
                         <td className="p-2">{col.collectionNumber}</td>
                         <td className="p-2">{new Date(col.collectionDate).toLocaleDateString()}</td>
-                        <td className="p-2">${col.amount.toLocaleString()}</td>
+                        <td className="p-2">{formatCurrency(col.amount)}</td>
                         <td className="p-2 capitalize">{col.paymentMethod.replace('_', ' ')}</td>
                         <td className="p-2 capitalize">{col.status}</td>
                       </tr>

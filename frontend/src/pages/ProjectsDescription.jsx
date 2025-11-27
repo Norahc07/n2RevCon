@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { projectAPI } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '../utils/currency';
 import {
   CalendarIcon,
   PlusIcon,
@@ -59,14 +60,7 @@ const ProjectsDescription = () => {
     return styles[status] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  import { formatCurrency } from '../utils/currency';
 
   // Get available years from projects
   const availableYears = useMemo(() => {

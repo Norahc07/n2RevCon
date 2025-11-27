@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { projectAPI, billingAPI, collectionAPI } from '../services/api';
+import { formatCurrency } from '../utils/currency';
 import {
   PieChart,
   Pie,
@@ -120,19 +121,19 @@ const ProjectsBillingCollections = () => {
             <div className="card">
               <h3 className="text-sm font-medium text-gray-500 mb-1">Total Billed</h3>
               <p className="text-2xl font-bold text-blue-600">
-                ${totalBilled.toLocaleString()}
+                {formatCurrency(totalBilled)}
               </p>
             </div>
             <div className="card">
               <h3 className="text-sm font-medium text-gray-500 mb-1">Total Collected</h3>
               <p className="text-2xl font-bold text-green-600">
-                ${totalCollected.toLocaleString()}
+                {formatCurrency(totalCollected)}
               </p>
             </div>
             <div className="card">
               <h3 className="text-sm font-medium text-gray-500 mb-1">Outstanding</h3>
               <p className={`text-2xl font-bold ${outstanding >= 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                ${outstanding.toLocaleString()}
+                {formatCurrency(outstanding)}
               </p>
             </div>
           </div>

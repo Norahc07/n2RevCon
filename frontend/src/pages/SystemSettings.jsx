@@ -196,7 +196,7 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
       website: company?.contact?.website || '',
     },
     settings: {
-      currency: company?.settings?.currency || 'USD',
+      currency: company?.settings?.currency || 'PHP',
       dateFormat: company?.settings?.dateFormat || 'MM/DD/YYYY',
     },
   });
@@ -371,10 +371,10 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
                 })}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
               >
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="PHP">PHP</option>
+                <option value="PHP">PHP (Philippine Peso)</option>
+                <option value="USD">USD (US Dollar)</option>
+                <option value="EUR">EUR (Euro)</option>
+                <option value="GBP">GBP (British Pound)</option>
                 <option value="JPY">JPY</option>
                 <option value="CNY">CNY</option>
               </select>

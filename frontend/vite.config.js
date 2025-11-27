@@ -16,7 +16,8 @@ export default defineConfig({
         theme_color: '#DC2626',
         background_color: '#FFFFFF',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
+        categories: ['business', 'productivity'],
         scope: '/',
         start_url: '/',
         icons: [

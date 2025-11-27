@@ -112,19 +112,19 @@ const ProjectsRevenueCosts = () => {
             <div className="card">
               <h3 className="text-sm font-medium text-gray-500 mb-1">Total Revenue</h3>
               <p className="text-2xl font-bold text-green-600">
-                ${totalRevenue.toLocaleString()}
+                {formatCurrency(totalRevenue)}
               </p>
             </div>
             <div className="card">
               <h3 className="text-sm font-medium text-gray-500 mb-1">Total Costs</h3>
               <p className="text-2xl font-bold text-red-600">
-                ${totalCosts.toLocaleString()}
+                {formatCurrency(totalCosts)}
               </p>
             </div>
             <div className="card">
               <h3 className="text-sm font-medium text-gray-500 mb-1">Net Profit</h3>
               <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                ${netProfit.toLocaleString()}
+                {formatCurrency(netProfit)}
               </p>
             </div>
           </div>
@@ -138,7 +138,7 @@ const ProjectsRevenueCosts = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
                   <Legend />
                   <Line
                     type="monotone"
@@ -165,7 +165,7 @@ const ProjectsRevenueCosts = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
                   <Legend />
                   <Bar dataKey="Revenue" fill="#10B981" />
                   <Bar dataKey="Costs" fill="#EF4444" />

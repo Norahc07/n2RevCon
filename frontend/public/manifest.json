@@ -6,7 +6,17 @@
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#DC2626",
-  "orientation": "portrait",
+  "orientation": "any",
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View system dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/n2RevConLogo.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/n2RevConLogo.png",
