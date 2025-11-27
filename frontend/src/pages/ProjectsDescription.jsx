@@ -11,6 +11,8 @@ import {
   MapPinIcon,
   CurrencyDollarIcon,
   ArrowDownTrayIcon,
+  PencilIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 import { exportAPI } from '../services/api';
 
@@ -60,8 +62,6 @@ const ProjectsDescription = () => {
     return styles[status] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  import { formatCurrency } from '../utils/currency';
-
   // Get available years from projects
   const availableYears = useMemo(() => {
     const years = new Set();
@@ -74,6 +74,23 @@ const ProjectsDescription = () => {
     });
     return Array.from(years).sort((a, b) => b - a);
   }, [projects]);
+
+  // Handle delete project
+  const handleDelete = async (projectId, projectName, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await projectAPI.delete(projectId);
+      toast.success('Project deleted successfully');
+      fetchProjects();
+    } catch (error) {
+      toast.error('Failed to delete project');
+      console.error('Delete error:', error);
+    }
+  };
 
   // Handle Excel export
   const handleExport = async () => {
@@ -273,16 +290,38 @@ const ProjectsDescription = () => {
                       </span>
                     </td>
                     <td className="p-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/projects/${project._id}`);
-                        }}
-                        className="flex items-center gap-1 text-primary hover:text-red-700 font-medium transition-colors duration-200"
-                      >
-                        <EyeIcon className="w-4 h-4" />
-                        <span className="hidden lg:inline">View</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/projects/${project._id}`);
+                          }}
+                          className="flex items-center gap-1 text-primary hover:text-red-700 font-medium transition-colors duration-200"
+                          title="View"
+                        >
+                          <EyeIcon className="w-4 h-4" />
+                          <span className="hidden lg:inline">View</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/projects/${project._id}`, { state: { edit: true } });
+                          }}
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+                          title="Edit"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                          <span className="hidden lg:inline">Edit</span>
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(project._id, project.projectName, e)}
+                          className="flex items-center gap-1 text-red-600 hover:text-red-700 font-medium transition-colors duration-200"
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                          <span className="hidden lg:inline">Delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

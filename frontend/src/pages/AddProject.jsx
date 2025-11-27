@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { projectAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/currency';
@@ -19,6 +19,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const AddProject = () => {
+  const { id } = useParams();
+  const isEditMode = !!id;
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     projectCode: '',
@@ -35,7 +37,41 @@ const AddProject = () => {
     notes: '',
   });
   const [loading, setLoading] = useState(false);
+  const [loadingProject, setLoadingProject] = useState(isEditMode);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isEditMode) {
+      fetchProject();
+    }
+  }, [id]);
+
+  const fetchProject = async () => {
+    try {
+      setLoadingProject(true);
+      const response = await projectAPI.getById(id);
+      const project = response.data.project;
+      setFormData({
+        projectCode: project.projectCode || '',
+        projectName: project.projectName || '',
+        description: project.description || '',
+        clientName: project.clientName || '',
+        status: project.status || 'pending',
+        startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
+        endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
+        budget: project.budget || '',
+        location: project.location || '',
+        projectManager: project.projectManager || '',
+        tags: project.tags || [],
+        notes: project.notes || '',
+      });
+    } catch (error) {
+      toast.error('Failed to load project');
+      navigate('/projects');
+    } finally {
+      setLoadingProject(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,15 +82,23 @@ const AddProject = () => {
 
     try {
       setLoading(true);
-      const response = await projectAPI.create({
+      const projectData = {
         ...formData,
         budget: parseFloat(formData.budget) || 0,
         tags: formData.tags.filter(tag => tag.trim() !== ''),
-      });
-      toast.success('Project created successfully');
-      navigate(`/projects/${response.data.project._id}`);
+      };
+      
+      if (isEditMode) {
+        await projectAPI.update(id, projectData);
+        toast.success('Project updated successfully');
+        navigate(`/projects/${id}`);
+      } else {
+        const response = await projectAPI.create(projectData);
+        toast.success('Project created successfully');
+        navigate(`/projects/${response.data.project._id}`);
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create project');
+      toast.error(error.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} project`);
     } finally {
       setLoading(false);
     }
@@ -87,8 +131,8 @@ const AddProject = () => {
             <BuildingOfficeIcon className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Add New Project</h1>
-            <p className="text-sm text-gray-500 mt-1">Create a new project with step-by-step wizard</p>
+            <h1 className="text-3xl font-bold text-gray-800">{isEditMode ? 'Edit Project' : 'Add New Project'}</h1>
+            <p className="text-sm text-gray-500 mt-1">{isEditMode ? 'Update project details' : 'Create a new project with step-by-step wizard'}</p>
           </div>
         </div>
         <button

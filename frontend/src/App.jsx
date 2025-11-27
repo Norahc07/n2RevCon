@@ -50,6 +50,7 @@ function App() {
                     <Route path="/projects/revenue-costs" element={<ProjectsRevenueCosts />} />
                     <Route path="/projects/billing-collections" element={<ProjectsBillingCollections />} />
                     <Route path="/projects/new" element={<AddProject />} />
+                    <Route path="/projects/:id/edit" element={<AddProject />} />
                     <Route path="/projects/:id" element={<ProjectDetails />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/export" element={<ExportReports />} />
