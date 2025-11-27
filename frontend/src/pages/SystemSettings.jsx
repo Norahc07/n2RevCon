@@ -121,40 +121,54 @@ const SystemSettings = () => {
       </div>
 
       {/* Main Content */}
-      <div className="card shadow-md">
+      <div>
             {/* Company Information */}
             {activeTab === 'company' && company && (
-              <CompanyInformationTab company={company} onSave={handleSave} saving={saving} />
+              <div className="card space-y-6 shadow-md">
+                <CompanyInformationTab company={company} onSave={handleSave} saving={saving} />
+              </div>
             )}
 
             {/* User Management */}
             {activeTab === 'users' && (
-              <UserManagementTab users={users} onRefresh={fetchUsers} />
+              <div className="card space-y-6 shadow-md">
+                <UserManagementTab users={users} onRefresh={fetchUsers} />
+              </div>
             )}
 
             {/* Project Configuration */}
             {activeTab === 'project' && company && (
-              <ProjectConfigTab company={company} onSave={handleSave} saving={saving} />
+              <div className="card space-y-6 shadow-md">
+                <ProjectConfigTab company={company} onSave={handleSave} saving={saving} />
+              </div>
             )}
 
             {/* Notifications */}
             {activeTab === 'notifications' && company && (
-              <NotificationConfigTab company={company} onSave={handleSave} saving={saving} />
+              <div className="card space-y-6 shadow-md">
+                <NotificationConfigTab company={company} onSave={handleSave} saving={saving} />
+              </div>
             )}
 
             {/* Data & Backup */}
             {activeTab === 'backup' && company && (
-              <BackupTab company={company} onSave={handleSave} onBackup={handleCreateBackup} saving={saving} />
+              <div className="card space-y-6 shadow-md">
+                <BackupTab company={company} onSave={handleSave} onBackup={handleCreateBackup} saving={saving} />
+              </div>
             )}
 
             {/* Audit Logs */}
             {activeTab === 'audit' && (
-              <AuditLogsTab logs={auditLogs} onRefresh={fetchAuditLogs} />
+              <div className="card space-y-6 shadow-md">
+                <AuditLogsTab logs={auditLogs} onRefresh={fetchAuditLogs} />
+              </div>
             )}
 
             {/* PWA & Offline */}
             {activeTab === 'pwa' && company && (
-              <PWATab company={company} onSave={handleSave} saving={saving} />
+              <div className="card space-y-6 shadow-md">
+                <PWATab company={company} onSave={handleSave} saving={saving} />
+              </div>
             )}
           </div>
     </div>
@@ -191,7 +205,7 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
   };
 
   return (
-    <div className="card space-y-6 shadow-md">
+    <div className="space-y-6 p-6">
       <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Company Information</h2>

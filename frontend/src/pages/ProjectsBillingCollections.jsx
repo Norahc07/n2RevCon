@@ -627,53 +627,69 @@ const ProjectsBillingCollections = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Billing Status Pie Chart */}
-        <div className="card shadow-md">
+        <div className="card shadow-md overflow-hidden">
           <h2 className="text-xl font-semibold mb-4">Billing Status</h2>
           {billingStatusChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={billingStatusChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent, value }) => `${name}: ${formatCurrency(value)} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={100}
-                  innerRadius={40}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {billingStatusChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="w-full" style={{ minHeight: '300px' }}>
+              <ResponsiveContainer width="100%" height={300} minHeight={250}>
+                <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                  <Pie
+                    data={billingStatusChartData}
+                    cx="50%"
+                    cy="45%"
+                    labelLine={false}
+                    label={({ name, percent, value }) => `${name}: ${formatCurrency(value)} (${(percent * 100).toFixed(0)}%)`}
+                    outerRadius="65%"
+                    innerRadius="25%"
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {billingStatusChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Legend 
+                    wrapperStyle={{ paddingTop: '10px' }}
+                    layout="horizontal"
+                    verticalAlign="bottom"
+                    align="center"
+                    iconSize={10}
+                    wrapperClass="text-xs sm:text-sm"
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
             <div className="flex items-center justify-center h-[300px] text-gray-500">No data available</div>
           )}
         </div>
 
         {/* Collection Status Bar Chart */}
-        <div className="card shadow-md">
+        <div className="card shadow-md overflow-hidden">
           <h2 className="text-xl font-semibold mb-4">Collection Status</h2>
           {collectionStatusChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={collectionStatusChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-                <Legend />
-                <Bar dataKey="value">
-                  {collectionStatusChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.name === 'Paid' ? COLORS.paid : entry.name === 'Unpaid' ? COLORS.unpaid : COLORS.uncollectible} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="w-full" style={{ minHeight: '300px' }}>
+              <ResponsiveContainer width="100%" height={300} minHeight={250}>
+                <BarChart data={collectionStatusChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Legend 
+                    wrapperStyle={{ paddingTop: '20px' }}
+                    layout="horizontal"
+                    verticalAlign="bottom"
+                    align="center"
+                  />
+                  <Bar dataKey="value">
+                    {collectionStatusChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.name === 'Paid' ? COLORS.paid : entry.name === 'Unpaid' ? COLORS.unpaid : COLORS.uncollectible} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
             <div className="flex items-center justify-center h-[300px] text-gray-500">No data available</div>
           )}
