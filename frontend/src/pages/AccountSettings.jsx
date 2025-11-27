@@ -197,11 +197,11 @@ const AccountSettings = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header Section */}
-      <div className="card space-y-6 shadow-md">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
           <div>
-            <h1 className="text-3xl font-bold text-white">Account Settings</h1>
-            <p className="text-red-100 mt-1">Manage your personal account information and preferences</p>
+            <h1 className="text-3xl font-bold text-gray-800">Account Settings</h1>
+            <p className="text-gray-500 mt-1">Manage your personal account information and preferences</p>
           </div>
         </div>
       </div>

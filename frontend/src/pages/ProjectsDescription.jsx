@@ -157,7 +157,6 @@ const ProjectsDescription = () => {
       {/* Header with Title, Year Filter, and Add Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
-          <BuildingOfficeIcon className="w-8 h-8 text-gray-700" />
           <h1 className="text-3xl font-bold text-gray-800">Projects Description</h1>
         </div>
         

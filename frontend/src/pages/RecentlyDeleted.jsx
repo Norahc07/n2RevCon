@@ -90,9 +90,6 @@ const RecentlyDeleted = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-red-100 rounded-lg">
-            <TrashIcon className="w-8 h-8 text-red-600" />
-          </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Recently Deleted</h1>
             <p className="text-sm text-gray-500 mt-1">Projects deleted in the last 30 days</p>
