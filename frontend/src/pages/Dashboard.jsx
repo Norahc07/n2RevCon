@@ -396,18 +396,43 @@ const Dashboard = () => {
             <h2 className="text-lg sm:text-xl font-semibold truncate">Billing Status ({year})</h2>
           </div>
           {billingStatusData.length > 0 ? (
-            <div className="w-full overflow-x-auto" style={{ minHeight: '250px', height: '300px' }}>
-              <PieChart
-                series={[{
-                  data: billingStatusData,
-                  innerRadius: 30,
-                  outerRadius: 100,
-                  paddingAngle: 2,
-                  cornerRadius: 5,
-                }]}
-                width={undefined}
-                height={300}
-              />
+            <div className="w-full flex flex-col items-center">
+              {/* Chart Container - Centered */}
+              <div className="w-full flex justify-center items-center" style={{ minHeight: '250px', height: '250px' }}>
+                <PieChart
+                  series={[{
+                    data: billingStatusData,
+                    innerRadius: 30,
+                    outerRadius: 80,
+                    paddingAngle: 2,
+                    cornerRadius: 5,
+                  }]}
+                  width={undefined}
+                  height={250}
+                  slotProps={{
+                    legend: {
+                      hidden: true, // Hide default legend
+                    },
+                  }}
+                />
+              </div>
+              {/* Custom Legend - Centered Under Chart */}
+              <div className="w-full mt-4 flex justify-center">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+                  {billingStatusData.map((entry) => (
+                    <div key={entry.id} className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: entry.color }}
+                      ></div>
+                      <span className="text-sm font-medium text-gray-700">{entry.label}</span>
+                      <span className="text-xs text-gray-500">
+                        ({entry.value})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center h-[300px] text-gray-500">
