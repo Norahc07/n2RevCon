@@ -192,7 +192,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
             <div className="flex items-center gap-2">
               <img 
                 src="/n2RevConLogo.png" 
-                alt="n2 RevCon Logo" 
+                alt="N2 RevCon Logo" 
                 className="h-8 w-auto"
               />
               <h1 className="text-xl font-bold text-accent">N2 RevCon</h1>
