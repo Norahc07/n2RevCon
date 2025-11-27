@@ -627,38 +627,50 @@ const ProjectsBillingCollections = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Billing Status Pie Chart */}
-        <div className="card shadow-md overflow-hidden">
+        <div className="card shadow-md p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4">Billing Status</h2>
           {billingStatusChartData.length > 0 ? (
-            <div className="w-full" style={{ minHeight: '300px' }}>
-              <ResponsiveContainer width="100%" height={300} minHeight={250}>
-                <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-                  <Pie
-                    data={billingStatusChartData}
-                    cx="50%"
-                    cy="45%"
-                    labelLine={false}
-                    label={({ name, percent, value }) => `${name}: ${formatCurrency(value)} (${(percent * 100).toFixed(0)}%)`}
-                    outerRadius="65%"
-                    innerRadius="25%"
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {billingStatusChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
-                  <Legend 
-                    wrapperStyle={{ paddingTop: '10px' }}
-                    layout="horizontal"
-                    verticalAlign="bottom"
-                    align="center"
-                    iconSize={10}
-                    wrapperClass="text-xs sm:text-sm"
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="w-full flex flex-col">
+              {/* Chart Container - True Responsive Wrapper */}
+              <div className="w-full" style={{ height: 'clamp(280px, 40vw, 400px)' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <Pie
+                      data={billingStatusChartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={false}
+                      outerRadius="60%"
+                      innerRadius="20%"
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {billingStatusChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Legend - Stacked Under Chart on All Screens */}
+              <div className="w-full mt-4 flex justify-center">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+                  {billingStatusChartData.map((entry, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded-full" 
+                        style={{ backgroundColor: entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled }}
+                      ></div>
+                      <span className="text-sm font-medium text-gray-700">{entry.name}</span>
+                      <span className="text-xs text-gray-500">
+                        ({formatCurrency(entry.value)})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center h-[300px] text-gray-500">No data available</div>
