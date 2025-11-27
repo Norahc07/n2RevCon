@@ -212,9 +212,6 @@ const AccountSettings = () => {
           {activeTab === 'profile' && (
             <div className="card space-y-6 shadow-md">
               <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-                <div className="bg-red-50 rounded-lg p-2">
-                  <UserIcon className="w-6 h-6 text-red-600" />
-                </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">Profile Information</h2>
                   <p className="text-sm text-gray-500">Update your personal details and profile picture</p>
@@ -354,9 +351,6 @@ const AccountSettings = () => {
           {activeTab === 'password' && (
             <div className="card space-y-6 shadow-md">
               <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-                <div className="bg-red-50 rounded-lg p-2">
-                  <LockClosedIcon className="w-6 h-6 text-red-600" />
-                </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">Password & Security</h2>
                   <p className="text-sm text-gray-500">Change your password and manage security settings</p>
@@ -391,9 +385,6 @@ const AccountSettings = () => {
             <div className="card space-y-6 shadow-md">
               <div className="flex items-center justify-between pb-4 border-b-2 border-gray-200">
                 <div className="flex items-center gap-3">
-                  <div className="bg-red-50 rounded-lg p-2">
-                    <DevicePhoneMobileIcon className="w-6 h-6 text-red-600" />
-                  </div>
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800">Login & Session Management</h2>
                     <p className="text-sm text-gray-500">View and manage your active sessions</p>
@@ -494,9 +485,6 @@ const AccountSettings = () => {
           {activeTab === 'account' && (
             <div className="card space-y-6 shadow-md">
               <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-                <div className="bg-red-50 rounded-lg p-2">
-                  <ShieldCheckIcon className="w-6 h-6 text-red-600" />
-                </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">Account Status</h2>
                   <p className="text-sm text-gray-500">View your account information and status</p>

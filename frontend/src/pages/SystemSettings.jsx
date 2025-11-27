@@ -191,7 +191,7 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="card space-y-6 shadow-md">
       <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Company Information</h2>
