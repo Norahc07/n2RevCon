@@ -111,11 +111,8 @@ const SystemSettings = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-700 rounded-lg p-6 shadow-lg">
-        <div className="flex items-center gap-4">
-          <div className="bg-white bg-opacity-20 rounded-lg p-3">
-            <Cog6ToothIcon className="w-8 h-8 text-white" />
-          </div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
           <div>
             <h1 className="text-3xl font-bold text-white">System Settings</h1>
             <p className="text-red-100 mt-1">Configure system-wide settings and preferences</p>
