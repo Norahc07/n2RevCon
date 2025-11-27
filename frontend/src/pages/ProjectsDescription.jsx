@@ -305,7 +305,7 @@ const ProjectsDescription = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/projects/${project._id}`, { state: { edit: true } });
+                            navigate(`/projects/${project._id}/edit`);
                           }}
                           className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
                           title="Edit"
