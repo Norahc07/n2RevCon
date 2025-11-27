@@ -132,7 +132,7 @@ const AddProject = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-800">{isEditMode ? 'Edit Project' : 'Add New Project'}</h1>
-            <p className="text-sm text-gray-500 mt-1">{isEditMode ? 'Update project details' : 'Create a new project with step-by-step wizard'}</p>
+            <p className="text-sm text-gray-500 mt-1">{isEditMode ? 'Update project details' : 'Create a new project with using five easy steps'}</p>
           </div>
         </div>
         <button

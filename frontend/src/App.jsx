@@ -56,9 +56,20 @@ function App() {
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/export" element={<ExportReports />} />
                     <Route path="/profile" element={<Profile />} />
-                    <Route path="/settings/account" element={<AccountSettings />} />
-                    <Route path="/settings/system" element={<SystemSettings />} />
-                    <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
+                    <Route path="/settings/account" element={<Navigate to="/settings/account/profile" replace />} />
+                    <Route path="/settings/account/profile" element={<AccountSettings />} />
+                    <Route path="/settings/account/password" element={<AccountSettings />} />
+                    <Route path="/settings/account/sessions" element={<AccountSettings />} />
+                    <Route path="/settings/account/status" element={<AccountSettings />} />
+                    <Route path="/settings/system" element={<Navigate to="/settings/system/company" replace />} />
+                    <Route path="/settings/system/company" element={<SystemSettings />} />
+                    <Route path="/settings/system/users" element={<SystemSettings />} />
+                    <Route path="/settings/system/project" element={<SystemSettings />} />
+                    <Route path="/settings/system/notifications" element={<SystemSettings />} />
+                    <Route path="/settings/system/backup" element={<SystemSettings />} />
+                    <Route path="/settings/system/audit" element={<SystemSettings />} />
+                    <Route path="/settings/system/pwa" element={<SystemSettings />} />
+                    <Route path="/settings" element={<Navigate to="/settings/account/profile" replace />} />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>
                 </Layout>

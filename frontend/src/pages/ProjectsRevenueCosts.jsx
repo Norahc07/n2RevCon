@@ -1,10 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
-import { projectAPI, revenueAPI, expenseAPI } from '../services/api';
+import { projectAPI, revenueAPI, expenseAPI, exportAPI } from '../services/api';
 import { formatCurrency } from '../utils/currency';
-import { CalendarIcon } from '@heroicons/react/24/outline';
 import {
-  LineChart,
-  Line,
+  CalendarIcon,
+  FunnelIcon,
+  ArrowPathIcon,
+  MagnifyingGlassIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  XMarkIcon,
+  DocumentArrowDownIcon,
+} from '@heroicons/react/24/outline';
+import {
   BarChart,
   Bar,
   XAxis,
@@ -15,51 +22,58 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const ProjectsRevenueCosts = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState('');
+  const [allRevenues, setAllRevenues] = useState([]);
+  const [allExpenses, setAllExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  // Filter states
   const [filterYear, setFilterYear] = useState('');
   const [filterMonth, setFilterMonth] = useState('');
-  const [revenues, setRevenues] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState('all');
+  const [appliedFilters, setAppliedFilters] = useState({
+    year: '',
+    month: '',
+    project: 'all',
+  });
+
+  // Table states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState(''); // 'revenue', 'costs', 'net'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  // Chart view state
+  const [chartView, setChartView] = useState('project'); // 'project' or 'month'
+
+  // Side panel state
+  const [selectedProjectDetails, setSelectedProjectDetails] = useState(null);
+  const [showSidePanel, setShowSidePanel] = useState(false);
 
   useEffect(() => {
-    fetchProjects();
+    fetchAllData();
   }, []);
 
-  useEffect(() => {
-    if (selectedProject) {
-      fetchRevenueAndCosts();
-    }
-  }, [selectedProject]);
-
-  const fetchProjects = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
-      const response = await projectAPI.getAll();
-      setProjects(response.data.projects || []);
-      if (response.data.projects && response.data.projects.length > 0) {
-        setSelectedProject(response.data.projects[0]._id);
-      }
+      const [projectsRes, revenuesRes, expensesRes] = await Promise.all([
+        projectAPI.getAll(),
+        revenueAPI.getAll(),
+        expenseAPI.getAll(),
+      ]);
+      setProjects(projectsRes.data.projects || []);
+      setAllRevenues(revenuesRes.data.revenue || []);
+      setAllExpenses(expensesRes.data.expenses || []);
     } catch (error) {
-      toast.error('Failed to load projects');
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchRevenueAndCosts = async () => {
-    try {
-      const [revenueRes, expenseRes] = await Promise.all([
-        revenueAPI.getAll({ projectId: selectedProject }),
-        expenseAPI.getAll({ projectId: selectedProject })
-      ]);
-      setRevenues(revenueRes.data.revenue || []);
-      setExpenses(expenseRes.data.expenses || []);
-    } catch (error) {
-      toast.error('Failed to load revenue and costs data');
     }
   };
 
@@ -76,245 +90,736 @@ const ProjectsRevenueCosts = () => {
     return Array.from(years).sort((a, b) => b - a);
   }, [projects]);
 
-  // Filter projects by year and month
+  // Apply filters
+  const handleApplyFilters = () => {
+    setAppliedFilters({
+      year: filterYear,
+      month: filterMonth,
+      project: selectedProject,
+    });
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilterYear('');
+    setFilterMonth('');
+    setSelectedProject('all');
+    setAppliedFilters({
+      year: '',
+      month: '',
+      project: 'all',
+    });
+  };
+
+  // Filter projects based on applied filters
   const filteredProjects = useMemo(() => {
     let filtered = projects;
 
-    if (filterYear) {
-      const yearNum = parseInt(filterYear);
+    // Filter by year
+    if (appliedFilters.year) {
+      const yearNum = parseInt(appliedFilters.year);
       filtered = filtered.filter((project) => {
         const startYear = new Date(project.startDate).getFullYear();
         const endYear = new Date(project.endDate).getFullYear();
-        const startMonth = new Date(project.startDate).getMonth() + 1;
-        const endMonth = new Date(project.endDate).getMonth() + 1;
-        
-        // Check if project spans the selected year
-        const spansYear = startYear <= yearNum && endYear >= yearNum;
-        
-        if (!spansYear) return false;
-        
-        // If month is selected, check if project is active in that month
-        if (filterMonth) {
-          const monthNum = parseInt(filterMonth);
-          // Project is active in the month if:
-          // - It starts before or during the month in the selected year
-          // - It ends after or during the month in the selected year
-          if (startYear === yearNum && startMonth > monthNum) return false;
-          if (endYear === yearNum && endMonth < monthNum) return false;
-        }
-        
+        return startYear <= yearNum && endYear >= yearNum;
+      });
+    }
+
+    // Filter by month
+    if (appliedFilters.month && appliedFilters.year) {
+      const monthNum = parseInt(appliedFilters.month);
+      const yearNum = parseInt(appliedFilters.year);
+      filtered = filtered.filter((project) => {
+        const startDate = new Date(project.startDate);
+        const endDate = new Date(project.endDate);
+        const startYear = startDate.getFullYear();
+        const endYear = endDate.getFullYear();
+        const startMonth = startDate.getMonth() + 1;
+        const endMonth = endDate.getMonth() + 1;
+
+        if (startYear === yearNum && startMonth > monthNum) return false;
+        if (endYear === yearNum && endMonth < monthNum) return false;
         return true;
       });
     }
 
-    return filtered;
-  }, [projects, filterYear, filterMonth]);
-
-  // Update selected project when filters change
-  useEffect(() => {
-    if (filteredProjects.length > 0) {
-      // If current selected project is not in filtered list, select first filtered project
-      if (!filteredProjects.find(p => p._id === selectedProject)) {
-        setSelectedProject(filteredProjects[0]._id);
-      }
-    } else if (filteredProjects.length === 0 && selectedProject) {
-      setSelectedProject('');
+    // Filter by project
+    if (appliedFilters.project !== 'all') {
+      filtered = filtered.filter((p) => p._id === appliedFilters.project);
     }
-  }, [filteredProjects, selectedProject]);
+
+    return filtered;
+  }, [projects, appliedFilters]);
+
+  // Calculate financial data for each project
+  const projectFinancialData = useMemo(() => {
+    return filteredProjects.map((project) => {
+      // Filter revenues and expenses for this project
+      let projectRevenues = allRevenues.filter((r) => r.projectId?._id === project._id || r.projectId === project._id);
+      let projectExpenses = allExpenses.filter((e) => e.projectId?._id === project._id || e.projectId === project._id);
+
+      // Filter by year if applied
+      if (appliedFilters.year) {
+        const yearNum = parseInt(appliedFilters.year);
+        projectRevenues = projectRevenues.filter((r) => {
+          const revenueYear = new Date(r.date).getFullYear();
+          return revenueYear === yearNum;
+        });
+        projectExpenses = projectExpenses.filter((e) => {
+          const expenseYear = new Date(e.date).getFullYear();
+          return expenseYear === yearNum;
+        });
+      }
+
+      // Filter by month if applied
+      if (appliedFilters.month && appliedFilters.year) {
+        const monthNum = parseInt(appliedFilters.month);
+        projectRevenues = projectRevenues.filter((r) => {
+          const revenueDate = new Date(r.date);
+          return revenueDate.getMonth() + 1 === monthNum;
+        });
+        projectExpenses = projectExpenses.filter((e) => {
+          const expenseDate = new Date(e.date);
+          return expenseDate.getMonth() + 1 === monthNum;
+        });
+      }
+
+      const totalRevenue = projectRevenues.reduce((sum, r) => sum + (r.amount || 0), 0);
+      const totalCosts = projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const netIncome = totalRevenue - totalCosts;
+
+      // Get year and month for display
+      const year = appliedFilters.year || new Date(project.startDate).getFullYear();
+      const month = appliedFilters.month
+        ? new Date(2000, parseInt(appliedFilters.month) - 1).toLocaleString('default', { month: 'long' })
+        : 'All Months';
+
+      return {
+        projectId: project.projectCode || project._id,
+        projectName: project.projectName,
+        clientName: project.clientName || 'N/A',
+        year,
+        month,
+        totalRevenue,
+        totalCosts,
+        netIncome,
+        status: project.status,
+        project: project,
+      };
+    });
+  }, [filteredProjects, allRevenues, allExpenses, appliedFilters]);
+
+  // Filter and sort table data
+  const tableData = useMemo(() => {
+    let data = [...projectFinancialData];
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      data = data.filter(
+        (item) =>
+          item.projectId.toLowerCase().includes(query) ||
+          item.projectName.toLowerCase().includes(query) ||
+          item.clientName.toLowerCase().includes(query)
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      data = data.filter((item) => item.status === statusFilter);
+    }
+
+    // Sort
+    if (sortBy) {
+      data.sort((a, b) => {
+        let aVal, bVal;
+        if (sortBy === 'revenue') {
+          aVal = a.totalRevenue;
+          bVal = b.totalRevenue;
+        } else if (sortBy === 'costs') {
+          aVal = a.totalCosts;
+          bVal = b.totalCosts;
+        } else if (sortBy === 'net') {
+          aVal = a.netIncome;
+          bVal = b.netIncome;
+        } else {
+          return 0;
+        }
+
+        if (sortOrder === 'asc') {
+          return aVal - bVal;
+        } else {
+          return bVal - aVal;
+        }
+      });
+    }
+
+    return data;
+  }, [projectFinancialData, searchQuery, statusFilter, sortBy, sortOrder]);
+
+  // Calculate totals
+  const totals = useMemo(() => {
+    return tableData.reduce(
+      (acc, item) => {
+        acc.revenue += item.totalRevenue;
+        acc.costs += item.totalCosts;
+        acc.net += item.netIncome;
+        return acc;
+      },
+      { revenue: 0, costs: 0, net: 0 }
+    );
+  }, [tableData]);
 
   // Prepare chart data
-  const chartData = revenues.map((rev, index) => ({
-    name: `Period ${index + 1}`,
-    Revenue: rev.amount || 0,
-    Costs: expenses[index]?.amount || 0,
-  }));
+  const chartData = useMemo(() => {
+    if (chartView === 'project') {
+      // Group by project
+      return tableData.map((item) => ({
+        name: item.projectName.length > 15 ? item.projectName.substring(0, 15) + '...' : item.projectName,
+        Revenue: item.totalRevenue,
+        Costs: item.totalCosts,
+      }));
+    } else {
+      // Group by month
+      const monthMap = {};
+      tableData.forEach((item) => {
+        const month = item.month;
+        if (!monthMap[month]) {
+          monthMap[month] = { Revenue: 0, Costs: 0 };
+        }
+        monthMap[month].Revenue += item.totalRevenue;
+        monthMap[month].Costs += item.totalCosts;
+      });
+      return Object.entries(monthMap).map(([month, data]) => ({
+        name: month,
+        ...data,
+      }));
+    }
+  }, [tableData, chartView]);
 
-  const totalRevenue = revenues.reduce((sum, r) => sum + (r.amount || 0), 0);
-  const totalCosts = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-  const netProfit = totalRevenue - totalCosts;
+  // Handle table row click
+  const handleRowClick = async (projectData) => {
+    try {
+      const project = projectData.project;
+      const projectRevenues = allRevenues.filter(
+        (r) => r.projectId?._id === project._id || r.projectId === project._id
+      );
+      const projectExpenses = allExpenses.filter(
+        (e) => e.projectId?._id === project._id || e.projectId === project._id
+      );
+
+      // Calculate billing and collection totals
+      const totalBilling = projectRevenues.reduce((sum, r) => sum + (r.amount || 0), 0);
+      const totalExpenses = projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const netIncome = totalBilling - totalExpenses;
+
+      // Calculate completion percentage (simplified - can be enhanced)
+      const completion = project.status === 'completed' ? 100 : project.status === 'ongoing' ? 50 : 0;
+
+      setSelectedProjectDetails({
+        projectName: project.projectName,
+        clientName: project.clientName || 'N/A',
+        totalRevenue: totalBilling,
+        totalExpenses,
+        netIncome,
+        billingStatus: project.status,
+        paymentStatus: project.status === 'completed' ? 'Paid' : 'Pending',
+        completion: completion,
+        project: project,
+      });
+      setShowSidePanel(true);
+    } catch (error) {
+      toast.error('Failed to load project details');
+    }
+  };
+
+  // Handle sort
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
+
+  // Export functions
+  const handleExportCurrentView = async () => {
+    try {
+      setExporting(true);
+      const params = {};
+      
+      // Convert year/month to startDate/endDate
+      if (appliedFilters.year) {
+        const yearNum = parseInt(appliedFilters.year);
+        if (appliedFilters.month) {
+          const monthNum = parseInt(appliedFilters.month);
+          params.startDate = new Date(yearNum, monthNum - 1, 1).toISOString();
+          params.endDate = new Date(yearNum, monthNum, 0, 23, 59, 59).toISOString();
+        } else {
+          params.startDate = new Date(yearNum, 0, 1).toISOString();
+          params.endDate = new Date(yearNum, 11, 31, 23, 59, 59).toISOString();
+        }
+      }
+      
+      const response = await exportAPI.exportRevenueCosts(params);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Revenue_Costs_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Export started');
+    } catch (error) {
+      toast.error('Failed to export data');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportAllForYear = async () => {
+    if (!appliedFilters.year) {
+      toast.error('Please select a year first');
+      return;
+    }
+    try {
+      setExporting(true);
+      const yearNum = parseInt(appliedFilters.year);
+      const params = {
+        startDate: new Date(yearNum, 0, 1).toISOString(),
+        endDate: new Date(yearNum, 11, 31, 23, 59, 59).toISOString(),
+      };
+      const response = await exportAPI.exportRevenueCosts(params);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Revenue_Costs_${appliedFilters.year}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Export started');
+    } catch (error) {
+      toast.error('Failed to export data');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportSingleProject = async (projectId) => {
+    try {
+      setExporting(true);
+      const response = await exportAPI.exportProject(projectId);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Project_Financial_Report_${projectId}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Export started');
+    } catch (error) {
+      toast.error('Failed to export project');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">Revenue Vs. Costs</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Revenue vs. Costs</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCurrentView}
+            disabled={exporting}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            <DocumentArrowDownIcon className="w-5 h-5" />
+            Export Current View
+          </button>
+          {appliedFilters.year && (
+            <button
+              onClick={handleExportAllForYear}
+              disabled={exporting}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+            >
+              <DocumentArrowDownIcon className="w-5 h-5" />
+              Export All {appliedFilters.year}
+            </button>
+          )}
+        </div>
       </div>
 
-      {projects.length === 0 ? (
-        <div className="card text-center py-12">
-          <p className="text-gray-500">No projects found</p>
+      {/* Filter Section */}
+      <div className="card p-6 shadow-md">
+        <div className="flex items-center gap-2 mb-4">
+          <FunnelIcon className="w-5 h-5 text-gray-600" />
+          <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
         </div>
-      ) : (
-        <>
-          <div className="card space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <CalendarIcon className="w-4 h-4 inline mr-1" />
-                  Filter by Year
-                </label>
-                <select
-                  value={filterYear}
-                  onChange={(e) => {
-                    setFilterYear(e.target.value);
-                    setFilterMonth(''); // Reset month when year changes
-                  }}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
-                >
-                  <option value="">All Years</option>
-                  {availableYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <CalendarIcon className="w-4 h-4 inline mr-1" />
-                  Filter by Month
-                </label>
-                <select
-                  value={filterMonth}
-                  onChange={(e) => setFilterMonth(e.target.value)}
-                  disabled={!filterYear}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="">All Months</option>
-                  <option value="1">January</option>
-                  <option value="2">February</option>
-                  <option value="3">March</option>
-                  <option value="4">April</option>
-                  <option value="5">May</option>
-                  <option value="6">June</option>
-                  <option value="7">July</option>
-                  <option value="8">August</option>
-                  <option value="9">September</option>
-                  <option value="10">October</option>
-                  <option value="11">November</option>
-                  <option value="12">December</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Select Project
-                </label>
-                <select
-                  value={selectedProject}
-                  onChange={(e) => setSelectedProject(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
-                >
-                  {filteredProjects.length === 0 ? (
-                    <option value="">No projects found</option>
-                  ) : (
-                    filteredProjects.map((project) => (
-                      <option key={project._id} value={project._id}>
-                        {project.projectName} ({project.projectCode})
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <CalendarIcon className="w-4 h-4 inline mr-1" />
+              Year
+            </label>
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors"
+            >
+              <option value="">All Years</option>
+              {availableYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <CalendarIcon className="w-4 h-4 inline mr-1" />
+              Month
+            </label>
+            <select
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+              disabled={!filterYear}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">All Months</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Project</label>
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors"
+            >
+              <option value="all">All Projects</option>
+              {projects.map((project) => (
+                <option key={project._id} value={project._id}>
+                  {project.projectName} ({project.projectCode})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end gap-2">
+            <button
+              onClick={handleApplyFilters}
+              className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              Apply Filter
+            </button>
+            <button
+              onClick={handleResetFilters}
+              className="flex items-center gap-2 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              <ArrowPathIcon className="w-5 h-5" />
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="card shadow-md">
+          <h3 className="text-sm font-medium text-gray-500 mb-1">Total Revenue</h3>
+          <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.revenue)}</p>
+        </div>
+        <div className="card shadow-md">
+          <h3 className="text-sm font-medium text-gray-500 mb-1">Total Costs</h3>
+          <p className="text-2xl font-bold text-red-600">{formatCurrency(totals.costs)}</p>
+        </div>
+        <div className="card shadow-md">
+          <h3 className="text-sm font-medium text-gray-500 mb-1">Net Income</h3>
+          <p className={`text-2xl font-bold ${totals.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {formatCurrency(totals.net)}
+          </p>
+        </div>
+      </div>
+
+      {/* Analytics Section - Bar Chart */}
+      <div className="card shadow-md">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">Analytics</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setChartView('project')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                chartView === 'project'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Per Project
+            </button>
+            <button
+              onClick={() => setChartView('month')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                chartView === 'month'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Per Month
+            </button>
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip formatter={(value) => formatCurrency(value)} />
+            <Legend />
+            <Bar dataKey="Revenue" fill="#EF4444" />
+            <Bar dataKey="Costs" fill="#374151" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Project Financial Table */}
+      <div className="card shadow-md">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">Project Revenue & Cost Breakdown</h2>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative">
+              <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by Project ID or Client..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 w-full sm:w-64"
+              />
             </div>
-            {(filterYear || filterMonth) && (
-              <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                <p className="text-sm text-gray-600">
-                  Showing <span className="font-semibold text-gray-900">{filteredProjects.length}</span> of{' '}
-                  <span className="font-semibold text-gray-900">{projects.length}</span> projects
-                  {filterYear && ` in ${filterYear}`}
-                  {filterMonth && ` - ${new Date(2000, parseInt(filterMonth) - 1).toLocaleString('default', { month: 'long' })}`}
-                </p>
-                <button
-                  onClick={() => {
-                    setFilterYear('');
-                    setFilterMonth('');
-                  }}
-                  className="text-sm text-primary hover:text-red-700 font-medium transition-colors duration-200"
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="ongoing">Ongoing</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Project ID</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Project Name</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Year</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Month</th>
+                <th
+                  className="border border-gray-300 px-4 py-3 text-left font-semibold cursor-pointer hover:bg-gray-200"
+                  onClick={() => handleSort('revenue')}
                 >
-                  Clear Filters
+                  <div className="flex items-center gap-1">
+                    Total Revenue
+                    {sortBy === 'revenue' && (
+                      sortOrder === 'asc' ? <ArrowUpIcon className="w-4 h-4" /> : <ArrowDownIcon className="w-4 h-4" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  className="border border-gray-300 px-4 py-3 text-left font-semibold cursor-pointer hover:bg-gray-200"
+                  onClick={() => handleSort('costs')}
+                >
+                  <div className="flex items-center gap-1">
+                    Total Costs
+                    {sortBy === 'costs' && (
+                      sortOrder === 'asc' ? <ArrowUpIcon className="w-4 h-4" /> : <ArrowDownIcon className="w-4 h-4" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  className="border border-gray-300 px-4 py-3 text-left font-semibold cursor-pointer hover:bg-gray-200"
+                  onClick={() => handleSort('net')}
+                >
+                  <div className="flex items-center gap-1">
+                    Net Income
+                    {sortBy === 'net' && (
+                      sortOrder === 'asc' ? <ArrowUpIcon className="w-4 h-4" /> : <ArrowDownIcon className="w-4 h-4" />
+                    )}
+                  </div>
+                </th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Status</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableData.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                    No projects found
+                  </td>
+                </tr>
+              ) : (
+                tableData.map((item, index) => (
+                  <tr
+                    key={index}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => handleRowClick(item)}
+                  >
+                    <td className="border border-gray-300 px-4 py-3">{item.projectId}</td>
+                    <td className="border border-gray-300 px-4 py-3 font-medium">{item.projectName}</td>
+                    <td className="border border-gray-300 px-4 py-3">{item.year}</td>
+                    <td className="border border-gray-300 px-4 py-3">{item.month}</td>
+                    <td className="border border-gray-300 px-4 py-3 text-green-600 font-semibold">
+                      {formatCurrency(item.totalRevenue)}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-3 text-red-600 font-semibold">
+                      {formatCurrency(item.totalCosts)}
+                    </td>
+                    <td
+                      className={`border border-gray-300 px-4 py-3 font-semibold ${
+                        item.netIncome >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {formatCurrency(item.netIncome)}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-semibold ${
+                          item.status === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : item.status === 'ongoing'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExportSingleProject(item.project._id);
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Export Project Report"
+                      >
+                        <DocumentArrowDownIcon className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Side Panel */}
+      {showSidePanel && selectedProjectDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
+          <div className="bg-white w-full md:w-96 h-full overflow-y-auto shadow-2xl">
+            <div className="p-6 border-b-2 border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">Project Details</h2>
+                <button
+                  onClick={() => setShowSidePanel(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <XMarkIcon className="w-6 h-6" />
                 </button>
               </div>
-            )}
-          </div>
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="card">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Total Revenue</h3>
-              <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(totalRevenue)}
-              </p>
             </div>
-            <div className="card">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Total Costs</h3>
-              <p className="text-2xl font-bold text-red-600">
-                {formatCurrency(totalCosts)}
-              </p>
-            </div>
-            <div className="card">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Net Profit</h3>
-              <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(netProfit)}
-              </p>
-            </div>
-          </div>
-
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4">Revenue vs Costs (Line Chart)</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="Revenue"
-                    stroke="#10B981"
-                    strokeWidth={2}
-                    dot={{ fill: '#10B981' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="Costs"
-                    stroke="#EF4444"
-                    strokeWidth={2}
-                    dot={{ fill: '#EF4444' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4">Revenue vs Costs (Bar Chart)</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
-                  <Legend />
-                  <Bar dataKey="Revenue" fill="#10B981" />
-                  <Bar dataKey="Costs" fill="#EF4444" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="p-6 space-y-6">
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Project Name</p>
+                <p className="text-lg font-bold text-gray-900">{selectedProjectDetails.projectName}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Client Name</p>
+                <p className="text-lg font-bold text-gray-900">{selectedProjectDetails.clientName}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Total Revenue</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {formatCurrency(selectedProjectDetails.totalRevenue)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Total Expenses</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {formatCurrency(selectedProjectDetails.totalExpenses)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Net Income</p>
+                <p
+                  className={`text-2xl font-bold ${
+                    selectedProjectDetails.netIncome >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
+                  {formatCurrency(selectedProjectDetails.netIncome)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Billing Status</p>
+                <p className="text-lg font-bold text-gray-900">{selectedProjectDetails.billingStatus}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Payment Status</p>
+                <p className="text-lg font-bold text-gray-900">{selectedProjectDetails.paymentStatus}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Completion</p>
+                <div className="mt-2">
+                  <div className="w-full bg-gray-200 rounded-full h-4">
+                    <div
+                      className="bg-red-600 h-4 rounded-full transition-all"
+                      style={{ width: `${selectedProjectDetails.completion}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{selectedProjectDetails.completion}%</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowSidePanel(false);
+                  navigate(`/projects/${selectedProjectDetails.project._id}`);
+                }}
+                className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                View Full Project Details
+              </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
 };
 
 export default ProjectsRevenueCosts;
-

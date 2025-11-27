@@ -14,6 +14,13 @@ import {
   TrashIcon,
   UserIcon,
   ShieldCheckIcon,
+  LockClosedIcon,
+  DevicePhoneMobileIcon,
+  BuildingOfficeIcon,
+  UserGroupIcon,
+  BellIcon,
+  CloudArrowDownIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 
 const Sidebar = ({ isOpen, onClose, onToggle }) => {
@@ -22,6 +29,8 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
   const navigate = useNavigate();
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [systemSettingsOpen, setSystemSettingsOpen] = useState(false);
 
   // Check if current path is under projects
   const isProjectsActive = location.pathname.startsWith('/projects');
@@ -35,8 +44,15 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
     }
     if (isSettingsActive && isOpen) {
       setSettingsOpen(true);
+      // Auto-open account or system settings if on their pages
+      if (location.pathname.startsWith('/settings/account')) {
+        setAccountSettingsOpen(true);
+      }
+      if (location.pathname.startsWith('/settings/system')) {
+        setSystemSettingsOpen(true);
+      }
     }
-  }, [isProjectsActive, isSettingsActive, isOpen]);
+  }, [isProjectsActive, isSettingsActive, isOpen, location.pathname]);
 
   // Projects subcategories with icons
   const projectsSubcategories = [
@@ -46,10 +62,33 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
     { path: '/projects/deleted', label: 'Recently Deleted', icon: TrashIcon },
   ];
 
-  // Settings subcategories with icons
+  // Settings subcategories with nested structure
   const settingsSubcategories = [
-    { path: '/settings/account', label: 'Account Settings', icon: UserIcon },
-    { path: '/settings/system', label: 'System Settings', icon: ShieldCheckIcon },
+    {
+      path: '/settings/account',
+      label: 'Account Settings',
+      icon: UserIcon,
+      subcategories: [
+        { path: '/settings/account/profile', label: 'Profile', icon: UserIcon },
+        { path: '/settings/account/password', label: 'Password & Security', icon: LockClosedIcon },
+        { path: '/settings/account/sessions', label: 'Sessions', icon: DevicePhoneMobileIcon },
+        { path: '/settings/account/status', label: 'Account Status', icon: ShieldCheckIcon },
+      ],
+    },
+    {
+      path: '/settings/system',
+      label: 'System Settings',
+      icon: ShieldCheckIcon,
+      subcategories: [
+        { path: '/settings/system/company', label: 'Company Information', icon: BuildingOfficeIcon },
+        { path: '/settings/system/users', label: 'User Management', icon: UserGroupIcon },
+        { path: '/settings/system/project', label: 'Project Configuration', icon: Cog6ToothIcon },
+        { path: '/settings/system/notifications', label: 'Notifications', icon: BellIcon },
+        { path: '/settings/system/backup', label: 'Data & Backup', icon: CloudArrowDownIcon },
+        { path: '/settings/system/audit', label: 'Audit Logs', icon: ClipboardDocumentListIcon },
+        { path: '/settings/system/pwa', label: 'PWA & Offline', icon: DevicePhoneMobileIcon },
+      ],
+    },
   ];
 
   // Handle navigation with sidebar expansion
@@ -215,21 +254,62 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
               {/* Settings Subcategories Dropdown */}
               {isOpen && settingsOpen && (
                 <div className="ml-4 space-y-1 animate-fade-in">
-                  {settingsSubcategories.map((sub) => {
-                    const IconComponent = sub.icon;
+                  {settingsSubcategories.map((category) => {
+                    const CategoryIcon = category.icon;
+                    const isAccountSettings = category.path === '/settings/account';
+                    const isSystemSettings = category.path === '/settings/system';
+                    const isCategoryActive = location.pathname.startsWith(category.path);
+                    const isExpanded = isAccountSettings ? accountSettingsOpen : systemSettingsOpen;
+
                     return (
-                      <button
-                        key={sub.path}
-                        onClick={() => handleSubcategoryClick(sub.path)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm text-left ${
-                          location.pathname === sub.path
-                            ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        }`}
-                      >
-                        <IconComponent className="w-4 h-4 flex-shrink-0" />
-                        <span className="whitespace-nowrap">{sub.label}</span>
-                      </button>
+                      <div key={category.path} className="space-y-1">
+                        <button
+                          onClick={() => {
+                            if (isAccountSettings) {
+                              setAccountSettingsOpen(!accountSettingsOpen);
+                            } else if (isSystemSettings) {
+                              setSystemSettingsOpen(!systemSettingsOpen);
+                            }
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm text-left ${
+                            isCategoryActive
+                              ? 'bg-red-50 text-red-600 font-semibold'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          }`}
+                        >
+                          <CategoryIcon className="w-4 h-4 flex-shrink-0" />
+                          <span className="flex-1 whitespace-nowrap">{category.label}</span>
+                          {isExpanded ? (
+                            <ChevronDownIcon className="w-3 h-3 flex-shrink-0" />
+                          ) : (
+                            <ChevronRightIcon className="w-3 h-3 flex-shrink-0" />
+                          )}
+                        </button>
+
+                        {/* Nested subcategories */}
+                        {isExpanded && category.subcategories && (
+                          <div className="ml-4 space-y-1">
+                            {category.subcategories.map((sub) => {
+                              const SubIcon = sub.icon;
+                              const isSubActive = location.pathname === sub.path;
+                              return (
+                                <button
+                                  key={sub.path}
+                                  onClick={() => handleSubcategoryClick(sub.path)}
+                                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-xs text-left ${
+                                    isSubActive
+                                      ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                  }`}
+                                >
+                                  <SubIcon className="w-3 h-3 flex-shrink-0" />
+                                  <span className="whitespace-nowrap">{sub.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -355,24 +435,64 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
               {/* Settings Subcategories Dropdown */}
               {settingsOpen && (
                 <div className="ml-4 space-y-1">
-                  {settingsSubcategories.map((sub) => {
-                    const IconComponent = sub.icon;
+                  {settingsSubcategories.map((category) => {
+                    const CategoryIcon = category.icon;
+                    const isAccountSettings = category.path === '/settings/account';
+                    const isSystemSettings = category.path === '/settings/system';
+                    const isCategoryActive = location.pathname.startsWith(category.path);
+                    const isExpanded = isAccountSettings ? accountSettingsOpen : systemSettingsOpen;
+
                     return (
-                      <NavLink
-                        key={sub.path}
-                        to={sub.path}
-                        onClick={onClose}
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
-                            isActive
-                              ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
+                      <div key={category.path} className="space-y-1">
+                        <button
+                          onClick={() => {
+                            if (isAccountSettings) {
+                              setAccountSettingsOpen(!accountSettingsOpen);
+                            } else if (isSystemSettings) {
+                              setSystemSettingsOpen(!systemSettingsOpen);
+                            }
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
+                            isCategoryActive
+                              ? 'bg-red-50 text-red-600 font-semibold'
                               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                          }`
-                        }
-                      >
-                        <IconComponent className="w-4 h-4 flex-shrink-0" />
-                        <span>{sub.label}</span>
-                      </NavLink>
+                          }`}
+                        >
+                          <CategoryIcon className="w-4 h-4 flex-shrink-0" />
+                          <span className="flex-1 text-left">{category.label}</span>
+                          {isExpanded ? (
+                            <ChevronDownIcon className="w-4 h-4 flex-shrink-0" />
+                          ) : (
+                            <ChevronRightIcon className="w-4 h-4 flex-shrink-0" />
+                          )}
+                        </button>
+
+                        {/* Nested subcategories */}
+                        {isExpanded && category.subcategories && (
+                          <div className="ml-4 space-y-1">
+                            {category.subcategories.map((sub) => {
+                              const SubIcon = sub.icon;
+                              return (
+                                <NavLink
+                                  key={sub.path}
+                                  to={sub.path}
+                                  onClick={onClose}
+                                  className={({ isActive }) =>
+                                    `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-xs ${
+                                      isActive
+                                        ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`
+                                  }
+                                >
+                                  <SubIcon className="w-3 h-3 flex-shrink-0" />
+                                  <span>{sub.label}</span>
+                                </NavLink>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

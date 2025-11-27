@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { userAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import {
@@ -18,7 +19,19 @@ import {
 
 const AccountSettings = () => {
   const { user, updateUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Get active tab from route
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.includes('/password')) return 'password';
+    if (path.includes('/sessions')) return 'sessions';
+    if (path.includes('/status')) return 'account';
+    return 'profile'; // default
+  };
+  
+  const activeTab = getActiveTab();
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [loginHistory, setLoginHistory] = useState([]);
@@ -182,11 +195,15 @@ const AccountSettings = () => {
   };
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: UserIcon },
-    { id: 'password', label: 'Password & Security', icon: LockClosedIcon },
-    { id: 'sessions', label: 'Sessions', icon: DevicePhoneMobileIcon },
-    { id: 'account', label: 'Account Status', icon: ShieldCheckIcon },
+    { id: 'profile', label: 'Profile', icon: UserIcon, path: '/settings/account/profile' },
+    { id: 'password', label: 'Password & Security', icon: LockClosedIcon, path: '/settings/account/password' },
+    { id: 'sessions', label: 'Sessions', icon: DevicePhoneMobileIcon, path: '/settings/account/sessions' },
+    { id: 'account', label: 'Account Status', icon: ShieldCheckIcon, path: '/settings/account/status' },
   ];
+  
+  const handleTabClick = (tab) => {
+    navigate(tab.path);
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -212,7 +229,7 @@ const AccountSettings = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabClick(tab)}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
                     activeTab === tab.id
                       ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'

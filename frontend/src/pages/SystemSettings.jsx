@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -16,7 +17,22 @@ import {
 
 const SystemSettings = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('company');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Get active tab from route
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.includes('/users')) return 'users';
+    if (path.includes('/project')) return 'project';
+    if (path.includes('/notifications')) return 'notifications';
+    if (path.includes('/backup')) return 'backup';
+    if (path.includes('/audit')) return 'audit';
+    if (path.includes('/pwa')) return 'pwa';
+    return 'company'; // default
+  };
+  
+  const activeTab = getActiveTab();
   const [company, setCompany] = useState(null);
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
@@ -24,14 +40,18 @@ const SystemSettings = () => {
   const [saving, setSaving] = useState(false);
 
   const tabs = [
-    { id: 'company', label: 'Company Information', icon: BuildingOfficeIcon },
-    { id: 'users', label: 'User Management', icon: UserGroupIcon },
-    { id: 'project', label: 'Project Configuration', icon: Cog6ToothIcon },
-    { id: 'notifications', label: 'Notifications', icon: BellIcon },
-    { id: 'backup', label: 'Data & Backup', icon: CloudArrowDownIcon },
-    { id: 'audit', label: 'Audit Logs', icon: ClipboardDocumentListIcon },
-    { id: 'pwa', label: 'PWA & Offline', icon: DevicePhoneMobileIcon },
+    { id: 'company', label: 'Company Information', icon: BuildingOfficeIcon, path: '/settings/system/company' },
+    { id: 'users', label: 'User Management', icon: UserGroupIcon, path: '/settings/system/users' },
+    { id: 'project', label: 'Project Configuration', icon: Cog6ToothIcon, path: '/settings/system/project' },
+    { id: 'notifications', label: 'Notifications', icon: BellIcon, path: '/settings/system/notifications' },
+    { id: 'backup', label: 'Data & Backup', icon: CloudArrowDownIcon, path: '/settings/system/backup' },
+    { id: 'audit', label: 'Audit Logs', icon: ClipboardDocumentListIcon, path: '/settings/system/audit' },
+    { id: 'pwa', label: 'PWA & Offline', icon: DevicePhoneMobileIcon, path: '/settings/system/pwa' },
   ];
+  
+  const handleTabClick = (tab) => {
+    navigate(tab.path);
+  };
 
   useEffect(() => {
     fetchCompany();
@@ -126,7 +146,7 @@ const SystemSettings = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabClick(tab)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                     activeTab === tab.id
                       ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
