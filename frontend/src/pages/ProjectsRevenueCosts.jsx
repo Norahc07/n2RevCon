@@ -421,13 +421,11 @@ const ProjectsRevenueCosts = () => {
       {/* Filter Section */}
       <div className="card p-6 shadow-md">
         <div className="flex items-center gap-2 mb-4">
-          <FunnelIcon className="w-5 h-5 text-gray-600" />
           <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <CalendarIcon className="w-4 h-4 inline mr-1" />
               Year
             </label>
             <select
@@ -445,7 +443,6 @@ const ProjectsRevenueCosts = () => {
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <CalendarIcon className="w-4 h-4 inline mr-1" />
               Month
             </label>
             <select

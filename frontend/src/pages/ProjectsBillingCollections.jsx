@@ -496,12 +496,10 @@ const ProjectsBillingCollections = () => {
       {/* Filter Section */}
       <div className="card p-6 shadow-md">
         <div className="flex items-center gap-2 mb-4">
-          <FunnelIcon className="w-5 h-5 text-gray-600" />
           <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
-            <CalendarIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
             <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
             <label className="block text-sm font-semibold text-gray-700 mb-2">Year</label>
             <select
@@ -518,7 +516,6 @@ const ProjectsBillingCollections = () => {
             </select>
           </div>
           <div className="relative">
-            <CalendarIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
             <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
             <label className="block text-sm font-semibold text-gray-700 mb-2">Month</label>
             <select
