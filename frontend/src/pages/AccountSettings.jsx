@@ -189,16 +189,24 @@ const AccountSettings = () => {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <UserIcon className="w-8 h-8 text-gray-700" />
-        <h1 className="text-3xl font-bold text-gray-800">Account Settings</h1>
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-700 rounded-lg p-6 shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="bg-white bg-opacity-20 rounded-lg p-3">
+            <UserIcon className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Account Settings</h1>
+            <p className="text-red-100 mt-1">Manage your personal account information and preferences</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar Tabs */}
         <div className="lg:col-span-1">
-          <div className="card space-y-2 p-2">
+          <div className="card space-y-2 p-3 shadow-md">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -223,10 +231,15 @@ const AccountSettings = () => {
         <div className="lg:col-span-3">
           {/* Profile Information */}
           {activeTab === 'profile' && (
-            <div className="card space-y-6">
+            <div className="card space-y-6 shadow-md">
               <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-                <UserIcon className="w-6 h-6 text-red-600" />
-                <h2 className="text-2xl font-bold text-gray-800">Profile Information</h2>
+                <div className="bg-red-50 rounded-lg p-2">
+                  <UserIcon className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Profile Information</h2>
+                  <p className="text-sm text-gray-500">Update your personal details and profile picture</p>
+                </div>
               </div>
 
               <form onSubmit={handleProfileUpdate} className="space-y-6">
@@ -360,10 +373,15 @@ const AccountSettings = () => {
 
           {/* Password & Security */}
           {activeTab === 'password' && (
-            <div className="card space-y-6">
+            <div className="card space-y-6 shadow-md">
               <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-                <LockClosedIcon className="w-6 h-6 text-red-600" />
-                <h2 className="text-2xl font-bold text-gray-800">Password & Security</h2>
+                <div className="bg-red-50 rounded-lg p-2">
+                  <LockClosedIcon className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Password & Security</h2>
+                  <p className="text-sm text-gray-500">Change your password and manage security settings</p>
+                </div>
               </div>
 
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
@@ -391,11 +409,16 @@ const AccountSettings = () => {
 
           {/* Login & Session Management */}
           {activeTab === 'sessions' && (
-            <div className="card space-y-6">
+            <div className="card space-y-6 shadow-md">
               <div className="flex items-center justify-between pb-4 border-b-2 border-gray-200">
                 <div className="flex items-center gap-3">
-                  <DevicePhoneMobileIcon className="w-6 h-6 text-red-600" />
-                  <h2 className="text-2xl font-bold text-gray-800">Login & Session Management</h2>
+                  <div className="bg-red-50 rounded-lg p-2">
+                    <DevicePhoneMobileIcon className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800">Login & Session Management</h2>
+                    <p className="text-sm text-gray-500">View and manage your active sessions</p>
+                  </div>
                 </div>
                 <button
                   onClick={handleLogoutAllDevices}
@@ -490,31 +513,36 @@ const AccountSettings = () => {
 
           {/* Account Status */}
           {activeTab === 'account' && (
-            <div className="card space-y-6">
+            <div className="card space-y-6 shadow-md">
               <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-                <ShieldCheckIcon className="w-6 h-6 text-red-600" />
-                <h2 className="text-2xl font-bold text-gray-800">Account Status</h2>
+                <div className="bg-red-50 rounded-lg p-2">
+                  <ShieldCheckIcon className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Account Status</h2>
+                  <p className="text-sm text-gray-500">View your account information and status</p>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Role</p>
-                  <p className="text-lg font-bold text-gray-900">Administrator</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-200 shadow-sm">
+                  <p className="text-sm font-semibold text-blue-600 uppercase mb-2">Role</p>
+                  <p className="text-xl font-bold text-gray-900">Administrator</p>
                 </div>
 
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Account Status</p>
+                <div className="p-5 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border-2 border-green-200 shadow-sm">
+                  <p className="text-sm font-semibold text-green-600 uppercase mb-2">Account Status</p>
                   <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${user?.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <p className="text-lg font-bold text-gray-900">
+                    <div className={`w-4 h-4 rounded-full ${user?.isActive ? 'bg-green-500' : 'bg-red-500'} shadow-sm`}></div>
+                    <p className="text-xl font-bold text-gray-900">
                       {user?.isActive ? 'Active' : 'Deactivated'}
                     </p>
                   </div>
                 </div>
 
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Account Created</p>
-                  <p className="text-lg font-bold text-gray-900">
+                <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border-2 border-purple-200 shadow-sm">
+                  <p className="text-sm font-semibold text-purple-600 uppercase mb-2">Account Created</p>
+                  <p className="text-xl font-bold text-gray-900">
                     {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
@@ -523,9 +551,9 @@ const AccountSettings = () => {
                   </p>
                 </div>
 
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Last Login</p>
-                  <p className="text-lg font-bold text-gray-900">
+                <div className="p-5 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border-2 border-orange-200 shadow-sm">
+                  <p className="text-sm font-semibold text-orange-600 uppercase mb-2">Last Login</p>
+                  <p className="text-xl font-bold text-gray-900">
                     {user?.lastLogin ? new Date(user.lastLogin).toLocaleString('en-US') : 'Never'}
                   </p>
                 </div>

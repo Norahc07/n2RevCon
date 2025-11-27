@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -12,6 +12,8 @@ import {
   ChartBarIcon,
   BanknotesIcon,
   TrashIcon,
+  UserIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 
 const Sidebar = ({ isOpen, onClose, onToggle }) => {
@@ -19,9 +21,22 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Check if current path is under projects
   const isProjectsActive = location.pathname.startsWith('/projects');
+  // Check if current path is under settings
+  const isSettingsActive = location.pathname.startsWith('/settings');
+
+  // Auto-open dropdowns when on their respective pages
+  useEffect(() => {
+    if (isProjectsActive && isOpen) {
+      setProjectsOpen(true);
+    }
+    if (isSettingsActive && isOpen) {
+      setSettingsOpen(true);
+    }
+  }, [isProjectsActive, isSettingsActive, isOpen]);
 
   // Projects subcategories with icons
   const projectsSubcategories = [
@@ -29,6 +44,12 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
     { path: '/projects/revenue-costs', label: 'Revenue Vs. Costs', icon: ChartBarIcon },
     { path: '/projects/billing-collections', label: 'Billings & Collections', icon: BanknotesIcon },
     { path: '/projects/deleted', label: 'Recently Deleted', icon: TrashIcon },
+  ];
+
+  // Settings subcategories with icons
+  const settingsSubcategories = [
+    { path: '/settings/account', label: 'Account Settings', icon: UserIcon },
+    { path: '/settings/system', label: 'System Settings', icon: ShieldCheckIcon },
   ];
 
   // Handle navigation with sidebar expansion
@@ -52,6 +73,21 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
     } else if (isOpen) {
       // If already expanded, just toggle dropdown
       setProjectsOpen(!projectsOpen);
+    }
+  };
+
+  // Handle Settings button click
+  const handleSettingsClick = () => {
+    // If sidebar is collapsed, expand it first
+    if (!isOpen && onToggle) {
+      onToggle();
+      // Wait for sidebar to expand, then open dropdown
+      setTimeout(() => {
+        setSettingsOpen(true);
+      }, 300);
+    } else if (isOpen) {
+      // If already expanded, just toggle dropdown
+      setSettingsOpen(!settingsOpen);
     }
   };
 
@@ -152,23 +188,53 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
               )}
             </div>
 
-            {/* Settings */}
-            <NavLink
-              to="/settings/account"
-              onClick={(e) => handleNavClick('/settings/account', e)}
-              className={({ isActive }) => {
-                const isSettingsActive = location.pathname.startsWith('/settings');
-                return `flex items-center p-3 rounded-lg transition-all duration-200 ${
+            {/* Settings with Dropdown */}
+            <div className="space-y-1">
+              <button
+                onClick={handleSettingsClick}
+                className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
                   isSettingsActive
                     ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
                     : 'text-gray-700 hover:bg-gray-100'
-                } ${!isOpen ? 'justify-center' : 'gap-3'}`;
-              }}
-              title={!isOpen ? 'Settings' : ''}
-            >
-              <Cog6ToothIcon className="w-6 h-6 flex-shrink-0" style={{ minWidth: '24px' }} />
-              {isOpen && <span className="font-medium whitespace-nowrap">Settings</span>}
-            </NavLink>
+                } ${!isOpen ? 'justify-center' : 'gap-3'}`}
+                title={!isOpen ? 'Settings' : ''}
+              >
+                <Cog6ToothIcon className="w-6 h-6 flex-shrink-0" style={{ minWidth: '24px' }} />
+                {isOpen && (
+                  <>
+                    <span className="font-medium flex-1 text-left whitespace-nowrap">Settings</span>
+                    {settingsOpen ? (
+                      <ChevronDownIcon className="w-5 h-5 flex-shrink-0" />
+                    ) : (
+                      <ChevronRightIcon className="w-5 h-5 flex-shrink-0" />
+                    )}
+                  </>
+                )}
+              </button>
+
+              {/* Settings Subcategories Dropdown */}
+              {isOpen && settingsOpen && (
+                <div className="ml-4 space-y-1 animate-fade-in">
+                  {settingsSubcategories.map((sub) => {
+                    const IconComponent = sub.icon;
+                    return (
+                      <button
+                        key={sub.path}
+                        onClick={() => handleSubcategoryClick(sub.path)}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm text-left ${
+                          location.pathname === sub.path
+                            ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <IconComponent className="w-4 h-4 flex-shrink-0" />
+                        <span className="whitespace-nowrap">{sub.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* User Info - Only show when expanded */}
@@ -267,22 +333,51 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
               )}
             </div>
 
-            {/* Settings */}
-            <NavLink
-              to="/settings/account"
-              onClick={onClose}
-              className={({ isActive }) => {
-                const isSettingsActive = location.pathname.startsWith('/settings');
-                return `flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
+            {/* Settings with Dropdown */}
+            <div className="space-y-1">
+              <button
+                onClick={() => setSettingsOpen(!settingsOpen)}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
                   isSettingsActive
                     ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`;
-              }}
-            >
-              <Cog6ToothIcon className="w-6 h-6" />
-              <span className="font-medium">Settings</span>
-            </NavLink>
+                }`}
+              >
+                <Cog6ToothIcon className="w-6 h-6" />
+                <span className="font-medium flex-1 text-left">Settings</span>
+                {settingsOpen ? (
+                  <ChevronDownIcon className="w-5 h-5" />
+                ) : (
+                  <ChevronRightIcon className="w-5 h-5" />
+                )}
+              </button>
+
+              {/* Settings Subcategories Dropdown */}
+              {settingsOpen && (
+                <div className="ml-4 space-y-1">
+                  {settingsSubcategories.map((sub) => {
+                    const IconComponent = sub.icon;
+                    return (
+                      <NavLink
+                        key={sub.path}
+                        to={sub.path}
+                        onClick={onClose}
+                        className={({ isActive }) =>
+                          `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
+                            isActive
+                              ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          }`
+                        }
+                      >
+                        <IconComponent className="w-4 h-4 flex-shrink-0" />
+                        <span>{sub.label}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </nav>
 
           <div className="p-4 border-t-2 border-gray-200">

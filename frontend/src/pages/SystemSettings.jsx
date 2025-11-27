@@ -104,15 +104,23 @@ const SystemSettings = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <Cog6ToothIcon className="w-8 h-8 text-red-600" />
-        <h1 className="text-3xl font-bold text-gray-800">System Settings</h1>
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-700 rounded-lg p-6 shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="bg-white bg-opacity-20 rounded-lg p-3">
+            <Cog6ToothIcon className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-white">System Settings</h1>
+            <p className="text-red-100 mt-1">Configure system-wide settings and preferences</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar Tabs */}
         <div className="lg:col-span-1">
-          <div className="card space-y-2 p-2">
+          <div className="card space-y-2 p-3 shadow-md">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -121,12 +129,12 @@ const SystemSettings = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                     activeTab === tab.id
-                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="font-medium">{tab.label}</span>
+                  <span className="font-medium text-sm">{tab.label}</span>
                 </button>
               );
             })}
@@ -135,7 +143,7 @@ const SystemSettings = () => {
 
         {/* Main Content */}
         <div className="lg:col-span-3">
-          <div className="card">
+          <div className="card shadow-md">
             {/* Company Information */}
             {activeTab === 'company' && company && (
               <CompanyInformationTab company={company} onSave={handleSave} saving={saving} />
@@ -208,7 +216,15 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
 
   return (
     <div className="space-y-6 p-6">
-      <h2 className="text-2xl font-bold text-gray-800">Company Information</h2>
+      <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
+        <div className="bg-red-50 rounded-lg p-2">
+          <BuildingOfficeIcon className="w-6 h-6 text-red-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Company Information</h2>
+          <p className="text-sm text-gray-500">Manage your company details and contact information</p>
+        </div>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -499,8 +515,16 @@ const UserManagementTab = ({ users, onRefresh }) => {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
+      <div className="flex items-center justify-between pb-4 border-b-2 border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="bg-red-50 rounded-lg p-2">
+            <UserGroupIcon className="w-6 h-6 text-red-600" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
+            <p className="text-sm text-gray-500">Manage system users and their permissions</p>
+          </div>
+        </div>
         <button
           onClick={onRefresh}
           disabled={loading}
@@ -683,7 +707,15 @@ const ProjectConfigTab = ({ company, onSave, saving }) => {
 
   return (
     <div className="space-y-6 p-6">
-      <h2 className="text-2xl font-bold text-gray-800">Project Configuration</h2>
+      <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
+        <div className="bg-red-50 rounded-lg p-2">
+          <Cog6ToothIcon className="w-6 h-6 text-red-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Project Configuration</h2>
+          <p className="text-sm text-gray-500">Configure project settings and defaults</p>
+        </div>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -848,8 +880,13 @@ const NotificationConfigTab = ({ company, onSave, saving }) => {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-        <BellIcon className="w-6 h-6 text-red-600" />
-        <h2 className="text-2xl font-bold text-gray-800">Notification System Settings</h2>
+        <div className="bg-red-50 rounded-lg p-2">
+          <BellIcon className="w-6 h-6 text-red-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Notification System Settings</h2>
+          <p className="text-sm text-gray-500">Configure notification preferences and timing</p>
+        </div>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -1036,7 +1073,15 @@ const BackupTab = ({ company, onSave, onBackup, saving }) => {
 
   return (
     <div className="space-y-6 p-6">
-      <h2 className="text-2xl font-bold text-gray-800">Data Management & Backup</h2>
+      <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
+        <div className="bg-red-50 rounded-lg p-2">
+          <CloudArrowDownIcon className="w-6 h-6 text-red-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Data Management & Backup</h2>
+          <p className="text-sm text-gray-500">Manage data backups and storage settings</p>
+        </div>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -1134,8 +1179,13 @@ const AuditLogsTab = ({ logs, onRefresh }) => {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between pb-4 border-b-2 border-gray-200">
         <div className="flex items-center gap-3">
-          <ClipboardDocumentListIcon className="w-6 h-6 text-red-600" />
-          <h2 className="text-2xl font-bold text-gray-800">Audit Logs & Activity Tracking</h2>
+          <div className="bg-red-50 rounded-lg p-2">
+            <ClipboardDocumentListIcon className="w-6 h-6 text-red-600" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Audit Logs & Activity Tracking</h2>
+            <p className="text-sm text-gray-500">View system activity and audit logs</p>
+          </div>
         </div>
         <button
           onClick={onRefresh}
@@ -1302,8 +1352,13 @@ const PWATab = ({ company, onSave, saving }) => {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-        <DevicePhoneMobileIcon className="w-6 h-6 text-red-600" />
-        <h2 className="text-2xl font-bold text-gray-800">PWA & Offline Settings</h2>
+        <div className="bg-red-50 rounded-lg p-2">
+          <DevicePhoneMobileIcon className="w-6 h-6 text-red-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">PWA & Offline Settings</h2>
+          <p className="text-sm text-gray-500">Configure Progressive Web App and offline capabilities</p>
+        </div>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">

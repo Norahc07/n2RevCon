@@ -20,7 +20,6 @@ import RecentlyDeleted from './pages/RecentlyDeleted';
 import Notifications from './pages/Notifications';
 import ExportReports from './pages/ExportReports';
 import Profile from './pages/Profile';
-import Settings from './pages/Settings';
 import AccountSettings from './pages/AccountSettings';
 import SystemSettings from './pages/SystemSettings';
 import ChangePassword from './pages/ChangePassword';
@@ -57,11 +56,9 @@ function App() {
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/export" element={<ExportReports />} />
                     <Route path="/profile" element={<Profile />} />
-                    <Route path="/settings" element={<Settings />}>
-                      <Route index element={<Navigate to="/settings/account" replace />} />
-                      <Route path="account" element={<AccountSettings />} />
-                      <Route path="system" element={<SystemSettings />} />
-                    </Route>
+                    <Route path="/settings/account" element={<AccountSettings />} />
+                    <Route path="/settings/system" element={<SystemSettings />} />
+                    <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>
                 </Layout>
