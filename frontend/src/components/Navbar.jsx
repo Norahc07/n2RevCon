@@ -112,33 +112,33 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 bg-white z-40 px-4 py-3 border-b border-gray-200">
+      <nav className="fixed top-0 left-0 right-0 bg-white z-40 px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
         <div className="flex items-center justify-between h-full">
           {/* Left side - Burger icon, Logo and Name (NOT affected by expansion) */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             {/* Burger icon - Aligned with sidebar icons */}
             <button
               onClick={onMenuClick}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center flex-shrink-0"
               title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
               style={{ width: '40px', height: '40px' }}
             >
-              <Bars3Icon className="w-6 h-6 text-gray-700" />
+              <Bars3Icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
             </button>
 
             {/* Logo and Name */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <img 
                 src="/n2RevConLogo.png" 
                 alt="n2 RevCon Logo" 
-                className="h-8 w-auto"
+                className="h-6 sm:h-8 w-auto flex-shrink-0"
               />
-              <h2 className="text-lg font-semibold text-gray-800">n2 RevCon</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800 truncate">n2 RevCon</h2>
             </div>
           </div>
 
           {/* Right side - Notifications and User Menu */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             {/* Notifications */}
             <div className="relative">
               <button
@@ -158,7 +158,7 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
               {showNotifications && (
                 <div
                   ref={notificationRef}
-                  className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border-2 border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col"
+                  className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-lg shadow-xl border-2 border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col"
                 >
                   <div className="flex items-center justify-between p-4 border-b border-gray-200">
                     <h3 className="font-semibold text-gray-800">Notifications</h3>
@@ -232,12 +232,12 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
 
             {/* User Profile */}
             <div className="relative group">
-              <button className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+              <button className="flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
                 {profilePicture ? (
                   <img
                     src={profilePicture}
                     alt={displayName}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
                     onError={(e) => {
                       e.target.style.display = 'none';
                       e.target.nextSibling.style.display = 'block';
@@ -245,10 +245,10 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
                   />
                 ) : null}
                 <UserCircleIcon 
-                  className={`w-8 h-8 text-gray-700 ${profilePicture ? 'hidden' : ''}`}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 text-gray-700 flex-shrink-0 ${profilePicture ? 'hidden' : ''}`}
                   style={{ display: profilePicture ? 'none' : 'block' }}
                 />
-                <span className="hidden md:block text-sm font-medium text-gray-700">
+                <span className="hidden lg:block text-sm font-medium text-gray-700 truncate max-w-[120px]">
                   {displayName}
                 </span>
               </button>
@@ -278,8 +278,8 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
 
       {/* Notification Modal */}
       {selectedNotification && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-6">
+          <div className="bg-white rounded-lg max-w-md w-full p-4 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <h3 className="text-xl font-bold text-gray-800">{selectedNotification.title}</h3>

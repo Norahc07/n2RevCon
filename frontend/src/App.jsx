@@ -28,43 +28,45 @@ function App() {
   const { user } = useAuth();
 
   return (
-    <Routes>
-      <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
-      <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/dashboard" />} />
-      <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
-      <Route path="/reset-password/:token" element={!user ? <ResetPassword /> : <Navigate to="/dashboard" />} />
-      
-      {/* Password change page - standalone, no auth needed (token is verification) */}
-      <Route path="/change-password/:token" element={!user ? <ChangePassword /> : <Navigate to="/dashboard" />} />
+    <>
+      <Routes>
+        <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/dashboard" />} />
+        <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
+        <Route path="/reset-password/:token" element={!user ? <ResetPassword /> : <Navigate to="/dashboard" />} />
         
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Routes>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/projects" element={<ProjectsDescription />} />
-                  <Route path="/projects/revenue-costs" element={<ProjectsRevenueCosts />} />
-                  <Route path="/projects/billing-collections" element={<ProjectsBillingCollections />} />
-                  <Route path="/projects/new" element={<AddProject />} />
-                  <Route path="/projects/:id" element={<ProjectDetails />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/export" element={<ExportReports />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/settings" element={<Settings />}>
-                    <Route index element={<Navigate to="/settings/account" replace />} />
-                    <Route path="account" element={<AccountSettings />} />
-                    <Route path="system" element={<SystemSettings />} />
-                  </Route>
-                  <Route path="*" element={<Navigate to="/dashboard" />} />
-                </Routes>
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+        {/* Password change page - standalone, no auth needed (token is verification) */}
+        <Route path="/change-password/:token" element={!user ? <ChangePassword /> : <Navigate to="/dashboard" />} />
+          
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Routes>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/projects" element={<ProjectsDescription />} />
+                    <Route path="/projects/revenue-costs" element={<ProjectsRevenueCosts />} />
+                    <Route path="/projects/billing-collections" element={<ProjectsBillingCollections />} />
+                    <Route path="/projects/new" element={<AddProject />} />
+                    <Route path="/projects/:id" element={<ProjectDetails />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/export" element={<ExportReports />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/settings" element={<Settings />}>
+                      <Route index element={<Navigate to="/settings/account" replace />} />
+                      <Route path="account" element={<AccountSettings />} />
+                      <Route path="system" element={<SystemSettings />} />
+                    </Route>
+                    <Route path="*" element={<Navigate to="/dashboard" />} />
+                  </Routes>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </>
   );
 }
 

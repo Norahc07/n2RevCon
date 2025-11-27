@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import PWAInstallButton from '../components/PWAInstallButton';
 
 // Typing Animation Component
 const TypingAnimation = ({ text, speed = 100, deleteSpeed = 50, delay = 2000, startDelay = 0, syncDelay = 0 }) => {
@@ -392,6 +393,8 @@ const LandingPage = () => {
           transform: scale(1.05);
         }
       `}</style>
+      {/* PWA Install Button - Only on Landing Page */}
+      <PWAInstallButton />
     </div>
   );
 };

@@ -30,11 +30,11 @@ const Layout = ({ children }) => {
       
       {/* Main content - shifts with sidebar, below navbar */}
       <div 
-        className={`transition-all duration-300 pt-16 ${
+        className={`transition-all duration-300 pt-14 sm:pt-16 ${
           sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'
         }`}
       >
-        <main className="p-4 md:p-6 lg:p-8">
+        <main className="p-3 sm:p-4 md:p-6 lg:p-8">
           {children}
         </main>
       </div>

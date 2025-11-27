@@ -138,15 +138,15 @@ const Dashboard = () => {
   ].filter(item => item.value > 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="w-5 h-5 text-gray-600" />
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Dashboard</h1>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <CalendarIcon className="w-5 h-5 text-gray-600 flex-shrink-0" />
           <select
             value={year}
             onChange={(e) => setYear(parseInt(e.target.value))}
-            className="input-field w-auto border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200"
+            className="input-field w-full sm:w-auto border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 text-sm sm:text-base"
           >
             {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
               <option key={y} value={y}>
@@ -213,14 +213,14 @@ const Dashboard = () => {
       </div>
 
       {/* Second Row: Revenue vs Expenses (3 columns) + Billing Status (1 column) */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Revenue vs Expenses Line Chart - 3 columns */}
         <div className="card lg:col-span-3">
           <div className="flex items-center gap-2 mb-4">
-            <ChartBarIcon className="w-6 h-6 text-gray-700" />
-            <h2 className="text-xl font-semibold">Revenue vs Expenses ({year})</h2>
+            <ChartBarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
+            <h2 className="text-lg sm:text-xl font-semibold truncate">Revenue vs Expenses ({year})</h2>
           </div>
-          <div className="w-full" style={{ height: '300px' }}>
+          <div className="w-full overflow-x-auto" style={{ minHeight: '250px', height: '300px' }}>
             <LineChart
               xAxis={[{
                 scaleType: 'point',
@@ -246,12 +246,12 @@ const Dashboard = () => {
 
         {/* Billing Status Pie Chart - 1 column (same width as Total Projects) */}
         <div className="card lg:col-span-1">
-          <div className="flex items-center gap-2 mb-4">
-            <DocumentTextIcon className="w-6 h-6 text-gray-700" />
-            <h2 className="text-xl font-semibold">Billing Status ({year})</h2>
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
+            <h2 className="text-lg sm:text-xl font-semibold truncate">Billing Status ({year})</h2>
           </div>
           {billingStatusData.length > 0 ? (
-            <div className="w-full" style={{ height: '300px' }}>
+            <div className="w-full overflow-x-auto" style={{ minHeight: '250px', height: '300px' }}>
               <PieChart
                 series={[{
                   data: billingStatusData,
@@ -276,23 +276,23 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Project Status Bar Chart - 2 columns (same width as Total Revenue + Total Expenses) */}
         <div className="card">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <BuildingOfficeIcon className="w-6 h-6 text-gray-700" />
-              <h2 className="text-xl font-semibold">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <BuildingOfficeIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
+              <h2 className="text-lg sm:text-xl font-semibold truncate">
                 Project Status {projectStatusViewAll ? '(All Time)' : `(${year})`}
               </h2>
             </div>
             <button
               onClick={() => setProjectStatusViewAll(!projectStatusViewAll)}
-              className="flex items-center gap-1 text-sm text-primary hover:text-primaryLight font-medium transition-colors duration-200"
+              className="flex items-center gap-1 text-sm text-primary hover:text-primaryLight font-medium transition-colors duration-200 whitespace-nowrap"
             >
               <ArrowPathIcon className="w-4 h-4" />
               {projectStatusViewAll ? `View ${year}` : 'View All'}
             </button>
           </div>
           {projectStatusDataWithColors.length > 0 ? (
-            <div className="w-full" style={{ height: '300px' }}>
+            <div className="w-full overflow-x-auto" style={{ minHeight: '250px', height: '300px' }}>
               <BarChart
                 xAxis={[{
                   scaleType: 'band',

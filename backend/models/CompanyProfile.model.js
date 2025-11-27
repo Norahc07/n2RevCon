@@ -63,9 +63,8 @@ const companyProfileSchema = new mongoose.Schema({
     systemAnnouncements: { type: Boolean, default: true },
     unpaidAfterCompletion: { type: Boolean, default: true },
     timing: {
-      daysBefore3: { type: Boolean, default: true },
-      daysBefore2: { type: Boolean, default: true },
-      daysBefore1: { type: Boolean, default: true }
+      timingType: { type: String, enum: ['1', '2', '3', 'custom'], default: '3' },
+      customDays: { type: Number, min: 1, max: 365, default: null }
     },
     overdueTriggerDays: { type: Number, default: 1 } // Days after end date
   },

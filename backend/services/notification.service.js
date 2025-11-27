@@ -25,8 +25,8 @@ export const checkNotifications = async () => {
       timing: { timingType: '3', customDays: null }
     };
 
-    // If notifications are disabled, skip
-    if (!notificationConfig.enabled || !notificationConfig.projectEndDate) {
+    // If notifications are disabled globally, skip
+    if (!notificationConfig.enabled) {
       console.log('Notifications are disabled in system settings');
       return;
     }
@@ -188,7 +188,7 @@ export const checkNotifications = async () => {
         if (billings.length === 0) {
           for (const user of users) {
             // Check user's notification preferences
-            if (user.preferences?.notifications?.paymentOverdue === false) {
+            if (user.preferences?.notifications?.unpaidAfterCompletion === false) {
               continue;
             }
 
@@ -210,6 +210,49 @@ export const checkNotifications = async () => {
                 relatedModel: 'Project',
                 priority: 'medium',
                 actionUrl: `/projects/${project._id}/billing`
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // 5. Check for Payment Overdue Alerts (separate from billing follow-up)
+    if (notificationConfig.paymentOverdue) {
+      const overdueBillings = await Billing.find({
+        status: 'overdue'
+      }).populate('projectId');
+
+      for (const billing of overdueBillings) {
+        const collections = await Collection.find({ billingId: billing._id });
+        const totalCollected = collections.reduce((sum, c) => sum + c.amount, 0);
+        const isStillOverdue = totalCollected < billing.totalAmount;
+
+        if (isStillOverdue) {
+          for (const user of users) {
+            // Check user's notification preferences
+            if (user.preferences?.notifications?.paymentOverdue === false) {
+              continue;
+            }
+
+            const existing = await Notification.findOne({
+              userId: user._id,
+              type: 'payment_overdue',
+              relatedId: billing._id,
+              relatedModel: 'Billing',
+              createdAt: { $gte: today }
+            });
+
+            if (!existing) {
+              await Notification.create({
+                userId: user._id,
+                type: 'payment_overdue',
+                title: 'Payment Overdue',
+                message: `Invoice ${billing.invoiceNumber} for project "${billing.projectId?.projectName}" is overdue.`,
+                relatedId: billing._id,
+                relatedModel: 'Billing',
+                priority: 'urgent',
+                actionUrl: `/projects/${billing.projectId?._id}/billing`
               });
             }
           }
