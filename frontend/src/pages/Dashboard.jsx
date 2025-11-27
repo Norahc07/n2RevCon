@@ -398,23 +398,25 @@ const Dashboard = () => {
           {billingStatusData.length > 0 ? (
             <div className="w-full flex flex-col items-center">
               {/* Chart Container - Centered */}
-              <div className="w-full flex justify-center items-center" style={{ minHeight: '250px', height: '250px' }}>
-                <PieChart
-                  series={[{
-                    data: billingStatusData,
-                    innerRadius: 30,
-                    outerRadius: 80,
-                    paddingAngle: 2,
-                    cornerRadius: 5,
-                  }]}
-                  width={undefined}
-                  height={250}
-                  slotProps={{
-                    legend: {
-                      hidden: true, // Hide default legend
-                    },
-                  }}
-                />
+              <div className="w-full flex justify-center items-center relative" style={{ minHeight: '250px', height: '250px' }}>
+                <div className="w-full h-full [&_.MuiChartsLegend-root]:hidden">
+                  <PieChart
+                    series={[{
+                      data: billingStatusData,
+                      innerRadius: 30,
+                      outerRadius: 80,
+                      paddingAngle: 2,
+                      cornerRadius: 5,
+                    }]}
+                    width={undefined}
+                    height={250}
+                    slotProps={{
+                      legend: {
+                        hidden: true,
+                      },
+                    }}
+                  />
+                </div>
               </div>
               {/* Custom Legend - Centered Under Chart */}
               <div className="w-full mt-4 flex justify-center">
