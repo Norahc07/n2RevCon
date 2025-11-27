@@ -302,6 +302,10 @@ const Dashboard = () => {
                 series={[{
                   data: projectStatusDataWithColors.map(item => item.value),
                   color: COLORS.info,
+                  valueFormatter: (value) => value.toString(),
+                }]}
+                yAxis={[{
+                  valueFormatter: (value) => value.toString(),
                 }]}
                 width={undefined}
                 height={300}

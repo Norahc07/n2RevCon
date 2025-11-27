@@ -13,10 +13,9 @@ import Collection from '../models/Collection.model.js';
 export const exportProjects = async (req, res) => {
   try {
     const { year } = req.query;
-    const userId = req.user.id;
     
-    // Build filter
-    const filter = { createdBy: userId };
+    // Build filter - don't filter by userId to match getAllProjects behavior
+    const filter = {};
     
     // Filter by year if provided
     if (year) {
@@ -61,6 +60,7 @@ export const exportProjects = async (req, res) => {
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Location', key: 'location', width: 25 },
       { header: 'Budget', key: 'budget', width: 15 },
+      { header: 'Total Revenue', key: 'totalRevenue', width: 15 },
       { header: 'Start Date', key: 'startDate', width: 15 },
       { header: 'End Date', key: 'endDate', width: 15 },
       { header: 'Project Manager', key: 'projectManager', width: 20 },
@@ -78,8 +78,22 @@ export const exportProjects = async (req, res) => {
     headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
     headerRow.height = 25;
 
+    // Get revenue data for all projects
+    const projectIds = projects.map(p => p._id);
+    const revenues = await Revenue.find({ projectId: { $in: projectIds } });
+    
+    // Calculate total revenue per project
+    const revenueMap = {};
+    revenues.forEach(rev => {
+      if (!revenueMap[rev.projectId]) {
+        revenueMap[rev.projectId] = 0;
+      }
+      revenueMap[rev.projectId] += rev.amount || 0;
+    });
+
     // Add project data
     projects.forEach((project, index) => {
+      const totalRevenue = revenueMap[project._id.toString()] || 0;
       const row = projectsSheet.addRow({
         projectCode: project.projectCode || '',
         projectName: project.projectName || '',
@@ -87,6 +101,7 @@ export const exportProjects = async (req, res) => {
         status: project.status ? project.status.charAt(0).toUpperCase() + project.status.slice(1) : '',
         location: project.location || '',
         budget: project.budget || 0,
+        totalRevenue: totalRevenue,
         startDate: project.startDate ? new Date(project.startDate).toLocaleDateString('en-US') : '',
         endDate: project.endDate ? new Date(project.endDate).toLocaleDateString('en-US') : '',
         projectManager: project.projectManager || '',
@@ -137,8 +152,13 @@ export const exportProjects = async (req, res) => {
 
       // Format budget as currency
       const budgetCell = row.getCell('budget');
-      budgetCell.numFmt = '$#,##0.00';
+      budgetCell.numFmt = '₱#,##0.00';
       budgetCell.font = { color: { argb: 'FF059669' }, bold: true };
+      
+      // Format total revenue as currency
+      const revenueCell = row.getCell('totalRevenue');
+      revenueCell.numFmt = '₱#,##0.00';
+      revenueCell.font = { color: { argb: 'FF10B981' }, bold: true };
 
       // Center align status
       statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
