@@ -7,8 +7,13 @@ import Project from '../models/Project.model.js';
  */
 export const getAllProjects = async (req, res) => {
   try {
-    const { status, clientName, startDate, endDate } = req.query;
+    const { status, clientName, startDate, endDate, includeDeleted } = req.query;
     const filter = {};
+
+    // Exclude deleted projects by default
+    if (includeDeleted !== 'true') {
+      filter.deletedAt = null;
+    }
 
     if (status) filter.status = status;
     if (clientName) filter.clientName = { $regex: clientName, $options: 'i' };
@@ -36,6 +41,7 @@ export const getAllProjects = async (req, res) => {
  */
 export const getProjectById = async (req, res) => {
   try {
+    // Allow viewing deleted projects (for Recently Deleted page)
     const project = await Project.findById(req.params.id)
       .populate('createdBy', 'firstName lastName email')
       .populate('updatedBy', 'firstName lastName email');
@@ -105,16 +111,78 @@ export const updateProject = async (req, res) => {
 
 /**
  * @route   DELETE /api/projects/:id
- * @desc    Delete project
+ * @desc    Soft delete project (moves to recently deleted)
  * @access  Private (Admin only)
  */
 export const deleteProject = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { deletedAt: new Date() },
+      { new: true }
+    );
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    res.json({ message: 'Project moved to recently deleted. It will be permanently deleted after 30 days.', project });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   GET /api/projects/deleted
+ * @desc    Get all deleted projects
+ * @access  Private
+ */
+export const getDeletedProjects = async (req, res) => {
+  try {
+    const projects = await Project.find({ deletedAt: { $ne: null } })
+      .populate('createdBy', 'firstName lastName email')
+      .populate('updatedBy', 'firstName lastName email')
+      .sort({ deletedAt: -1 });
+
+    res.json({ projects });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   POST /api/projects/:id/restore
+ * @desc    Restore a deleted project
+ * @access  Private
+ */
+export const restoreProject = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { deletedAt: null },
+      { new: true }
+    ).populate('createdBy', 'firstName lastName email')
+     .populate('updatedBy', 'firstName lastName email');
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    res.json({ message: 'Project restored successfully', project });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   DELETE /api/projects/:id/permanent
+ * @desc    Permanently delete a project
+ * @access  Private (Admin only)
+ */
+export const permanentDeleteProject = async (req, res) => {
   try {
     const project = await Project.findByIdAndDelete(req.params.id);
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
-    res.json({ message: 'Project deleted successfully' });
+    res.json({ message: 'Project permanently deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -5,7 +5,10 @@ import {
   getProjectById,
   createProject,
   updateProject,
-  deleteProject
+  deleteProject,
+  getDeletedProjects,
+  restoreProject,
+  permanentDeleteProject
 } from '../controllers/project.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { authorize } from '../middleware/auth.middleware.js';
@@ -18,6 +21,9 @@ router.use(authenticate);
 
 // Get all projects
 router.get('/', getAllProjects);
+
+// Get deleted projects
+router.get('/deleted', getDeletedProjects);
 
 // Get project by ID
 router.get('/:id', getProjectById);
@@ -49,8 +55,14 @@ router.put(
   updateProject
 );
 
-// Delete project (Admin only)
+// Restore deleted project
+router.post('/:id/restore', restoreProject);
+
+// Delete project (soft delete - moves to recently deleted)
 router.delete('/:id', authorize('admin'), deleteProject);
+
+// Permanently delete project (Admin only)
+router.delete('/:id/permanent', authorize('admin'), permanentDeleteProject);
 
 export default router;
 

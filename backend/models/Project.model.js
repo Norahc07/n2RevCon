@@ -67,6 +67,10 @@ const projectSchema = new mongoose.Schema({
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
@@ -76,6 +80,7 @@ const projectSchema = new mongoose.Schema({
 projectSchema.index({ status: 1 });
 projectSchema.index({ startDate: 1, endDate: 1 });
 projectSchema.index({ clientName: 1 });
+projectSchema.index({ deletedAt: 1 });
 
 const Project = mongoose.model('Project', projectSchema);
 

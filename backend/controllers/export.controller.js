@@ -15,7 +15,8 @@ export const exportProjects = async (req, res) => {
     const { year } = req.query;
     
     // Build filter - don't filter by userId to match getAllProjects behavior
-    const filter = {};
+    // Exclude deleted projects from export
+    const filter = { deletedAt: null };
     
     // Filter by year if provided
     if (year) {

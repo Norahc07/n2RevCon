@@ -168,6 +168,9 @@ mongoose.connect(process.env.MONGODB_URI || '')
     process.exit(1);
   });
 
+// Import Project model for cleanup job
+import Project from './models/Project.model.js';
+
 // Daily cron job for notifications (runs at 9 AM every day)
 cron.schedule('0 9 * * *', async () => {
   console.log('Running daily notification check...');
@@ -176,6 +179,27 @@ cron.schedule('0 9 * * *', async () => {
     console.log('Notification check completed');
   } catch (error) {
     console.error('Error in notification cron job:', error);
+  }
+});
+
+// Daily cron job to permanently delete projects after 30 days (runs at 2 AM every day)
+cron.schedule('0 2 * * *', async () => {
+  console.log('Running cleanup job for permanently deleting old deleted projects...');
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const result = await Project.deleteMany({
+      deletedAt: { $ne: null, $lte: thirtyDaysAgo }
+    });
+    
+    if (result.deletedCount > 0) {
+      console.log(`Permanently deleted ${result.deletedCount} project(s) that were deleted more than 30 days ago`);
+    } else {
+      console.log('No projects to permanently delete');
+    }
+  } catch (error) {
+    console.error('Error in cleanup cron job:', error);
   }
 });
 

@@ -16,6 +16,7 @@ import ProjectsRevenueCosts from './pages/ProjectsRevenueCosts';
 import ProjectsBillingCollections from './pages/ProjectsBillingCollections';
 import ProjectDetails from './pages/ProjectDetails';
 import AddProject from './pages/AddProject';
+import RecentlyDeleted from './pages/RecentlyDeleted';
 import Notifications from './pages/Notifications';
 import ExportReports from './pages/ExportReports';
 import Profile from './pages/Profile';
@@ -50,6 +51,7 @@ function App() {
                     <Route path="/projects/revenue-costs" element={<ProjectsRevenueCosts />} />
                     <Route path="/projects/billing-collections" element={<ProjectsBillingCollections />} />
                     <Route path="/projects/new" element={<AddProject />} />
+                    <Route path="/projects/deleted" element={<RecentlyDeleted />} />
                     <Route path="/projects/:id/edit" element={<AddProject />} />
                     <Route path="/projects/:id" element={<ProjectDetails />} />
                     <Route path="/notifications" element={<Notifications />} />

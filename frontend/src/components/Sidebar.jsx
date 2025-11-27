@@ -11,6 +11,7 @@ import {
   DocumentTextIcon,
   ChartBarIcon,
   BanknotesIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 
 const Sidebar = ({ isOpen, onClose, onToggle }) => {
@@ -27,6 +28,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
     { path: '/projects', label: 'Description', icon: DocumentTextIcon },
     { path: '/projects/revenue-costs', label: 'Revenue Vs. Costs', icon: ChartBarIcon },
     { path: '/projects/billing-collections', label: 'Billings & Collections', icon: BanknotesIcon },
+    { path: '/projects/deleted', label: 'Recently Deleted', icon: TrashIcon },
   ];
 
   // Handle navigation with sidebar expansion

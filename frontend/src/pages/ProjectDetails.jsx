@@ -239,10 +239,11 @@ const ProjectDetails = () => {
           </button>
           <button
             onClick={async () => {
-              if (window.confirm(`Are you sure you want to delete "${project.projectName}"? This action cannot be undone.`)) {
+              const confirmMessage = `Are you sure you want to delete "${project.projectName}"?\n\nThis project will be moved to "Recently Deleted" and can be restored within 30 days. After 30 days, it will be permanently deleted.`;
+              if (window.confirm(confirmMessage)) {
                 try {
                   await projectAPI.delete(id);
-                  toast.success('Project deleted');
+                  toast.success('Project moved to Recently Deleted. It will be permanently deleted after 30 days.');
                   navigate('/projects');
                 } catch (error) {
                   toast.error('Failed to delete project');

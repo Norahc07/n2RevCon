@@ -67,6 +67,9 @@ export const projectAPI = {
   create: (data) => api.post('/projects', data),
   update: (id, data) => api.put(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`),
+  getDeleted: () => api.get('/projects/deleted'),
+  restore: (id) => api.post(`/projects/${id}/restore`),
+  permanentDelete: (id) => api.delete(`/projects/${id}/permanent`),
 };
 
 // Revenue API

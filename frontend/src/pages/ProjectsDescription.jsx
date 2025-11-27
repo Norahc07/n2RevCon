@@ -96,13 +96,14 @@ const ProjectsDescription = () => {
   // Handle delete project
   const handleDelete = async (projectId, projectName, e) => {
     e.stopPropagation();
-    if (!window.confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) {
+    const confirmMessage = `Are you sure you want to delete "${projectName}"?\n\nThis project will be moved to "Recently Deleted" and can be restored within 30 days. After 30 days, it will be permanently deleted.`;
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     try {
       await projectAPI.delete(projectId);
-      toast.success('Project deleted successfully');
+      toast.success('Project moved to Recently Deleted. It will be permanently deleted after 30 days.');
       fetchProjects();
     } catch (error) {
       toast.error('Failed to delete project');
