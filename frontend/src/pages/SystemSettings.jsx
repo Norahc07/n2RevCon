@@ -114,8 +114,8 @@ const SystemSettings = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div>
-            <h1 className="text-3xl font-bold text-white">System Settings</h1>
-            <p className="text-red-100 mt-1">Configure system-wide settings and preferences</p>
+            <h1 className="text-3xl font-bold text-gray-800">System Settings</h1>
+            <p className="text-gray-500 mt-1">Configure system-wide settings and preferences</p>
           </div>
         </div>
       </div>
@@ -490,9 +490,6 @@ const UserManagementTab = ({ users, onRefresh }) => {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between pb-4 border-b-2 border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="bg-red-50 rounded-lg p-2">
-            <UserGroupIcon className="w-6 h-6 text-red-600" />
-          </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
             <p className="text-sm text-gray-500">Manage system users and their permissions</p>
@@ -681,9 +678,6 @@ const ProjectConfigTab = ({ company, onSave, saving }) => {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-        <div className="bg-red-50 rounded-lg p-2">
-          <Cog6ToothIcon className="w-6 h-6 text-red-600" />
-        </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Project Configuration</h2>
           <p className="text-sm text-gray-500">Configure project settings and defaults</p>
@@ -794,6 +788,8 @@ const NotificationConfigTab = ({ company, onSave, saving }) => {
       paymentOverdue: true,
       systemAnnouncements: true,
       unpaidAfterCompletion: true,
+      projectFollowUp: true,
+      followUpDays: 7,
       timing: { timingType: '3', customDays: null },
       overdueTriggerDays: 1
     };
@@ -820,6 +816,8 @@ const NotificationConfigTab = ({ company, onSave, saving }) => {
         paymentOverdue: company.notificationConfig.paymentOverdue ?? true,
         systemAnnouncements: company.notificationConfig.systemAnnouncements ?? true,
         unpaidAfterCompletion: company.notificationConfig.unpaidAfterCompletion ?? true,
+        projectFollowUp: company.notificationConfig.projectFollowUp ?? true,
+        followUpDays: company.notificationConfig.followUpDays ?? 7,
         timing: convertedTiming,
         overdueTriggerDays: company.notificationConfig.overdueTriggerDays ?? 1
       });
@@ -853,9 +851,6 @@ const NotificationConfigTab = ({ company, onSave, saving }) => {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-        <div className="bg-red-50 rounded-lg p-2">
-          <BellIcon className="w-6 h-6 text-red-600" />
-        </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Notification System Settings</h2>
           <p className="text-sm text-gray-500">Configure notification preferences and timing</p>
@@ -931,6 +926,18 @@ const NotificationConfigTab = ({ company, onSave, saving }) => {
             <ToggleSwitch
               checked={config.unpaidAfterCompletion}
               onChange={(e) => setConfig({ ...config, unpaidAfterCompletion: e.target.checked })}
+              disabled={!config.enabled}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div>
+              <label className="font-semibold text-gray-700">Project Follow-Up Alerts</label>
+              <p className="text-sm text-gray-500">Get notified about completed projects that need follow-up action</p>
+            </div>
+            <ToggleSwitch
+              checked={config.projectFollowUp}
+              onChange={(e) => setConfig({ ...config, projectFollowUp: e.target.checked })}
               disabled={!config.enabled}
             />
           </div>
@@ -1019,6 +1026,26 @@ const NotificationConfigTab = ({ company, onSave, saving }) => {
           <p className="text-xs text-gray-500 mt-1">Number of days after project end date to trigger overdue alert</p>
         </div>
 
+        {config.projectFollowUp && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Days After Completion to Trigger Follow-Up Alert
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="365"
+              value={config.followUpDays || 7}
+              onChange={(e) => setConfig({ ...config, followUpDays: parseInt(e.target.value) || 7 })}
+              disabled={!config.enabled || !config.projectFollowUp}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Number of days after project completion before triggering follow-up alert (default: 7 days)
+            </p>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={saving}
@@ -1047,9 +1074,6 @@ const BackupTab = ({ company, onSave, onBackup, saving }) => {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-        <div className="bg-red-50 rounded-lg p-2">
-          <CloudArrowDownIcon className="w-6 h-6 text-red-600" />
-        </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Data Management & Backup</h2>
           <p className="text-sm text-gray-500">Manage data backups and storage settings</p>
@@ -1152,9 +1176,6 @@ const AuditLogsTab = ({ logs, onRefresh }) => {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between pb-4 border-b-2 border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="bg-red-50 rounded-lg p-2">
-            <ClipboardDocumentListIcon className="w-6 h-6 text-red-600" />
-          </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Audit Logs & Activity Tracking</h2>
             <p className="text-sm text-gray-500">View system activity and audit logs</p>
@@ -1325,9 +1346,6 @@ const PWATab = ({ company, onSave, saving }) => {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-        <div className="bg-red-50 rounded-lg p-2">
-          <DevicePhoneMobileIcon className="w-6 h-6 text-red-600" />
-        </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-800">PWA & Offline Settings</h2>
           <p className="text-sm text-gray-500">Configure Progressive Web App and offline capabilities</p>

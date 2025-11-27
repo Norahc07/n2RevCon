@@ -260,6 +260,91 @@ export const checkNotifications = async () => {
       }
     }
 
+    // 6. Check for projects that need follow-up
+    if (notificationConfig.projectFollowUp) {
+      const followUpDays = notificationConfig.followUpDays || 7;
+      const followUpDate = new Date(today);
+      followUpDate.setDate(today.getDate() - followUpDays);
+      followUpDate.setHours(0, 0, 0, 0);
+
+      // Find completed projects that ended more than X days ago
+      const completedProjects = await Project.find({
+        status: 'completed',
+        endDate: { $lte: followUpDate }
+      });
+
+      for (const project of completedProjects) {
+        // Check if project has outstanding issues that need follow-up
+        const billings = await Billing.find({ projectId: project._id });
+        const collections = await Collection.find({ projectId: project._id });
+        
+        const totalBilled = billings.reduce((sum, b) => sum + (b.totalAmount || b.amount || 0), 0);
+        const totalCollected = collections.reduce((sum, c) => sum + (c.amount || 0), 0);
+        const outstandingBalance = totalBilled - totalCollected;
+        
+        // Check if follow-up is needed:
+        // 1. Project has no billing records (needs billing)
+        // 2. Project has outstanding balance (needs collection)
+        // 3. Project completed but no activity for X days
+        const needsFollowUp = 
+          billings.length === 0 || 
+          outstandingBalance > 0 ||
+          (project.updatedAt && new Date(project.updatedAt) < followUpDate);
+
+        if (needsFollowUp) {
+          for (const user of users) {
+            // Check user's notification preferences
+            if (user.preferences?.notifications?.projectFollowUp === false) {
+              continue;
+            }
+
+            // Check if notification already exists (only one per day)
+            const existing = await Notification.findOne({
+              userId: user._id,
+              type: 'project_follow_up',
+              relatedId: project._id,
+              relatedModel: 'Project',
+              createdAt: { $gte: today }
+            });
+
+            if (!existing) {
+              let title = 'Project Follow-Up Required';
+              let message = '';
+              let priority = 'medium';
+
+              if (billings.length === 0) {
+                message = `Project "${project.projectName}" (${project.projectCode}) was completed ${Math.ceil((today - project.endDate) / (1000 * 60 * 60 * 24))} days ago but has no billing records. Please follow up.`;
+                priority = 'high';
+              } else if (outstandingBalance > 0) {
+                const formattedBalance = new Intl.NumberFormat('en-PH', {
+                  style: 'currency',
+                  currency: 'PHP',
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }).format(outstandingBalance);
+                message = `Project "${project.projectName}" (${project.projectCode}) has an outstanding balance of ${formattedBalance}. Please follow up on collections.`;
+                priority = outstandingBalance > project.budget * 0.5 ? 'urgent' : 'high';
+              } else {
+                message = `Project "${project.projectName}" (${project.projectCode}) was completed ${Math.ceil((today - project.endDate) / (1000 * 60 * 60 * 24))} days ago. Please verify project closure.`;
+                priority = 'medium';
+              }
+
+              await Notification.create({
+                userId: user._id,
+                type: 'project_follow_up',
+                title: title,
+                message: message,
+                relatedId: project._id,
+                relatedModel: 'Project',
+                priority: priority,
+                actionUrl: `/projects/${project._id}`
+              });
+            }
+          }
+        }
+      }
+    }
+
     console.log('Notification check completed successfully');
   } catch (error) {
     console.error('Error in notification service:', error);

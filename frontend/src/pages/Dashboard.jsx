@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dashboardAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { BarChart } from '@mui/x-charts/BarChart';
@@ -14,17 +15,61 @@ import {
   BanknotesIcon,
   DocumentTextIcon,
   ArrowPathIcon,
+  BellIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
+import {
+  requestNotificationPermission,
+  subscribeToPushNotifications,
+  isPushNotificationSupported,
+} from '../utils/pushNotifications';
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState(new Date().getFullYear());
   const [projectStatusViewAll, setProjectStatusViewAll] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [requestingPermission, setRequestingPermission] = useState(false);
 
   useEffect(() => {
     fetchSummary();
   }, [year]);
+
+  // Check and show notification permission prompt
+  useEffect(() => {
+    if (user && isPushNotificationSupported() && 'Notification' in window) {
+      // Check if permission is already granted or denied
+      if (Notification.permission === 'granted' || Notification.permission === 'denied') {
+        return;
+      }
+
+      // Only show if permission is 'default' (not yet asked)
+      if (Notification.permission !== 'default') {
+        return;
+      }
+
+      // Check if user previously dismissed the prompt
+      const dismissedPrompt = localStorage.getItem('notification-prompt-dismissed');
+      if (dismissedPrompt) {
+        // Check if it was dismissed today, don't show again until tomorrow
+        const dismissedDate = new Date(dismissedPrompt);
+        const today = new Date();
+        const isSameDay = dismissedDate.toDateString() === today.toDateString();
+        if (isSameDay) {
+          return;
+        }
+      }
+
+      // Show prompt after a short delay
+      const timer = setTimeout(() => {
+        setShowNotificationPrompt(true);
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   const fetchSummary = async () => {
     try {
@@ -42,6 +87,60 @@ const Dashboard = () => {
   useEffect(() => {
     fetchSummary();
   }, [projectStatusViewAll]);
+
+  // Handle allow notification
+  const handleAllowNotification = async () => {
+    try {
+      setRequestingPermission(true);
+      
+      // Request notification permission
+      const hasPermission = await requestNotificationPermission();
+      
+      if (hasPermission) {
+        // Subscribe to push notifications
+        const userId = user?.id || user?._id;
+        if (userId) {
+          try {
+            await subscribeToPushNotifications(userId);
+            toast.success('Notifications enabled! You will receive desktop and mobile notifications.');
+          } catch (subscribeError) {
+            // If subscription fails but permission is granted, still consider it enabled
+            console.warn('Push subscription failed, but permission granted:', subscribeError);
+            toast.success('Notification permission granted! You will receive browser notifications.');
+          }
+        } else {
+          toast.success('Notification permission granted! You will receive browser notifications.');
+        }
+        
+        // Hide prompt and clear any dismissal record
+        setShowNotificationPrompt(false);
+        localStorage.removeItem('notification-prompt-dismissed');
+      } else {
+        // Permission was denied
+        setShowNotificationPrompt(false);
+        toast.error('Notification permission was denied. You can enable it later in your browser settings.');
+      }
+    } catch (error) {
+      console.error('Notification permission error:', error);
+      
+      // Check if error is because permission was denied
+      if (error.message && error.message.includes('denied')) {
+        setShowNotificationPrompt(false);
+        toast.error('Notification permission was denied. You can enable it later in your browser settings.');
+      } else {
+        toast.error('Failed to enable notifications. Please check your browser settings.');
+      }
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
+
+  // Handle not now - will show again tomorrow
+  const handleNotNow = () => {
+    setShowNotificationPrompt(false);
+    // Store current date so it shows again tomorrow
+    localStorage.setItem('notification-prompt-dismissed', new Date().toISOString());
+  };
 
   if (loading) {
     return (
@@ -140,6 +239,51 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Notification Permission Prompt */}
+      {showNotificationPrompt && user && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg p-4 shadow-lg animate-fade-in">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="bg-blue-100 rounded-full p-2">
+                <BellIcon className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                Receive Desktop & Mobile Notifications
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Stay updated with project deadlines, billing reminders, and important system notifications even when you're away.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={handleAllowNotification}
+                  disabled={requestingPermission}
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <BellIcon className="w-4 h-4" />
+                  {requestingPermission ? 'Enabling...' : 'Allow Notification'}
+                </button>
+                <button
+                  onClick={handleNotNow}
+                  disabled={requestingPermission}
+                  className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-300 px-4 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Not Now
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={handleNotNow}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              disabled={requestingPermission}
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Dashboard</h1>
         <div className="flex items-center gap-2 w-full sm:w-auto">

@@ -14,6 +14,7 @@ import {
   PencilIcon,
   TrashIcon,
   MagnifyingGlassIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import { exportAPI } from '../services/api';
 
@@ -162,24 +163,25 @@ const ProjectsDescription = () => {
         
         <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
           {/* Search Input */}
-          <div className="flex items-center gap-2 flex-1 sm:flex-initial min-w-[200px]">
-            <MagnifyingGlassIcon className="w-5 h-5 text-gray-600 flex-shrink-0" />
+          <div className="relative flex-1 sm:flex-initial min-w-[200px]">
+            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Search by project name, code, or client..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white"
+              className="w-full border-2 border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white"
             />
           </div>
 
           {/* Year Filter */}
-          <div className="flex items-center gap-2 flex-1 sm:flex-initial">
-            <CalendarIcon className="w-5 h-5 text-gray-600" />
+          <div className="relative flex-1 sm:flex-initial">
+            <CalendarIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
+            <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
             <select
               value={year}
               onChange={(e) => setYear(e.target.value)}
-              className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white"
+              className="w-full border-2 border-gray-300 rounded-lg pl-10 pr-10 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white appearance-none cursor-pointer"
             >
               <option value="">All Years</option>
               {availableYears.map((y) => (

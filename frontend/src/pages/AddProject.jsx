@@ -31,6 +31,7 @@ const AddProject = () => {
     startDate: '',
     endDate: '',
     budget: '',
+    variableConsiderations: '',
     location: '',
     projectManager: '',
     tags: [],
@@ -60,6 +61,7 @@ const AddProject = () => {
         startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
         endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
         budget: project.budget || '',
+        variableConsiderations: project.variableConsiderations || '',
         location: project.location || '',
         projectManager: project.projectManager || '',
         tags: project.tags || [],
@@ -86,6 +88,7 @@ const AddProject = () => {
         ...formData,
         budget: parseFloat(formData.budget) || 0,
         tags: formData.tags.filter(tag => tag.trim() !== ''),
+        variableConsiderations: formData.variableConsiderations || '',
       };
       
       if (isEditMode) {
@@ -117,8 +120,8 @@ const AddProject = () => {
   const steps = [
     { number: 1, label: 'Basic Info', icon: BuildingOfficeIcon },
     { number: 2, label: 'Description', icon: DocumentTextIcon },
-    { number: 3, label: 'Dates & Budget', icon: CalendarIcon },
-    { number: 4, label: 'Additional', icon: ClipboardDocumentListIcon },
+    { number: 3, label: 'Price', icon: CurrencyDollarIcon },
+    { number: 4, label: 'Revenue', icon: ClipboardDocumentListIcon },
     { number: 5, label: 'Review', icon: CheckCircleIcon },
   ];
 
@@ -255,6 +258,21 @@ const AddProject = () => {
                 />
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Location
+              </label>
+              <div className="relative">
+                <MapPinIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
+                  placeholder="Enter project location"
+                />
+              </div>
+            </div>
           </div>
         )}
 
@@ -263,7 +281,7 @@ const AddProject = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
               <DocumentTextIcon className="w-6 h-6 text-red-600" />
-              <h2 className="text-2xl font-bold text-gray-800">Description & Status</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Description</h2>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -274,37 +292,58 @@ const AddProject = () => {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200 resize-none"
                 rows="6"
-                placeholder="Provide a detailed description of the project..."
+                placeholder="Provide a detailed description of the project (e.g. Installation of electrical wiring for a residential unit)"
               />
-              <p className="mt-1 text-xs text-gray-500">Describe the project scope, objectives, and key details</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Project Status <span className="text-red-500">*</span>
-                </label>
-                <select
-                  required
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="ongoing">Ongoing</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
             </div>
           </div>
         )}
 
-        {/* Step 3: Dates & Budget */}
+        {/* Step 3: Price */}
         {step === 3 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-              <CalendarIcon className="w-6 h-6 text-red-600" />
-              <h2 className="text-2xl font-bold text-gray-800">Dates & Budget</h2>
+              <CurrencyDollarIcon className="w-6 h-6 text-red-600" />
+              <h2 className="text-2xl font-bold text-gray-800">Transaction Price</h2>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Transaction Price
+              </label>
+              <div className="relative">
+                <CurrencyDollarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.budget}
+                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
+                  placeholder="0.00"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Enter the total contract price in PHP</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Variable Considerations, if any
+              </label>
+              <textarea
+                value={formData.variableConsiderations}
+                onChange={(e) => setFormData({ ...formData, variableConsiderations: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200 resize-none"
+                rows="4"
+                placeholder="Retention, Penalties, Bonuses, etc."
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Revenue Recognition */}
+        {step === 4 && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
+              <ClipboardDocumentListIcon className="w-6 h-6 text-red-600" />
+              <h2 className="text-2xl font-bold text-gray-800">Revenue Recognition</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -340,108 +379,23 @@ const AddProject = () => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Project Budget
+                Project Status <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <CurrencyDollarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.budget}
-                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
-                  placeholder="0.00"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">Enter the total project budget in USD</p>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Additional Information */}
-        {step === 4 && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-              <ClipboardDocumentListIcon className="w-6 h-6 text-red-600" />
-              <h2 className="text-2xl font-bold text-gray-800">Additional Information</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Location
-                </label>
-                <div className="relative">
-                  <MapPinIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
-                    placeholder="Enter project location"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Project Manager
-                </label>
-                <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={formData.projectManager}
-                    onChange={(e) => setFormData({ ...formData, projectManager: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
-                    placeholder="Enter project manager name"
-                  />
-                </div>
-              </div>
+              <select
+                required
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white"
+              >
+                <option value="pending">Pending</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Tags
-              </label>
-              <div className="flex gap-2 mb-3">
-                <div className="relative flex-1">
-                  <TagIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
-                    placeholder="Add a tag and press Enter"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addTag(e.target.value);
-                        e.target.value = '';
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 shadow-md"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        className="hover:text-red-200 transition-colors duration-200"
-                      >
-                        <XMarkIcon className="w-4 h-4" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Additional Notes
+                Remarks
               </label>
               <textarea
                 value={formData.notes}
@@ -480,11 +434,17 @@ const AddProject = () => {
                   <p className="text-lg font-semibold text-gray-900">{formData.clientName || 'N/A'}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Budget</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Transaction Price</span>
                   <p className="text-lg font-semibold text-green-600">
                     {formData.budget ? formatCurrency(parseFloat(formData.budget)) : formatCurrency(0)}
                   </p>
                 </div>
+                {formData.variableConsiderations && (
+                  <div className="space-y-1 md:col-span-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Variable Considerations</span>
+                    <p className="text-base text-gray-700 leading-relaxed">{formData.variableConsiderations}</p>
+                  </div>
+                )}
                 <div className="space-y-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Start Date</span>
                   <p className="text-lg font-semibold text-gray-900">
@@ -523,19 +483,16 @@ const AddProject = () => {
                     <p className="text-base text-gray-700 leading-relaxed">{formData.description}</p>
                   </div>
                 )}
-                {formData.tags.length > 0 && (
-                  <div className="space-y-2 md:col-span-2">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tags</span>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                {formData.variableConsiderations && (
+                  <div className="space-y-1 md:col-span-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Variable Considerations</span>
+                    <p className="text-base text-gray-700 leading-relaxed">{formData.variableConsiderations}</p>
+                  </div>
+                )}
+                {formData.notes && (
+                  <div className="space-y-1 md:col-span-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Remarks</span>
+                    <p className="text-base text-gray-700 leading-relaxed">{formData.notes}</p>
                   </div>
                 )}
               </div>

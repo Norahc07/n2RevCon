@@ -8,7 +8,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['project_end_date', 'project_overdue', 'billing_unpaid', 'project_unbilled', 'system'],
+    enum: ['project_end_date', 'project_overdue', 'billing_unpaid', 'project_unbilled', 'project_follow_up', 'system'],
     required: true
   },
   title: {

@@ -8,7 +8,6 @@ import {
   MagnifyingGlassIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  XMarkIcon,
   DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -22,10 +21,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 
 const ProjectsRevenueCosts = () => {
-  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [allRevenues, setAllRevenues] = useState([]);
   const [allExpenses, setAllExpenses] = useState([]);
@@ -50,10 +47,6 @@ const ProjectsRevenueCosts = () => {
 
   // Chart view state
   const [chartView, setChartView] = useState('project'); // 'project' or 'month'
-
-  // Side panel state
-  const [selectedProjectDetails, setSelectedProjectDetails] = useState(null);
-  const [showSidePanel, setShowSidePanel] = useState(false);
 
   useEffect(() => {
     fetchAllData();
@@ -297,41 +290,6 @@ const ProjectsRevenueCosts = () => {
     }
   }, [tableData, chartView]);
 
-  // Handle table row click
-  const handleRowClick = async (projectData) => {
-    try {
-      const project = projectData.project;
-      const projectRevenues = allRevenues.filter(
-        (r) => r.projectId?._id === project._id || r.projectId === project._id
-      );
-      const projectExpenses = allExpenses.filter(
-        (e) => e.projectId?._id === project._id || e.projectId === project._id
-      );
-
-      // Calculate billing and collection totals
-      const totalBilling = projectRevenues.reduce((sum, r) => sum + (r.amount || 0), 0);
-      const totalExpenses = projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const netIncome = totalBilling - totalExpenses;
-
-      // Calculate completion percentage (simplified - can be enhanced)
-      const completion = project.status === 'completed' ? 100 : project.status === 'ongoing' ? 50 : 0;
-
-      setSelectedProjectDetails({
-        projectName: project.projectName,
-        clientName: project.clientName || 'N/A',
-        totalRevenue: totalBilling,
-        totalExpenses,
-        netIncome,
-        billingStatus: project.status,
-        paymentStatus: project.status === 'completed' ? 'Paid' : 'Pending',
-        completion: completion,
-        project: project,
-      });
-      setShowSidePanel(true);
-    } catch (error) {
-      toast.error('Failed to load project details');
-    }
-  };
 
   // Handle sort
   const handleSort = (field) => {
@@ -686,8 +644,7 @@ const ProjectsRevenueCosts = () => {
                 tableData.map((item, index) => (
                   <tr
                     key={index}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => handleRowClick(item)}
+                    className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="border border-gray-300 px-4 py-3">{item.projectId}</td>
                     <td className="border border-gray-300 px-4 py-3 font-medium">{item.projectName}</td>
@@ -739,85 +696,6 @@ const ProjectsRevenueCosts = () => {
         </div>
       </div>
 
-      {/* Side Panel */}
-      {showSidePanel && selectedProjectDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
-          <div className="bg-white w-full md:w-96 h-full overflow-y-auto shadow-2xl">
-            <div className="p-6 border-b-2 border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Project Details</h2>
-                <button
-                  onClick={() => setShowSidePanel(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <XMarkIcon className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6 space-y-6">
-              <div>
-                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Project Name</p>
-                <p className="text-lg font-bold text-gray-900">{selectedProjectDetails.projectName}</p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Client Name</p>
-                <p className="text-lg font-bold text-gray-900">{selectedProjectDetails.clientName}</p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Total Revenue</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(selectedProjectDetails.totalRevenue)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {formatCurrency(selectedProjectDetails.totalExpenses)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Net Income</p>
-                <p
-                  className={`text-2xl font-bold ${
-                    selectedProjectDetails.netIncome >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {formatCurrency(selectedProjectDetails.netIncome)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Billing Status</p>
-                <p className="text-lg font-bold text-gray-900">{selectedProjectDetails.billingStatus}</p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Payment Status</p>
-                <p className="text-lg font-bold text-gray-900">{selectedProjectDetails.paymentStatus}</p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-500 uppercase mb-1">Completion</p>
-                <div className="mt-2">
-                  <div className="w-full bg-gray-200 rounded-full h-4">
-                    <div
-                      className="bg-red-600 h-4 rounded-full transition-all"
-                      style={{ width: `${selectedProjectDetails.completion}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">{selectedProjectDetails.completion}%</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowSidePanel(false);
-                  navigate(`/projects/${selectedProjectDetails.project._id}`);
-                }}
-                className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                View Full Project Details
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

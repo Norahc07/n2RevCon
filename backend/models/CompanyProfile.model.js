@@ -62,6 +62,8 @@ const companyProfileSchema = new mongoose.Schema({
     paymentOverdue: { type: Boolean, default: true },
     systemAnnouncements: { type: Boolean, default: true },
     unpaidAfterCompletion: { type: Boolean, default: true },
+    projectFollowUp: { type: Boolean, default: true },
+    followUpDays: { type: Number, default: 7 }, // Days after completion to trigger follow-up
     timing: {
       timingType: { type: String, enum: ['1', '2', '3', 'custom'], default: '3' },
       customDays: { type: Number, min: 1, max: 365, default: null }
