@@ -134,7 +134,7 @@ export const exportAPI = {
   exportProjects: (params) => api.get('/export/projects', { params, responseType: 'blob' }),
   exportProject: (id) => api.get(`/export/project/${id}`, { responseType: 'blob' }),
   exportRevenueCosts: (params) => api.get('/export/revenue-costs', { params, responseType: 'blob' }),
-  exportBillingCollections: () => api.get('/export/billing-collections', { responseType: 'blob' }),
+  exportBillingCollections: (params) => api.get('/export/billing-collections', { params, responseType: 'blob' }),
   exportSummary: () => api.get('/export/summary', { responseType: 'blob' }),
 };
 

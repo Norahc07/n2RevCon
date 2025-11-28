@@ -714,96 +714,318 @@ export const exportProject = async (req, res) => {
  */
 export const exportRevenueCosts = async (req, res) => {
   try {
+    const userId = req.user._id;
     const { startDate, endDate } = req.query;
-    const filter = {};
+    
+    const revenueFilter = { createdBy: userId, status: { $ne: 'cancelled' } };
+    const expenseFilter = { createdBy: userId, status: { $ne: 'cancelled' } };
 
     if (startDate || endDate) {
-      filter.date = {};
-      if (startDate) filter.date.$gte = new Date(startDate);
-      if (endDate) filter.date.$lte = new Date(endDate);
+      revenueFilter.date = {};
+      expenseFilter.date = {};
+      if (startDate) {
+        revenueFilter.date.$gte = new Date(startDate);
+        expenseFilter.date.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        revenueFilter.date.$lte = new Date(endDate);
+        expenseFilter.date.$lte = new Date(endDate);
+      }
     }
 
-    const revenues = await Revenue.find(filter).populate('projectId', 'projectCode projectName');
-    const expenses = await Expense.find(filter).populate('projectId', 'projectCode projectName');
+    const revenues = await Revenue.find(revenueFilter)
+      .populate('projectId', 'projectCode projectName clientName');
+    const expenses = await Expense.find(expenseFilter)
+      .populate('projectId', 'projectCode projectName clientName');
 
     const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'N2 RevCon';
+    workbook.created = new Date();
+    workbook.modified = new Date();
     
     // Revenue Sheet
-    const revenueSheet = workbook.addWorksheet('Revenue');
+    const revenueSheet = workbook.addWorksheet('Revenue', {
+      properties: {
+        tabColor: { argb: 'FF10B981' } // Green color
+      }
+    });
+    
     revenueSheet.columns = [
       { header: 'Date', key: 'date', width: 15 },
-      { header: 'Project Code', key: 'projectCode', width: 15 },
-      { header: 'Project Name', key: 'projectName', width: 30 },
-      { header: 'Revenue Code', key: 'revenueCode', width: 15 },
-      { header: 'Description', key: 'description', width: 30 },
-      { header: 'Amount', key: 'amount', width: 15 },
-      { header: 'Category', key: 'category', width: 15 }
+      { header: 'Project Code', key: 'projectCode', width: 18 },
+      { header: 'Project Name', key: 'projectName', width: 35 },
+      { header: 'Client Name', key: 'clientName', width: 25 },
+      { header: 'Revenue Code', key: 'revenueCode', width: 18 },
+      { header: 'Description', key: 'description', width: 40 },
+      { header: 'Amount', key: 'amount', width: 18 },
+      { header: 'Category', key: 'category', width: 18 },
+      { header: 'Status', key: 'status', width: 12 }
     ];
-    revenues.forEach(rev => {
-      revenueSheet.addRow({
-        date: rev.date,
+
+    // Style header row
+    const revenueHeaderRow = revenueSheet.getRow(1);
+    revenueHeaderRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    revenueHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF10B981' } // Green background
+    };
+    revenueHeaderRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
+    revenueHeaderRow.height = 25;
+
+    // Add auto-filter
+    revenueSheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: 9 }
+    };
+
+    revenues.forEach((rev, index) => {
+      const row = revenueSheet.addRow({
+        date: rev.date ? new Date(rev.date).toLocaleDateString('en-US') : '',
         projectCode: rev.projectId?.projectCode || '',
         projectName: rev.projectId?.projectName || '',
-        revenueCode: rev.revenueCode,
-        description: rev.description,
-        amount: rev.amount,
-        category: rev.category
+        clientName: rev.projectId?.clientName || '',
+        revenueCode: rev.revenueCode || '',
+        description: rev.description || '',
+        amount: rev.amount || 0,
+        category: rev.category ? rev.category.charAt(0).toUpperCase() + rev.category.slice(1) : '',
+        status: rev.status ? rev.status.charAt(0).toUpperCase() + rev.status.slice(1) : ''
+      });
+
+      // Alternate row colors
+      if (index % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF9FAFB' } // Light gray
+        };
+      }
+
+      // Format currency column
+      row.getCell('amount').numFmt = '₱#,##0.00';
+      row.getCell('amount').font = { color: { argb: 'FF10B981' }, bold: true };
+
+      // Style status column
+      const statusCell = row.getCell('status');
+      const status = rev.status?.toLowerCase();
+      if (status === 'approved' || status === 'completed') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true };
+      } else if (status === 'pending') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true };
+      }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      row.height = 20;
+    });
+
+    // Format all cells with borders
+    revenueSheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+        };
+        if (rowNumber > 1) {
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
+        }
       });
     });
+
+    revenueSheet.views = [{ state: 'frozen', ySplit: 1 }];
 
     // Expenses Sheet
-    const expenseSheet = workbook.addWorksheet('Expenses');
+    const expenseSheet = workbook.addWorksheet('Expenses', {
+      properties: {
+        tabColor: { argb: 'FFDC2626' } // Red color
+      }
+    });
+    
     expenseSheet.columns = [
       { header: 'Date', key: 'date', width: 15 },
-      { header: 'Project Code', key: 'projectCode', width: 15 },
-      { header: 'Project Name', key: 'projectName', width: 30 },
-      { header: 'Expense Code', key: 'expenseCode', width: 15 },
-      { header: 'Description', key: 'description', width: 30 },
-      { header: 'Amount', key: 'amount', width: 15 },
-      { header: 'Category', key: 'category', width: 15 }
+      { header: 'Project Code', key: 'projectCode', width: 18 },
+      { header: 'Project Name', key: 'projectName', width: 35 },
+      { header: 'Client Name', key: 'clientName', width: 25 },
+      { header: 'Expense Code', key: 'expenseCode', width: 18 },
+      { header: 'Description', key: 'description', width: 40 },
+      { header: 'Amount', key: 'amount', width: 18 },
+      { header: 'Category', key: 'category', width: 18 },
+      { header: 'Vendor', key: 'vendor', width: 20 },
+      { header: 'Status', key: 'status', width: 12 }
     ];
-    expenses.forEach(exp => {
-      expenseSheet.addRow({
-        date: exp.date,
+
+    // Style header row
+    const expenseHeaderRow = expenseSheet.getRow(1);
+    expenseHeaderRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    expenseHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFDC2626' } // Red background
+    };
+    expenseHeaderRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
+    expenseHeaderRow.height = 25;
+
+    // Add auto-filter
+    expenseSheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: 10 }
+    };
+
+    expenses.forEach((exp, index) => {
+      const row = expenseSheet.addRow({
+        date: exp.date ? new Date(exp.date).toLocaleDateString('en-US') : '',
         projectCode: exp.projectId?.projectCode || '',
         projectName: exp.projectId?.projectName || '',
-        expenseCode: exp.expenseCode,
-        description: exp.description,
-        amount: exp.amount,
-        category: exp.category
+        clientName: exp.projectId?.clientName || '',
+        expenseCode: exp.expenseCode || '',
+        description: exp.description || '',
+        amount: exp.amount || 0,
+        category: exp.category ? exp.category.charAt(0).toUpperCase() + exp.category.slice(1) : '',
+        vendor: exp.vendor || '',
+        status: exp.status ? exp.status.charAt(0).toUpperCase() + exp.status.slice(1) : ''
+      });
+
+      // Alternate row colors
+      if (index % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF9FAFB' } // Light gray
+        };
+      }
+
+      // Format currency column
+      row.getCell('amount').numFmt = '₱#,##0.00';
+      row.getCell('amount').font = { color: { argb: 'FFDC2626' }, bold: true };
+
+      // Style status column
+      const statusCell = row.getCell('status');
+      const status = exp.status?.toLowerCase();
+      if (status === 'approved' || status === 'completed') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true };
+      } else if (status === 'pending') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true };
+      }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      row.height = 20;
+    });
+
+    // Format all cells with borders
+    expenseSheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+        };
+        if (rowNumber > 1) {
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
+        }
       });
     });
 
+    expenseSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
     // Summary Sheet
-    const summarySheet = workbook.addWorksheet('Summary');
-    const totalRevenue = revenues.reduce((sum, r) => sum + r.amount, 0);
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const summarySheet = workbook.addWorksheet('Summary', {
+      properties: {
+        tabColor: { argb: 'FF3B82F6' } // Blue color
+      }
+    });
+
+    const totalRevenue = revenues.reduce((sum, r) => sum + (r.amount || 0), 0);
+    const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const netProfit = totalRevenue - totalExpenses;
+
     summarySheet.columns = [
-      { header: 'Item', key: 'item', width: 30 },
-      { header: 'Amount', key: 'amount', width: 15 }
+      { header: 'Metric', key: 'metric', width: 30 },
+      { header: 'Value', key: 'value', width: 25 }
     ];
-    summarySheet.addRows([
-      { item: 'Total Revenue', amount: totalRevenue },
-      { item: 'Total Expenses', amount: totalExpenses },
-      { item: 'Net Profit', amount: totalRevenue - totalExpenses }
-    ]);
 
-    revenueSheet.getColumn('amount').numFmt = '₱#,##0.00';
-    expenseSheet.getColumn('amount').numFmt = '₱#,##0.00';
-    summarySheet.getColumn('amount').numFmt = '₱#,##0.00';
+    const summaryHeaderRow = summarySheet.getRow(1);
+    summaryHeaderRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    summaryHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' } // Blue background
+    };
+    summaryHeaderRow.alignment = { vertical: 'middle', horizontal: 'center' };
+    summaryHeaderRow.height = 25;
 
+    summarySheet.addRow({ metric: 'Total Revenue', value: totalRevenue });
+    summarySheet.addRow({ metric: 'Total Expenses', value: totalExpenses });
+    summarySheet.addRow({ metric: 'Net Profit', value: netProfit });
+    summarySheet.addRow({ metric: '', value: '' }); // Empty row
+    summarySheet.addRow({ metric: 'Total Revenue Records', value: revenues.length });
+    summarySheet.addRow({ metric: 'Total Expense Records', value: expenses.length });
+
+    // Format summary sheet
+    summarySheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // Skip header
+      const valueCell = row.getCell('value');
+      
+      if (rowNumber <= 4) {
+        // Currency format for financial metrics
+        valueCell.numFmt = '₱#,##0.00';
+        valueCell.font = { bold: true, size: 12 };
+        
+        // Color net profit
+        if (rowNumber === 3) {
+          if (netProfit >= 0) {
+            valueCell.font = { color: { argb: 'FF059669' }, bold: true, size: 12 };
+          } else {
+            valueCell.font = { color: { argb: 'FFDC2626' }, bold: true, size: 12 };
+          }
+        } else if (rowNumber === 1) {
+          // Total Revenue - green
+          valueCell.font = { color: { argb: 'FF10B981' }, bold: true, size: 12 };
+        } else if (rowNumber === 2) {
+          // Total Expenses - red
+          valueCell.font = { color: { argb: 'FFDC2626' }, bold: true, size: 12 };
+        }
+      } else {
+        // Number format for counts
+        valueCell.numFmt = '0';
+        valueCell.font = { bold: true, size: 12 };
+      }
+      
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      });
+    });
+
+    // Set response headers
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
+    
+    const filename = startDate && endDate
+      ? `revenue_costs_${new Date(startDate).toISOString().split('T')[0]}_to_${new Date(endDate).toISOString().split('T')[0]}.xlsx`
+      : `revenue_costs_${Date.now()}.xlsx`;
+    
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename=revenue_costs_${Date.now()}.xlsx`
+      `attachment; filename="${filename}"`
     );
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
+    console.error('Export error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -815,80 +1037,339 @@ export const exportRevenueCosts = async (req, res) => {
  */
 export const exportBillingCollections = async (req, res) => {
   try {
-    const billings = await Billing.find().populate('projectId', 'projectCode projectName');
-    const collections = await Collection.find()
+    const userId = req.user._id;
+    const { year, month, projectId } = req.query;
+    
+    // Build filters
+    const billingFilter = { createdBy: userId };
+    const collectionFilter = { createdBy: userId };
+    
+    if (projectId && projectId !== 'all') {
+      billingFilter.projectId = projectId;
+      collectionFilter.projectId = projectId;
+    }
+    
+    if (year) {
+      const yearNum = parseInt(year);
+      billingFilter.billingDate = {
+        $gte: new Date(yearNum, 0, 1),
+        $lte: new Date(yearNum, 11, 31, 23, 59, 59)
+      };
+      collectionFilter.collectionDate = {
+        $gte: new Date(yearNum, 0, 1),
+        $lte: new Date(yearNum, 11, 31, 23, 59, 59)
+      };
+      
+      if (month) {
+        const monthNum = parseInt(month);
+        billingFilter.billingDate = {
+          $gte: new Date(yearNum, monthNum - 1, 1),
+          $lte: new Date(yearNum, monthNum, 0, 23, 59, 59)
+        };
+        collectionFilter.collectionDate = {
+          $gte: new Date(yearNum, monthNum - 1, 1),
+          $lte: new Date(yearNum, monthNum, 0, 23, 59, 59)
+        };
+      }
+    }
+
+    const billings = await Billing.find(billingFilter)
+      .populate('projectId', 'projectCode projectName clientName');
+    const collections = await Collection.find(collectionFilter)
       .populate('billingId', 'invoiceNumber')
-      .populate('projectId', 'projectCode projectName');
+      .populate('projectId', 'projectCode projectName clientName');
 
     const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'N2 RevCon';
+    workbook.created = new Date();
+    workbook.modified = new Date();
     
     // Billing Sheet
-    const billingSheet = workbook.addWorksheet('Billing');
+    const billingSheet = workbook.addWorksheet('Billing', {
+      properties: {
+        tabColor: { argb: 'FF3B82F6' } // Blue color
+      }
+    });
+    
     billingSheet.columns = [
       { header: 'Invoice Number', key: 'invoiceNumber', width: 20 },
-      { header: 'Project Code', key: 'projectCode', width: 15 },
-      { header: 'Project Name', key: 'projectName', width: 30 },
+      { header: 'Project Code', key: 'projectCode', width: 18 },
+      { header: 'Project Name', key: 'projectName', width: 35 },
+      { header: 'Client Name', key: 'clientName', width: 25 },
       { header: 'Billing Date', key: 'billingDate', width: 15 },
       { header: 'Due Date', key: 'dueDate', width: 15 },
       { header: 'Amount', key: 'amount', width: 15 },
       { header: 'Tax', key: 'tax', width: 15 },
-      { header: 'Total Amount', key: 'totalAmount', width: 15 },
-      { header: 'Status', key: 'status', width: 15 }
+      { header: 'Total Amount', key: 'totalAmount', width: 18 },
+      { header: 'Status', key: 'status', width: 12 }
     ];
-    billings.forEach(bill => {
-      billingSheet.addRow({
-        invoiceNumber: bill.invoiceNumber,
+
+    // Style header row
+    const billingHeaderRow = billingSheet.getRow(1);
+    billingHeaderRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    billingHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' } // Blue background
+    };
+    billingHeaderRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
+    billingHeaderRow.height = 25;
+
+    // Add auto-filter
+    billingSheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: 10 }
+    };
+
+    billings.forEach((bill, index) => {
+      const row = billingSheet.addRow({
+        invoiceNumber: bill.invoiceNumber || '',
         projectCode: bill.projectId?.projectCode || '',
         projectName: bill.projectId?.projectName || '',
-        billingDate: bill.billingDate,
-        dueDate: bill.dueDate,
-        amount: bill.amount,
-        tax: bill.tax,
-        totalAmount: bill.totalAmount,
-        status: bill.status
+        clientName: bill.projectId?.clientName || '',
+        billingDate: bill.billingDate ? new Date(bill.billingDate).toLocaleDateString('en-US') : '',
+        dueDate: bill.dueDate ? new Date(bill.dueDate).toLocaleDateString('en-US') : '',
+        amount: bill.amount || 0,
+        tax: bill.tax || 0,
+        totalAmount: bill.totalAmount || bill.amount || 0,
+        status: bill.status ? bill.status.charAt(0).toUpperCase() + bill.status.slice(1) : ''
+      });
+
+      // Alternate row colors
+      if (index % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF9FAFB' } // Light gray
+        };
+      }
+
+      // Format currency columns
+      row.getCell('amount').numFmt = '₱#,##0.00';
+      row.getCell('tax').numFmt = '₱#,##0.00';
+      row.getCell('totalAmount').numFmt = '₱#,##0.00';
+      row.getCell('amount').font = { color: { argb: 'FF059669' }, bold: true };
+      row.getCell('totalAmount').font = { color: { argb: 'FF3B82F6' }, bold: true };
+
+      // Style status column
+      const statusCell = row.getCell('status');
+      const status = bill.status?.toLowerCase();
+      if (status === 'paid' || status === 'sent') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true };
+      } else if (status === 'draft') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true };
+      } else if (status === 'overdue') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true };
+      }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      row.height = 20;
+    });
+
+    // Format all cells with borders
+    billingSheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+        };
+        if (rowNumber > 1) {
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
+        }
       });
     });
 
+    billingSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
     // Collections Sheet
-    const collectionSheet = workbook.addWorksheet('Collections');
+    const collectionSheet = workbook.addWorksheet('Collections', {
+      properties: {
+        tabColor: { argb: 'FF10B981' } // Green color
+      }
+    });
+    
     collectionSheet.columns = [
       { header: 'Collection Number', key: 'collectionNumber', width: 20 },
       { header: 'Invoice Number', key: 'invoiceNumber', width: 20 },
-      { header: 'Project Code', key: 'projectCode', width: 15 },
+      { header: 'Project Code', key: 'projectCode', width: 18 },
+      { header: 'Project Name', key: 'projectName', width: 35 },
+      { header: 'Client Name', key: 'clientName', width: 25 },
       { header: 'Collection Date', key: 'collectionDate', width: 15 },
-      { header: 'Amount', key: 'amount', width: 15 },
-      { header: 'Payment Method', key: 'paymentMethod', width: 15 },
-      { header: 'Status', key: 'status', width: 15 }
+      { header: 'Check Number', key: 'checkNumber', width: 18 },
+      { header: 'Amount', key: 'amount', width: 18 },
+      { header: 'Payment Method', key: 'paymentMethod', width: 18 },
+      { header: 'Status', key: 'status', width: 12 }
     ];
-    collections.forEach(col => {
-      collectionSheet.addRow({
-        collectionNumber: col.collectionNumber,
+
+    // Style header row
+    const collectionHeaderRow = collectionSheet.getRow(1);
+    collectionHeaderRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    collectionHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF10B981' } // Green background
+    };
+    collectionHeaderRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
+    collectionHeaderRow.height = 25;
+
+    // Add auto-filter
+    collectionSheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: 10 }
+    };
+
+    collections.forEach((col, index) => {
+      const row = collectionSheet.addRow({
+        collectionNumber: col.collectionNumber || '',
         invoiceNumber: col.billingId?.invoiceNumber || '',
         projectCode: col.projectId?.projectCode || '',
-        collectionDate: col.collectionDate,
-        amount: col.amount,
-        paymentMethod: col.paymentMethod,
-        status: col.status
+        projectName: col.projectId?.projectName || '',
+        clientName: col.projectId?.clientName || '',
+        collectionDate: col.collectionDate ? new Date(col.collectionDate).toLocaleDateString('en-US') : '',
+        checkNumber: col.checkNumber || '',
+        amount: col.amount || 0,
+        paymentMethod: col.paymentMethod ? col.paymentMethod.charAt(0).toUpperCase() + col.paymentMethod.slice(1) : '',
+        status: col.status ? col.status.charAt(0).toUpperCase() + col.status.slice(1) : ''
+      });
+
+      // Alternate row colors
+      if (index % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF9FAFB' } // Light gray
+        };
+      }
+
+      // Format currency column
+      row.getCell('amount').numFmt = '₱#,##0.00';
+      row.getCell('amount').font = { color: { argb: 'FF10B981' }, bold: true };
+
+      // Style status column
+      const statusCell = row.getCell('status');
+      const status = col.status?.toLowerCase();
+      if (status === 'paid' || status === 'completed') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true };
+      } else if (status === 'pending') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true };
+      }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      row.height = 20;
+    });
+
+    // Format all cells with borders
+    collectionSheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+        };
+        if (rowNumber > 1) {
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
+        }
       });
     });
 
-    billingSheet.getColumn('amount').numFmt = '₱#,##0.00';
-    billingSheet.getColumn('tax').numFmt = '₱#,##0.00';
-    billingSheet.getColumn('totalAmount').numFmt = '₱#,##0.00';
-    collectionSheet.getColumn('amount').numFmt = '₱#,##0.00';
+    collectionSheet.views = [{ state: 'frozen', ySplit: 1 }];
 
+    // Summary Sheet
+    const summarySheet = workbook.addWorksheet('Summary', {
+      properties: {
+        tabColor: { argb: 'FF8B5CF6' } // Purple color
+      }
+    });
+
+    // Calculate totals
+    const totalBilled = billings.reduce((sum, b) => sum + (b.totalAmount || b.amount || 0), 0);
+    const totalCollected = collections.reduce((sum, c) => sum + (c.amount || 0), 0);
+    const outstanding = totalBilled - totalCollected;
+
+    summarySheet.columns = [
+      { header: 'Metric', key: 'metric', width: 30 },
+      { header: 'Value', key: 'value', width: 25 }
+    ];
+
+    const summaryHeaderRow = summarySheet.getRow(1);
+    summaryHeaderRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    summaryHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF8B5CF6' } // Purple background
+    };
+    summaryHeaderRow.alignment = { vertical: 'middle', horizontal: 'center' };
+    summaryHeaderRow.height = 25;
+
+    summarySheet.addRow({ metric: 'Total Billed', value: totalBilled });
+    summarySheet.addRow({ metric: 'Total Collected', value: totalCollected });
+    summarySheet.addRow({ metric: 'Outstanding Balance', value: outstanding });
+    summarySheet.addRow({ metric: '', value: '' }); // Empty row
+    summarySheet.addRow({ metric: 'Total Billing Records', value: billings.length });
+    summarySheet.addRow({ metric: 'Total Collection Records', value: collections.length });
+
+    // Format summary sheet
+    summarySheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // Skip header
+      const valueCell = row.getCell('value');
+      
+      if (rowNumber <= 4) {
+        // Currency format for financial metrics
+        valueCell.numFmt = '₱#,##0.00';
+        valueCell.font = { bold: true, size: 12 };
+        
+        // Color outstanding balance
+        if (rowNumber === 3) {
+          if (outstanding > 0) {
+            valueCell.font = { color: { argb: 'FFDC2626' }, bold: true, size: 12 };
+          } else if (outstanding === 0) {
+            valueCell.font = { color: { argb: 'FF059669' }, bold: true, size: 12 };
+          }
+        }
+      } else {
+        // Number format for counts
+        valueCell.numFmt = '0';
+        valueCell.font = { bold: true, size: 12 };
+      }
+      
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      });
+    });
+
+    // Set response headers
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
+    
+    const filename = year 
+      ? `billing_collections_${year}${month ? `_${month}` : ''}_${Date.now()}.xlsx`
+      : `billing_collections_all_${Date.now()}.xlsx`;
+    
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename=billing_collections_${Date.now()}.xlsx`
+      `attachment; filename="${filename}"`
     );
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
+    console.error('Export error:', error);
     res.status(500).json({ message: error.message });
   }
 };

@@ -15,19 +15,6 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
 import toast from 'react-hot-toast';
 
 const ProjectsBillingCollections = () => {
@@ -320,28 +307,6 @@ const ProjectsBillingCollections = () => {
     );
   }, [filteredTableData]);
 
-  // Prepare chart data
-  const billingStatusChartData = useMemo(() => {
-    const billed = filteredTableData.filter((item) => item.billingStatus === 'billed').reduce((sum, item) => sum + item.billedAmount, 0);
-    const unbilled = filteredTableData.filter((item) => item.billingStatus === 'unbilled' || item.billingStatus === 'draft').reduce((sum, item) => sum + item.billedAmount, 0);
-    
-    return [
-      { name: 'Billed', value: billed },
-      { name: 'Unbilled', value: unbilled },
-    ].filter(item => item.value > 0);
-  }, [filteredTableData]);
-
-  const collectionStatusChartData = useMemo(() => {
-    const paid = filteredTableData.filter((item) => item.paymentStatus === 'paid').reduce((sum, item) => sum + item.amountCollected, 0);
-    const unpaid = filteredTableData.filter((item) => item.paymentStatus === 'unpaid').reduce((sum, item) => sum + item.outstandingBalance, 0);
-    const uncollectible = filteredTableData.filter((item) => item.paymentStatus === 'uncollectible').reduce((sum, item) => sum + item.outstandingBalance, 0);
-    
-    return [
-      { name: 'Paid', value: paid },
-      { name: 'Unpaid', value: unpaid },
-      { name: 'Uncollectible', value: uncollectible },
-    ].filter(item => item.value > 0);
-  }, [filteredTableData]);
 
 
   // Handle sort
@@ -358,9 +323,19 @@ const ProjectsBillingCollections = () => {
   const handleExportCurrentFilter = async () => {
     try {
       setExporting(true);
-      // Note: The export endpoint doesn't support filters yet, so we export all data
-      // In a real implementation, you'd filter the data on the backend
-      const response = await exportAPI.exportBillingCollections();
+      const params = {};
+      
+      if (appliedFilters.year) {
+        params.year = appliedFilters.year;
+      }
+      if (appliedFilters.month) {
+        params.month = appliedFilters.month;
+      }
+      if (appliedFilters.project && appliedFilters.project !== 'all') {
+        params.projectId = appliedFilters.project;
+      }
+      
+      const response = await exportAPI.exportBillingCollections(params);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -386,7 +361,14 @@ const ProjectsBillingCollections = () => {
     }
     try {
       setExporting(true);
-      const response = await exportAPI.exportBillingCollections();
+      const params = {
+        year: appliedFilters.year,
+        month: appliedFilters.month,
+      };
+      if (appliedFilters.project && appliedFilters.project !== 'all') {
+        params.projectId = appliedFilters.project;
+      }
+      const response = await exportAPI.exportBillingCollections(params);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -409,7 +391,13 @@ const ProjectsBillingCollections = () => {
     }
     try {
       setExporting(true);
-      const response = await exportAPI.exportBillingCollections();
+      const params = {
+        year: appliedFilters.year,
+      };
+      if (appliedFilters.project && appliedFilters.project !== 'all') {
+        params.projectId = appliedFilters.project;
+      }
+      const response = await exportAPI.exportBillingCollections(params);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -428,7 +416,16 @@ const ProjectsBillingCollections = () => {
   const handleExportPerProject = async (projectId) => {
     try {
       setExporting(true);
-      const response = await exportAPI.exportBillingCollections();
+      const params = {
+        projectId: projectId,
+      };
+      if (appliedFilters.year) {
+        params.year = appliedFilters.year;
+      }
+      if (appliedFilters.month) {
+        params.month = appliedFilters.month;
+      }
+      const response = await exportAPI.exportBillingCollections(params);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -442,14 +439,6 @@ const ProjectsBillingCollections = () => {
     } finally {
       setExporting(false);
     }
-  };
-
-  const COLORS = {
-    billed: '#10B981',
-    unbilled: '#F59E0B',
-    paid: '#10B981',
-    unpaid: '#EF4444',
-    uncollectible: '#6B7280',
   };
 
   if (loading) {
@@ -643,92 +632,6 @@ const ProjectsBillingCollections = () => {
             <div className={`w-2 h-2 rounded-full ${totals.outstanding >= 0 ? 'bg-red-500' : 'bg-green-500'}`}></div>
             <span className="text-xs text-gray-500">Outstanding</span>
           </div>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Billing Status Pie Chart */}
-        <div className="card shadow-md p-4 sm:p-6">
-          <h2 className="text-xl font-semibold mb-4">Billing Status</h2>
-          {billingStatusChartData.length > 0 ? (
-            <div className="w-full flex flex-col items-center">
-              {/* Chart Container - Centered and Responsive */}
-              <div className="w-full flex justify-center items-center py-4">
-                <div className="w-full max-w-md mx-auto" style={{ height: '300px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={billingStatusChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={false}
-                        outerRadius="70%"
-                        innerRadius="30%"
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {billingStatusChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => formatCurrency(value)} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              {/* Legend - Centered Under Chart */}
-              <div className="w-full mt-4 flex justify-center">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-                  {billingStatusChartData.map((entry, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div 
-                        className="w-4 h-4 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: entry.name === 'Billed' ? COLORS.billed : COLORS.unbilled }}
-                      ></div>
-                      <span className="text-sm font-medium text-gray-700">{entry.name}</span>
-                      <span className="text-xs text-gray-500">
-                        ({formatCurrency(entry.value)})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">No data available</div>
-          )}
-        </div>
-
-        {/* Collection Status Bar Chart */}
-        <div className="card shadow-md overflow-hidden">
-          <h2 className="text-xl font-semibold mb-4">Collection Status</h2>
-          {collectionStatusChartData.length > 0 ? (
-            <div className="w-full" style={{ minHeight: '300px' }}>
-              <ResponsiveContainer width="100%" height={300} minHeight={250}>
-                <BarChart data={collectionStatusChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
-                  <Legend 
-                    wrapperStyle={{ paddingTop: '20px' }}
-                    layout="horizontal"
-                    verticalAlign="bottom"
-                    align="center"
-                  />
-                  <Bar dataKey="value">
-                    {collectionStatusChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.name === 'Paid' ? COLORS.paid : entry.name === 'Unpaid' ? COLORS.unpaid : COLORS.uncollectible} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">No data available</div>
-          )}
         </div>
       </div>
 

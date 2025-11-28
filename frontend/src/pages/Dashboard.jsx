@@ -18,6 +18,7 @@ import {
   BellIcon,
   XMarkIcon,
   ChevronDownIcon,
+  ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import {
   requestNotificationPermission,
@@ -34,6 +35,7 @@ const Dashboard = () => {
   const [projectStatusViewAll, setProjectStatusViewAll] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [requestingPermission, setRequestingPermission] = useState(false);
+  const [focusedYearDropdown, setFocusedYearDropdown] = useState(false);
 
   // Define functions before using them in useEffect
   const fetchProjects = useCallback(async () => {
@@ -383,10 +385,16 @@ const Dashboard = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Dashboard</h1>
         <div className="relative w-full sm:w-auto">
           <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
-          <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+          {focusedYearDropdown ? (
+            <ChevronUpIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+          ) : (
+            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+          )}
           <select
             value={year}
             onChange={(e) => setYear(e.target.value)}
+            onFocus={() => setFocusedYearDropdown(true)}
+            onBlur={() => setFocusedYearDropdown(false)}
             className="w-full sm:w-auto border-2 border-gray-300 rounded-lg pl-10 pr-10 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 text-sm sm:text-base appearance-none cursor-pointer bg-white"
           >
             <option value="all">All Years</option>
