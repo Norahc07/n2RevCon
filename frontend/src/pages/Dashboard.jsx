@@ -35,6 +35,29 @@ const Dashboard = () => {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [requestingPermission, setRequestingPermission] = useState(false);
 
+  // Define functions before using them in useEffect
+  const fetchProjects = useCallback(async () => {
+    try {
+      const response = await projectAPI.getAll();
+      setProjects(response.data.projects || []);
+    } catch (error) {
+      console.error('Failed to load projects for year filter:', error);
+    }
+  }, []);
+
+  const fetchSummary = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = projectStatusViewAll ? { viewAll: true } : year === 'all' ? { viewAll: true } : { year: parseInt(year) };
+      const response = await dashboardAPI.getSummary(params);
+      setSummary(response.data);
+    } catch (error) {
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  }, [year, projectStatusViewAll]);
+
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
@@ -76,28 +99,6 @@ const Dashboard = () => {
       return () => clearTimeout(timer);
     }
   }, [user]);
-
-  const fetchProjects = useCallback(async () => {
-    try {
-      const response = await projectAPI.getAll();
-      setProjects(response.data.projects || []);
-    } catch (error) {
-      console.error('Failed to load projects for year filter:', error);
-    }
-  }, []);
-
-  const fetchSummary = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = projectStatusViewAll ? { viewAll: true } : year === 'all' ? { viewAll: true } : { year: parseInt(year) };
-      const response = await dashboardAPI.getSummary(params);
-      setSummary(response.data);
-    } catch (error) {
-      toast.error('Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  }, [year, projectStatusViewAll]);
 
   // Handle allow notification
   const handleAllowNotification = async () => {
