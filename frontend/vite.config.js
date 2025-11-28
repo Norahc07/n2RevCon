@@ -15,7 +15,7 @@ export default defineConfig({
         name: 'N2 RevCon',
         short_name: 'N2 RevCon',
         description: 'N2 RevCon - Company Monitoring System',
-        theme_color: '#DC2626',
+        theme_color: '#FFFFFF',
         background_color: '#FFFFFF',
         display: 'standalone',
         orientation: 'any',

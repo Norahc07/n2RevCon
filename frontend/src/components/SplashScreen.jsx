@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 
 const SplashScreen = () => {
   const [isVisible, setIsVisible] = useState(true);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     // Check if running as PWA (installed app)
@@ -17,24 +16,38 @@ const SplashScreen = () => {
     }
 
     // Immediately set white background to override any default splash
-    document.body.style.backgroundColor = '#FFFFFF';
-    document.documentElement.style.backgroundColor = '#FFFFFF';
+    const setWhiteBackground = () => {
+      document.body.style.backgroundColor = '#FFFFFF';
+      document.body.style.background = '#FFFFFF';
+      document.documentElement.style.backgroundColor = '#FFFFFF';
+      document.documentElement.style.background = '#FFFFFF';
+      
+      // Remove any black background from images or elements
+      const allImages = document.querySelectorAll('img');
+      allImages.forEach(img => {
+        if (img.src && (img.src.includes('icon') || img.src.includes('logo'))) {
+          img.style.backgroundColor = '#FFFFFF';
+          img.style.background = '#FFFFFF';
+        }
+      });
+    };
 
-    // Start fade-in animation immediately
-    setIsAnimating(true);
+    // Set immediately
+    setWhiteBackground();
+
+    // Also set on DOMContentLoaded if not already loaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setWhiteBackground);
+    }
 
     // Hide splash screen after animation
     const timer = setTimeout(() => {
       setIsVisible(false);
-      // Clean up styles
-      document.body.style.backgroundColor = '';
-      document.documentElement.style.backgroundColor = '';
     }, 2000); // Show for 2 seconds total
 
     return () => {
       clearTimeout(timer);
-      document.body.style.backgroundColor = '';
-      document.documentElement.style.backgroundColor = '';
+      document.removeEventListener('DOMContentLoaded', setWhiteBackground);
     };
   }, []);
 
