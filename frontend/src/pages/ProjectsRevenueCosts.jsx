@@ -342,17 +342,39 @@ const ProjectsRevenueCosts = () => {
   const handleExportSingleProject = async (projectId) => {
     try {
       setExporting(true);
-      const response = await exportAPI.exportProject(projectId);
+      
+      // Find project for filename
+      const project = projects.find(p => p._id === projectId);
+      const projectCode = project?.projectCode || projectId;
+      
+      // Build params with project filter and date filters if applied
+      const params = { projectId };
+      
+      if (appliedFilters.year) {
+        const yearNum = parseInt(appliedFilters.year);
+        params.startDate = new Date(yearNum, 0, 1).toISOString();
+        params.endDate = new Date(yearNum, 11, 31, 23, 59, 59).toISOString();
+        
+        // If month is also selected, adjust dates
+        if (appliedFilters.month) {
+          const monthNum = parseInt(appliedFilters.month) - 1; // 0-indexed
+          params.startDate = new Date(yearNum, monthNum, 1).toISOString();
+          params.endDate = new Date(yearNum, monthNum + 1, 0, 23, 59, 59).toISOString();
+        }
+      }
+      
+      const response = await exportAPI.exportRevenueCosts(params);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Project_Financial_Report_${projectId}.xlsx`);
+      link.setAttribute('download', `Revenue_Expenses_${projectCode}_${Date.now()}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       toast.success('Export started');
     } catch (error) {
-      toast.error('Failed to export project');
+      console.error('Export error:', error);
+      toast.error(error.response?.data?.message || 'Failed to export project');
     } finally {
       setExporting(false);
     }

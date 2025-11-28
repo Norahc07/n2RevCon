@@ -715,10 +715,16 @@ export const exportProject = async (req, res) => {
 export const exportRevenueCosts = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, projectId } = req.query;
     
     const revenueFilter = { createdBy: userId, status: { $ne: 'cancelled' } };
     const expenseFilter = { createdBy: userId, status: { $ne: 'cancelled' } };
+
+    // Filter by project if provided
+    if (projectId) {
+      revenueFilter.projectId = projectId;
+      expenseFilter.projectId = projectId;
+    }
 
     if (startDate || endDate) {
       revenueFilter.date = {};
