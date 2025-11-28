@@ -28,9 +28,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+    // Only logout on 401 (Unauthorized), not on 400 (Bad Request/Validation errors) or 429 (Rate Limit)
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+      // Don't logout if we're already on the login page
+      if (window.location.pathname !== '/login') {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

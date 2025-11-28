@@ -41,8 +41,8 @@ const ProjectDetails = () => {
     description: '',
     amount: '',
     date: new Date().toISOString().split('T')[0],
-    category: 'operational',
-    status: 'recorded',
+    category: 'other',
+    status: 'pending',
     notes: ''
   });
   const [newBilling, setNewBilling] = useState({
@@ -292,8 +292,8 @@ const ProjectDetails = () => {
         description: '',
         amount: '',
         date: new Date().toISOString().split('T')[0],
-        category: 'operational',
-        status: 'recorded',
+        category: 'other',
+        status: 'pending',
         notes: ''
       });
       fetchExpenses();
@@ -978,9 +978,10 @@ const ProjectDetails = () => {
                   onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
                 >
-                  <option value="operational">Operational</option>
-                  <option value="material">Material</option>
                   <option value="labor">Labor</option>
+                  <option value="materials">Materials</option>
+                  <option value="equipment">Equipment</option>
+                  <option value="travel">Travel</option>
                   <option value="overhead">Overhead</option>
                   <option value="other">Other</option>
                 </select>
@@ -992,8 +993,10 @@ const ProjectDetails = () => {
                   onChange={(e) => setNewExpense({ ...newExpense, status: e.target.value })}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
                 >
-                  <option value="recorded">Recorded</option>
-                  <option value="confirmed">Confirmed</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="paid">Paid</option>
+                  <option value="cancelled">Cancelled</option>
                 </select>
               </div>
               <div>

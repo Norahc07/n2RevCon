@@ -261,7 +261,7 @@ const ProjectsDescription = () => {
                   <th className="text-left p-4 font-semibold text-gray-700">Client</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Location</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Status</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Budget</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Transaction Price</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Start Date</th>
                   <th className="text-left p-4 font-semibold text-gray-700">End Date</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Actions</th>
