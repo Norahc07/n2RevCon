@@ -322,36 +322,33 @@ const ProjectsDescription = () => {
                       </span>
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/projects/${project._id}`);
                           }}
-                          className="flex items-center gap-1 text-primary hover:text-red-700 font-medium transition-colors duration-200"
+                          className="p-2 text-primary hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
                           title="View"
                         >
-                          <EyeIcon className="w-4 h-4" />
-                          <span className="hidden lg:inline">View</span>
+                          <EyeIcon className="w-5 h-5" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/projects/${project._id}/edit`);
                           }}
-                          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
                           title="Edit"
                         >
-                          <PencilIcon className="w-4 h-4" />
-                          <span className="hidden lg:inline">Edit</span>
+                          <PencilIcon className="w-5 h-5" />
                         </button>
                         <button
                           onClick={(e) => handleDelete(project._id, project.projectName, e)}
-                          className="flex items-center gap-1 text-red-600 hover:text-red-700 font-medium transition-colors duration-200"
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
                           title="Delete"
                         >
-                          <TrashIcon className="w-4 h-4" />
-                          <span className="hidden lg:inline">Delete</span>
+                          <TrashIcon className="w-5 h-5" />
                         </button>
                       </div>
                     </td>

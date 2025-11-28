@@ -289,7 +289,7 @@ const ProjectDetails = () => {
 
   const tabs = [
     { id: 'description', label: 'Description' },
-    { id: 'revenue', label: 'Revenue & Costs' },
+    { id: 'revenue', label: 'Revenue & Expenses' },
     { id: 'billing', label: 'Billing & Collections' },
   ];
 
