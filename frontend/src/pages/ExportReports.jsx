@@ -45,7 +45,7 @@ const ExportReports = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success('Revenue vs Costs report exported successfully');
+      toast.success('Revenue vs. Expenses report exported successfully');
     } catch (error) {
       toast.error('Failed to export report');
     } finally {
@@ -125,9 +125,9 @@ const ExportReports = () => {
           </div>
         </div>
 
-        {/* Revenue vs Costs */}
+        {/* Revenue vs Expenses */}
         <div className="card">
-          <h2 className="text-xl font-semibold mb-4">Revenue vs Costs</h2>
+          <h2 className="text-xl font-semibold mb-4">Revenue vs. Expenses</h2>
           <p className="text-sm text-gray-600 mb-4">
             Export revenue and expenses comparison report for a date range.
           </p>
@@ -161,7 +161,7 @@ const ExportReports = () => {
               disabled={loading}
               className="w-full btn-primary disabled:opacity-50"
             >
-              {loading ? 'Exporting...' : 'Export Revenue vs Costs'}
+              {loading ? 'Exporting...' : 'Export Revenue vs. Expenses'}
             </button>
           </div>
         </div>

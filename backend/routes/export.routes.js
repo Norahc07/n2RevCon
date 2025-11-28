@@ -20,7 +20,7 @@ router.get('/projects', exportProjects);
 // Export project report
 router.get('/project/:id', exportProject);
 
-// Export revenue vs costs
+// Export revenue vs expenses
 router.get('/revenue-costs', exportRevenueCosts);
 
 // Export billing & collections

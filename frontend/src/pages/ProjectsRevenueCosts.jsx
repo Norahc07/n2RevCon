@@ -46,9 +46,11 @@ const ProjectsRevenueCosts = () => {
 
   // Table states
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState(''); // 'revenue', 'costs', 'net'
+  const [sortBy, setSortBy] = useState(''); // 'revenue', 'expenses', 'net'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Chart view state
   const [chartView, setChartView] = useState('project'); // 'project' or 'month'
@@ -95,6 +97,7 @@ const ProjectsRevenueCosts = () => {
       month: filterMonth,
       project: selectedProject,
     });
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
   // Reset filters
@@ -107,6 +110,7 @@ const ProjectsRevenueCosts = () => {
       month: '',
       project: 'all',
     });
+    setCurrentPage(1); // Reset to first page when filters reset
   };
 
   // Filter projects based on applied filters
@@ -183,8 +187,8 @@ const ProjectsRevenueCosts = () => {
       }
 
       const totalRevenue = projectRevenues.reduce((sum, r) => sum + (r.amount || 0), 0);
-      const totalCosts = projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const netIncome = totalRevenue - totalCosts;
+      const totalExpenses = projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const netIncome = totalRevenue - totalExpenses;
 
       // Get year and month for display
       const year = appliedFilters.year || new Date(project.startDate).getFullYear();
@@ -199,7 +203,7 @@ const ProjectsRevenueCosts = () => {
         year,
         month,
         totalRevenue,
-        totalCosts,
+        totalExpenses,
         netIncome,
         status: project.status,
         project: project,
@@ -234,9 +238,9 @@ const ProjectsRevenueCosts = () => {
         if (sortBy === 'revenue') {
           aVal = a.totalRevenue;
           bVal = b.totalRevenue;
-        } else if (sortBy === 'costs') {
-          aVal = a.totalCosts;
-          bVal = b.totalCosts;
+        } else if (sortBy === 'expenses') {
+          aVal = a.totalExpenses;
+          bVal = b.totalExpenses;
         } else if (sortBy === 'net') {
           aVal = a.netIncome;
           bVal = b.netIncome;
@@ -255,16 +259,28 @@ const ProjectsRevenueCosts = () => {
     return data;
   }, [projectFinancialData, searchQuery, statusFilter, sortBy, sortOrder]);
 
+  // Pagination
+  const totalPages = Math.ceil(tableData.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return tableData.slice(startIndex, startIndex + itemsPerPage);
+  }, [tableData, currentPage, itemsPerPage]);
+
+  // Reset to first page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
   // Calculate totals
   const totals = useMemo(() => {
     return tableData.reduce(
       (acc, item) => {
         acc.revenue += item.totalRevenue;
-        acc.costs += item.totalCosts;
+        acc.expenses += item.totalExpenses;
         acc.net += item.netIncome;
         return acc;
       },
-      { revenue: 0, costs: 0, net: 0 }
+      { revenue: 0, expenses: 0, net: 0 }
     );
   }, [tableData]);
 
@@ -275,7 +291,7 @@ const ProjectsRevenueCosts = () => {
       return tableData.map((item) => ({
         name: item.projectName.length > 15 ? item.projectName.substring(0, 15) + '...' : item.projectName,
         Revenue: item.totalRevenue,
-        Costs: item.totalCosts,
+        Expenses: item.totalExpenses,
       }));
     } else {
       // Group by month
@@ -283,10 +299,10 @@ const ProjectsRevenueCosts = () => {
       tableData.forEach((item) => {
         const month = item.month;
         if (!monthMap[month]) {
-          monthMap[month] = { Revenue: 0, Costs: 0 };
+          monthMap[month] = { Revenue: 0, Expenses: 0 };
         }
         monthMap[month].Revenue += item.totalRevenue;
-        monthMap[month].Costs += item.totalCosts;
+        monthMap[month].Expenses += item.totalExpenses;
       });
       return Object.entries(monthMap).map(([month, data]) => ({
         name: month,
@@ -329,7 +345,7 @@ const ProjectsRevenueCosts = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Revenue_Costs_${new Date().toISOString().split('T')[0]}.xlsx`);
+      link.setAttribute('download', `Revenue_Expenses_${new Date().toISOString().split('T')[0]}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -357,7 +373,7 @@ const ProjectsRevenueCosts = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Revenue_Costs_${appliedFilters.year}.xlsx`);
+      link.setAttribute('download', `Revenue_Expenses_${appliedFilters.year}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -400,7 +416,7 @@ const ProjectsRevenueCosts = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">Revenue vs. Costs</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Revenue vs. Expenses</h1>
         <div className="flex gap-2">
           <button
             onClick={handleExportCurrentView}
@@ -538,8 +554,8 @@ const ProjectsRevenueCosts = () => {
           <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.revenue)}</p>
         </div>
         <div className="card shadow-md">
-          <h3 className="text-sm font-medium text-gray-500 mb-1">Total Costs</h3>
-          <p className="text-2xl font-bold text-red-600">{formatCurrency(totals.costs)}</p>
+          <h3 className="text-sm font-medium text-gray-500 mb-1">Total Expenses</h3>
+          <p className="text-2xl font-bold text-red-600">{formatCurrency(totals.expenses)}</p>
         </div>
         <div className="card shadow-md">
           <h3 className="text-sm font-medium text-gray-500 mb-1">Net Income</h3>
@@ -584,7 +600,7 @@ const ProjectsRevenueCosts = () => {
             <Tooltip formatter={(value) => formatCurrency(value)} />
             <Legend />
             <Bar dataKey="Revenue" fill="#EF4444" />
-            <Bar dataKey="Costs" fill="#374151" />
+            <Bar dataKey="Expenses" fill="#374151" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -638,11 +654,11 @@ const ProjectsRevenueCosts = () => {
                 </th>
                 <th
                   className="border border-gray-300 px-4 py-3 text-left font-semibold cursor-pointer hover:bg-gray-200"
-                  onClick={() => handleSort('costs')}
+                  onClick={() => handleSort('expenses')}
                 >
                   <div className="flex items-center gap-1">
-                    Total Costs
-                    {sortBy === 'costs' && (
+                    Total Expenses
+                    {sortBy === 'expenses' && (
                       sortOrder === 'asc' ? <ArrowUpIcon className="w-4 h-4" /> : <ArrowDownIcon className="w-4 h-4" />
                     )}
                   </div>
@@ -663,14 +679,14 @@ const ProjectsRevenueCosts = () => {
               </tr>
             </thead>
             <tbody>
-              {tableData.length === 0 ? (
+              {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="border border-gray-300 px-4 py-8 text-center text-gray-500">
                     No projects found
                   </td>
                 </tr>
               ) : (
-                tableData.map((item, index) => (
+                paginatedData.map((item, index) => (
                   <tr
                     key={index}
                     className="hover:bg-gray-50 transition-colors"
@@ -683,7 +699,7 @@ const ProjectsRevenueCosts = () => {
                       {formatCurrency(item.totalRevenue)}
                     </td>
                     <td className="border border-gray-300 px-4 py-3 text-red-600 font-semibold">
-                      {formatCurrency(item.totalCosts)}
+                      {formatCurrency(item.totalExpenses)}
                     </td>
                     <td
                       className={`border border-gray-300 px-4 py-3 font-semibold ${
@@ -723,6 +739,34 @@ const ProjectsRevenueCosts = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+            <div className="text-sm text-gray-600">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, tableData.length)} of {tableData.length} entries
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <span className="px-4 py-2 text-sm text-gray-700">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

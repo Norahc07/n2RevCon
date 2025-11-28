@@ -13,29 +13,36 @@ import Collection from '../models/Collection.model.js';
 export const exportProjects = async (req, res) => {
   try {
     const { year } = req.query;
+    const userId = req.user._id;
     
-    // Build filter - don't filter by userId to match getAllProjects behavior
-    // Exclude deleted projects from export
-    const filter = { deletedAt: null };
+    // Build filter - match Projects Description page behavior
+    // Filter by user and exclude deleted projects
+    const filter = { 
+      createdBy: userId,
+      deletedAt: null 
+    };
     
-    // Filter by year if provided
+    // Filter by year if provided - match frontend logic
+    // Frontend checks: startYear === year || endYear === year || (startYear <= year && endYear >= year)
     if (year) {
       const yearNum = parseInt(year);
-      const startDate = new Date(yearNum, 0, 1);
-      const endDate = new Date(yearNum, 11, 31, 23, 59, 59);
-      filter.$or = [
-        { startDate: { $gte: startDate, $lte: endDate } },
-        { endDate: { $gte: startDate, $lte: endDate } },
-        { 
-          $and: [
-            { startDate: { $lte: startDate } },
-            { endDate: { $gte: endDate } }
-          ]
-        }
-      ];
+      // We'll filter in memory to match exact frontend logic, or use aggregation
+      // For better performance, we'll fetch all user projects and filter in memory
+      // This matches exactly what the frontend does
     }
 
-    const projects = await Project.find(filter).sort({ createdAt: -1 });
+    let projects = await Project.find(filter).sort({ createdAt: -1 });
+    
+    // Apply year filter to match frontend logic exactly
+    if (year) {
+      const yearNum = parseInt(year);
+      projects = projects.filter((project) => {
+        if (!project.startDate || !project.endDate) return false;
+        const startYear = new Date(project.startDate).getFullYear();
+        const endYear = new Date(project.endDate).getFullYear();
+        return startYear === yearNum || endYear === yearNum || (startYear <= yearNum && endYear >= yearNum);
+      });
+    }
 
     if (projects.length === 0) {
       return res.status(404).json({ message: 'No projects found' });
@@ -68,7 +75,7 @@ export const exportProjects = async (req, res) => {
       { header: 'Description', key: 'description', width: 50 },
     ];
 
-    // Style header row
+      // Style header row
     const headerRow = projectsSheet.getRow(1);
     headerRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
     headerRow.fill = {
@@ -76,20 +83,71 @@ export const exportProjects = async (req, res) => {
       pattern: 'solid',
       fgColor: { argb: 'FFDC2626' } // Red background
     };
-    headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
     headerRow.height = 25;
-
-    // Get revenue data for all projects
-    const projectIds = projects.map(p => p._id);
-    const revenues = await Revenue.find({ projectId: { $in: projectIds } });
     
-    // Calculate total revenue per project
+    // Add auto-filter to header row (all columns: A1 to K1 for 11 columns)
+    projectsSheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: 11 }
+    };
+
+    // Get revenue, expense, billing, and collection data for all projects
+    const projectIds = projects.map(p => p._id);
+    const revenues = await Revenue.find({ 
+      projectId: { $in: projectIds },
+      createdBy: userId,
+      status: { $ne: 'cancelled' }
+    });
+    const expenses = await Expense.find({ 
+      projectId: { $in: projectIds },
+      createdBy: userId,
+      status: { $ne: 'cancelled' }
+    });
+    const billings = await Billing.find({ 
+      projectId: { $in: projectIds },
+      createdBy: userId
+    });
+    const collections = await Collection.find({ 
+      projectId: { $in: projectIds },
+      createdBy: userId
+    });
+    
+    // Calculate totals per project
     const revenueMap = {};
     revenues.forEach(rev => {
-      if (!revenueMap[rev.projectId]) {
-        revenueMap[rev.projectId] = 0;
+      const projId = rev.projectId.toString();
+      if (!revenueMap[projId]) {
+        revenueMap[projId] = 0;
       }
-      revenueMap[rev.projectId] += rev.amount || 0;
+      revenueMap[projId] += rev.amount || 0;
+    });
+    
+    const expenseMap = {};
+    expenses.forEach(exp => {
+      const projId = exp.projectId.toString();
+      if (!expenseMap[projId]) {
+        expenseMap[projId] = 0;
+      }
+      expenseMap[projId] += exp.amount || 0;
+    });
+    
+    const billingMap = {};
+    billings.forEach(bill => {
+      const projId = bill.projectId.toString();
+      if (!billingMap[projId]) {
+        billingMap[projId] = 0;
+      }
+      billingMap[projId] += bill.totalAmount || 0;
+    });
+    
+    const collectionMap = {};
+    collections.forEach(coll => {
+      const projId = coll.projectId.toString();
+      if (!collectionMap[projId]) {
+        collectionMap[projId] = 0;
+      }
+      collectionMap[projId] += coll.amount || 0;
     });
 
     // Add project data
@@ -178,7 +236,7 @@ export const exportProjects = async (req, res) => {
           right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
         };
         if (rowNumber > 1) {
-          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
         }
       });
     });
@@ -231,10 +289,24 @@ export const exportProjects = async (req, res) => {
     });
 
     // Format summary sheet
-    summarySheet.getColumn('value').numFmt = '$#,##0.00';
-    summarySheet.getRow(2).getCell('value').numFmt = '0'; // Total Projects as number
     summarySheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return; // Skip header
+      const valueCell = row.getCell('value');
+      
+      // Format based on row content
+      if (rowNumber === 2) {
+        // Total Projects - number format
+        valueCell.numFmt = '0';
+        valueCell.font = { bold: true, size: 12 };
+      } else if (rowNumber === 3) {
+        // Total Budget - peso currency
+        valueCell.numFmt = '₱#,##0.00';
+        valueCell.font = { bold: true, size: 12 };
+      } else if (rowNumber >= 5) {
+        // Status Breakdown - number format (count of projects)
+        valueCell.numFmt = '0';
+      }
+      
       row.eachCell((cell) => {
         cell.border = {
           top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
@@ -243,11 +315,222 @@ export const exportProjects = async (req, res) => {
           right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
         };
         cell.alignment = { vertical: 'middle', horizontal: 'left' };
-        if (rowNumber === 2) {
-          cell.font = { bold: true, size: 12 };
+      });
+    });
+
+    // Add Revenue vs Expenses Sheet
+    const revenueExpenseSheet = workbook.addWorksheet('Revenue vs Expenses', {
+      properties: {
+        tabColor: { argb: 'FF3B82F6' } // Blue color
+      }
+    });
+
+    revenueExpenseSheet.columns = [
+      { header: 'Project Code', key: 'projectCode', width: 18 },
+      { header: 'Project Name', key: 'projectName', width: 35 },
+      { header: 'Client Name', key: 'clientName', width: 25 },
+      { header: 'Total Revenue', key: 'totalRevenue', width: 18 },
+      { header: 'Total Expenses', key: 'totalExpenses', width: 18 },
+      { header: 'Net Income', key: 'netIncome', width: 18 },
+      { header: 'Status', key: 'status', width: 12 },
+    ];
+
+    const revExpHeaderRow = revenueExpenseSheet.getRow(1);
+    revExpHeaderRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    revExpHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' }
+    };
+    revExpHeaderRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
+    revExpHeaderRow.height = 25;
+
+    revenueExpenseSheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: 7 }
+    };
+
+    projects.forEach((project, index) => {
+      const projId = project._id.toString();
+      const totalRevenue = revenueMap[projId] || 0;
+      const totalExpenses = expenseMap[projId] || 0;
+      const netIncome = totalRevenue - totalExpenses;
+      
+      const row = revenueExpenseSheet.addRow({
+        projectCode: project.projectCode || '',
+        projectName: project.projectName || '',
+        clientName: project.clientName || '',
+        totalRevenue: totalRevenue,
+        totalExpenses: totalExpenses,
+        netIncome: netIncome,
+        status: project.status ? project.status.charAt(0).toUpperCase() + project.status.slice(1) : '',
+      });
+
+      if (index % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF9FAFB' }
+        };
+      }
+
+      // Format currency columns
+      row.getCell('totalRevenue').numFmt = '₱#,##0.00';
+      row.getCell('totalExpenses').numFmt = '₱#,##0.00';
+      row.getCell('netIncome').numFmt = '₱#,##0.00';
+      
+      // Color net income based on positive/negative
+      const netIncomeCell = row.getCell('netIncome');
+      if (netIncome >= 0) {
+        netIncomeCell.font = { color: { argb: 'FF059669' }, bold: true };
+      } else {
+        netIncomeCell.font = { color: { argb: 'FFDC2626' }, bold: true };
+      }
+
+      // Style status column
+      const statusCell = row.getCell('status');
+      const status = project.status?.toLowerCase();
+      if (status === 'completed') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true };
+      } else if (status === 'ongoing') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true };
+      } else if (status === 'pending') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true };
+      } else if (status === 'cancelled') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true };
+      }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      row.height = 20;
+    });
+
+    revenueExpenseSheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+        };
+        if (rowNumber > 1) {
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
         }
       });
     });
+
+    revenueExpenseSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    // Add Billing & Collections Sheet
+    const billingCollectionSheet = workbook.addWorksheet('Billing & Collections', {
+      properties: {
+        tabColor: { argb: 'FF8B5CF6' } // Purple color
+      }
+    });
+
+    billingCollectionSheet.columns = [
+      { header: 'Project Code', key: 'projectCode', width: 18 },
+      { header: 'Project Name', key: 'projectName', width: 35 },
+      { header: 'Client Name', key: 'clientName', width: 25 },
+      { header: 'Total Billed', key: 'totalBilled', width: 18 },
+      { header: 'Total Collected', key: 'totalCollected', width: 18 },
+      { header: 'Outstanding Balance', key: 'outstanding', width: 18 },
+      { header: 'Status', key: 'status', width: 12 },
+    ];
+
+    const billCollHeaderRow = billingCollectionSheet.getRow(1);
+    billCollHeaderRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    billCollHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF8B5CF6' }
+    };
+    billCollHeaderRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
+    billCollHeaderRow.height = 25;
+
+    billingCollectionSheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: 7 }
+    };
+
+    projects.forEach((project, index) => {
+      const projId = project._id.toString();
+      const totalBilled = billingMap[projId] || 0;
+      const totalCollected = collectionMap[projId] || 0;
+      const outstanding = totalBilled - totalCollected;
+      
+      const row = billingCollectionSheet.addRow({
+        projectCode: project.projectCode || '',
+        projectName: project.projectName || '',
+        clientName: project.clientName || '',
+        totalBilled: totalBilled,
+        totalCollected: totalCollected,
+        outstanding: outstanding,
+        status: project.status ? project.status.charAt(0).toUpperCase() + project.status.slice(1) : '',
+      });
+
+      if (index % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF9FAFB' }
+        };
+      }
+
+      // Format currency columns
+      row.getCell('totalBilled').numFmt = '₱#,##0.00';
+      row.getCell('totalCollected').numFmt = '₱#,##0.00';
+      row.getCell('outstanding').numFmt = '₱#,##0.00';
+      
+      // Color outstanding based on positive/negative
+      const outstandingCell = row.getCell('outstanding');
+      if (outstanding > 0) {
+        outstandingCell.font = { color: { argb: 'FFDC2626' }, bold: true };
+      } else if (outstanding === 0) {
+        outstandingCell.font = { color: { argb: 'FF059669' }, bold: true };
+      } else {
+        outstandingCell.font = { color: { argb: 'FF10B981' }, bold: true };
+      }
+
+      // Style status column
+      const statusCell = row.getCell('status');
+      const status = project.status?.toLowerCase();
+      if (status === 'completed') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true };
+      } else if (status === 'ongoing') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true };
+      } else if (status === 'pending') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true };
+      } else if (status === 'cancelled') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true };
+      }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      row.height = 20;
+    });
+
+    billingCollectionSheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+        };
+        if (rowNumber > 1) {
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
+        }
+      });
+    });
+
+    billingCollectionSheet.views = [{ state: 'frozen', ySplit: 1 }];
 
     // Set response headers
     res.setHeader(
@@ -399,12 +682,12 @@ export const exportProject = async (req, res) => {
 
     // Format currency columns
     [revenueSheet, expenseSheet, billingSheet, collectionSheet].forEach(sheet => {
-      sheet.getColumn('amount').numFmt = '$#,##0.00';
+      sheet.getColumn('amount').numFmt = '₱#,##0.00';
       if (sheet.getColumn('totalAmount')) {
-        sheet.getColumn('totalAmount').numFmt = '$#,##0.00';
+        sheet.getColumn('totalAmount').numFmt = '₱#,##0.00';
       }
       if (sheet.getColumn('tax')) {
-        sheet.getColumn('tax').numFmt = '$#,##0.00';
+        sheet.getColumn('tax').numFmt = '₱#,##0.00';
       }
     });
 
@@ -426,7 +709,7 @@ export const exportProject = async (req, res) => {
 
 /**
  * @route   GET /api/export/revenue-costs
- * @desc    Export revenue vs costs report
+ * @desc    Export revenue vs expenses report
  * @access  Private
  */
 export const exportRevenueCosts = async (req, res) => {
@@ -505,9 +788,9 @@ export const exportRevenueCosts = async (req, res) => {
       { item: 'Net Profit', amount: totalRevenue - totalExpenses }
     ]);
 
-    revenueSheet.getColumn('amount').numFmt = '$#,##0.00';
-    expenseSheet.getColumn('amount').numFmt = '$#,##0.00';
-    summarySheet.getColumn('amount').numFmt = '$#,##0.00';
+    revenueSheet.getColumn('amount').numFmt = '₱#,##0.00';
+    expenseSheet.getColumn('amount').numFmt = '₱#,##0.00';
+    summarySheet.getColumn('amount').numFmt = '₱#,##0.00';
 
     res.setHeader(
       'Content-Type',
@@ -589,10 +872,10 @@ export const exportBillingCollections = async (req, res) => {
       });
     });
 
-    billingSheet.getColumn('amount').numFmt = '$#,##0.00';
-    billingSheet.getColumn('tax').numFmt = '$#,##0.00';
-    billingSheet.getColumn('totalAmount').numFmt = '$#,##0.00';
-    collectionSheet.getColumn('amount').numFmt = '$#,##0.00';
+    billingSheet.getColumn('amount').numFmt = '₱#,##0.00';
+    billingSheet.getColumn('tax').numFmt = '₱#,##0.00';
+    billingSheet.getColumn('totalAmount').numFmt = '₱#,##0.00';
+    collectionSheet.getColumn('amount').numFmt = '₱#,##0.00';
 
     res.setHeader(
       'Content-Type',
@@ -647,7 +930,7 @@ export const exportSummary = async (req, res) => {
       { metric: 'Outstanding', value: totalBilled - totalCollected }
     ]);
 
-    overviewSheet.getColumn('value').numFmt = '$#,##0.00';
+    overviewSheet.getColumn('value').numFmt = '₱#,##0.00';
 
     res.setHeader(
       'Content-Type',
