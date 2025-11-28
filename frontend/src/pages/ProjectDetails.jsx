@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { projectAPI, revenueAPI, expenseAPI, billingAPI, collectionAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/currency';
-import { PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 const ProjectDetails = () => {
   const { id } = useParams();
@@ -25,6 +25,8 @@ const ProjectDetails = () => {
   // Add modal states
   const [showAddRevenueModal, setShowAddRevenueModal] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [showAddBillingModal, setShowAddBillingModal] = useState(false);
+  const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
   const [newRevenue, setNewRevenue] = useState({
     revenueCode: '',
     description: '',
@@ -41,6 +43,27 @@ const ProjectDetails = () => {
     date: new Date().toISOString().split('T')[0],
     category: 'operational',
     status: 'recorded',
+    notes: ''
+  });
+  const [newBilling, setNewBilling] = useState({
+    invoiceNumber: '',
+    billingDate: new Date().toISOString().split('T')[0],
+    dueDate: '',
+    amount: '',
+    tax: '0',
+    totalAmount: '',
+    status: 'draft',
+    description: '',
+    notes: ''
+  });
+  const [newCollection, setNewCollection] = useState({
+    billingId: '',
+    collectionNumber: '',
+    collectionDate: new Date().toISOString().split('T')[0],
+    amount: '',
+    paymentMethod: 'bank_transfer',
+    status: 'paid',
+    checkNumber: '',
     notes: ''
   });
 
@@ -279,6 +302,80 @@ const ProjectDetails = () => {
     }
   };
 
+  const handleCreateBilling = async (e) => {
+    e.preventDefault();
+    try {
+      const amount = parseFloat(newBilling.amount) || 0;
+      const tax = parseFloat(newBilling.tax) || 0;
+      const totalAmount = amount + tax;
+      
+      await billingAPI.create({
+        projectId: id,
+        invoiceNumber: newBilling.invoiceNumber,
+        billingDate: newBilling.billingDate,
+        dueDate: newBilling.dueDate,
+        amount: amount,
+        tax: tax,
+        totalAmount: totalAmount,
+        status: newBilling.status,
+        description: newBilling.description || undefined,
+        notes: newBilling.notes || undefined,
+      });
+      toast.success('Billing record created successfully');
+      setShowAddBillingModal(false);
+      setNewBilling({
+        invoiceNumber: '',
+        billingDate: new Date().toISOString().split('T')[0],
+        dueDate: '',
+        amount: '',
+        tax: '0',
+        totalAmount: '',
+        status: 'draft',
+        description: '',
+        notes: ''
+      });
+      fetchBillings();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to create billing record');
+    }
+  };
+
+  const handleCreateCollection = async (e) => {
+    e.preventDefault();
+    try {
+      if (!newCollection.billingId) {
+        toast.error('Please select a billing record');
+        return;
+      }
+      
+      await collectionAPI.create({
+        billingId: newCollection.billingId,
+        collectionNumber: newCollection.collectionNumber,
+        collectionDate: newCollection.collectionDate,
+        amount: parseFloat(newCollection.amount),
+        paymentMethod: newCollection.paymentMethod,
+        status: newCollection.status,
+        checkNumber: newCollection.checkNumber || undefined,
+        notes: newCollection.notes || undefined,
+      });
+      toast.success('Collection record created successfully');
+      setShowAddCollectionModal(false);
+      setNewCollection({
+        billingId: '',
+        collectionNumber: '',
+        collectionDate: new Date().toISOString().split('T')[0],
+        amount: '',
+        paymentMethod: 'bank_transfer',
+        status: 'paid',
+        checkNumber: '',
+        notes: ''
+      });
+      fetchCollections();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to create collection record');
+    }
+  };
+
   if (loading || !project) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -430,109 +527,133 @@ const ProjectDetails = () => {
         {activeTab === 'revenue' && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
-              <div 
-                className="card cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => setShowAddRevenueModal(true)}
-                title="Click to add revenue"
-              >
+              <div className="card">
                 <h3 className="text-sm text-gray-600 mb-1">Total Revenue</h3>
                 <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
-                <p className="text-xs text-gray-500 mt-1">Click to add revenue</p>
               </div>
-              <div 
-                className="card cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => setShowAddExpenseModal(true)}
-                title="Click to add expense"
-              >
+              <div className="card">
                 <h3 className="text-sm text-gray-600 mb-1">Total Expenses</h3>
                 <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
-                <p className="text-xs text-gray-500 mt-1">Click to add expense</p>
               </div>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Revenue Records</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-lg">Revenue Records</h3>
+                <button
+                  onClick={() => setShowAddRevenueModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  Add Revenue
+                </button>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b-2 border-gray-200">
-                      <th className="text-left p-2">Code</th>
-                      <th className="text-left p-2">Description</th>
-                      <th className="text-left p-2">Amount</th>
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Actions</th>
+                    <tr className="bg-gray-100 border-b-2 border-gray-300">
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Code</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Description</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Amount</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Date</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {revenues.map((rev) => (
-                      <tr key={rev._id} className="border-b">
-                        <td className="p-2">{rev.revenueCode}</td>
-                        <td className="p-2">{rev.description}</td>
-                        <td className="p-2">{formatCurrency(rev.amount)}</td>
-                        <td className="p-2">{new Date(rev.date).toLocaleDateString()}</td>
-                        <td className="p-2">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setEditingRevenue({ ...rev })}
-                              className="text-blue-600 hover:text-blue-700"
-                              title="Edit"
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteRevenue(rev._id)}
-                              className="text-red-600 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
+                    {revenues.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-gray-500 border border-gray-300">
+                          No revenue records found. Click "Add Revenue" to create one.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      revenues.map((rev) => (
+                        <tr key={rev._id} className="border-b border-gray-200 hover:bg-gray-50">
+                          <td className="px-4 py-3 border border-gray-300">{rev.revenueCode}</td>
+                          <td className="px-4 py-3 border border-gray-300">{rev.description}</td>
+                          <td className="px-4 py-3 border border-gray-300 font-semibold text-green-600">{formatCurrency(rev.amount)}</td>
+                          <td className="px-4 py-3 border border-gray-300">{new Date(rev.date).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 border border-gray-300">
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => setEditingRevenue({ ...rev })}
+                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <PencilIcon className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteRevenue(rev._id)}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Expense Records</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-lg">Expense Records</h3>
+                <button
+                  onClick={() => setShowAddExpenseModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  Add Expense
+                </button>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b-2 border-gray-200">
-                      <th className="text-left p-2">Code</th>
-                      <th className="text-left p-2">Description</th>
-                      <th className="text-left p-2">Amount</th>
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Actions</th>
+                    <tr className="bg-gray-100 border-b-2 border-gray-300">
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Code</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Description</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Amount</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Date</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {expenses.map((exp) => (
-                      <tr key={exp._id} className="border-b">
-                        <td className="p-2">{exp.expenseCode}</td>
-                        <td className="p-2">{exp.description}</td>
-                        <td className="p-2">{formatCurrency(exp.amount)}</td>
-                        <td className="p-2">{new Date(exp.date).toLocaleDateString()}</td>
-                        <td className="p-2">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setEditingExpense({ ...exp })}
-                              className="text-blue-600 hover:text-blue-700"
-                              title="Edit"
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteExpense(exp._id)}
-                              className="text-red-600 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
+                    {expenses.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-gray-500 border border-gray-300">
+                          No expense records found. Click "Add Expense" to create one.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      expenses.map((exp) => (
+                        <tr key={exp._id} className="border-b border-gray-200 hover:bg-gray-50">
+                          <td className="px-4 py-3 border border-gray-300">{exp.expenseCode}</td>
+                          <td className="px-4 py-3 border border-gray-300">{exp.description}</td>
+                          <td className="px-4 py-3 border border-gray-300 font-semibold text-red-600">{formatCurrency(exp.amount)}</td>
+                          <td className="px-4 py-3 border border-gray-300">{new Date(exp.date).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 border border-gray-300">
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => setEditingExpense({ ...exp })}
+                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <PencilIcon className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteExpense(exp._id)}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -543,93 +664,145 @@ const ProjectDetails = () => {
         {activeTab === 'billing' && (
           <div className="space-y-6">
             <div>
-              <h3 className="font-semibold mb-4">Billing Records</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-lg">Billing Records</h3>
+                <button
+                  onClick={() => setShowAddBillingModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  Add Billing
+                </button>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b-2 border-gray-200">
-                      <th className="text-left p-2">Invoice #</th>
-                      <th className="text-left p-2">Billing Date</th>
-                      <th className="text-left p-2">Due Date</th>
-                      <th className="text-left p-2">Amount</th>
-                      <th className="text-left p-2">Status</th>
-                      <th className="text-left p-2">Actions</th>
+                    <tr className="bg-gray-100 border-b-2 border-gray-300">
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Invoice #</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Billing Date</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Due Date</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Amount</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Status</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {billings.map((bill) => (
-                      <tr key={bill._id} className="border-b">
-                        <td className="p-2">{bill.invoiceNumber}</td>
-                        <td className="p-2">{new Date(bill.billingDate).toLocaleDateString()}</td>
-                        <td className="p-2">{new Date(bill.dueDate).toLocaleDateString()}</td>
-                        <td className="p-2">{formatCurrency(bill.totalAmount)}</td>
-                        <td className="p-2 capitalize">{bill.status}</td>
-                        <td className="p-2">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setEditingBilling({ ...bill })}
-                              className="text-blue-600 hover:text-blue-700"
-                              title="Edit"
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteBilling(bill._id)}
-                              className="text-red-600 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
+                    {billings.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="px-4 py-8 text-center text-gray-500 border border-gray-300">
+                          No billing records found. Click "Add Billing" to create one.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      billings.map((bill) => (
+                        <tr key={bill._id} className="border-b border-gray-200 hover:bg-gray-50">
+                          <td className="px-4 py-3 border border-gray-300">{bill.invoiceNumber}</td>
+                          <td className="px-4 py-3 border border-gray-300">{new Date(bill.billingDate).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 border border-gray-300">{new Date(bill.dueDate).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 border border-gray-300 font-semibold">{formatCurrency(bill.totalAmount)}</td>
+                          <td className="px-4 py-3 border border-gray-300">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold capitalize ${
+                              bill.status === 'paid' ? 'bg-green-100 text-green-800' :
+                              bill.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                              bill.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {bill.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 border border-gray-300">
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => setEditingBilling({ ...bill })}
+                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <PencilIcon className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBilling(bill._id)}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Collection Records</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-lg">Collection Records</h3>
+                <button
+                  onClick={() => setShowAddCollectionModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  Add Collection
+                </button>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b-2 border-gray-200">
-                      <th className="text-left p-2">Collection #</th>
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Amount</th>
-                      <th className="text-left p-2">Method</th>
-                      <th className="text-left p-2">Status</th>
-                      <th className="text-left p-2">Actions</th>
+                    <tr className="bg-gray-100 border-b-2 border-gray-300">
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Collection #</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Date</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Amount</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Method</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Status</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {collections.map((col) => (
-                      <tr key={col._id} className="border-b">
-                        <td className="p-2">{col.collectionNumber}</td>
-                        <td className="p-2">{new Date(col.collectionDate).toLocaleDateString()}</td>
-                        <td className="p-2">{formatCurrency(col.amount)}</td>
-                        <td className="p-2 capitalize">{col.paymentMethod?.replace('_', ' ') || 'N/A'}</td>
-                        <td className="p-2 capitalize">{col.status}</td>
-                        <td className="p-2">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setEditingCollection({ ...col })}
-                              className="text-blue-600 hover:text-blue-700"
-                              title="Edit"
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCollection(col._id)}
-                              className="text-red-600 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
+                    {collections.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="px-4 py-8 text-center text-gray-500 border border-gray-300">
+                          No collection records found. Click "Add Collection" to create one.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      collections.map((col) => (
+                        <tr key={col._id} className="border-b border-gray-200 hover:bg-gray-50">
+                          <td className="px-4 py-3 border border-gray-300">{col.collectionNumber}</td>
+                          <td className="px-4 py-3 border border-gray-300">{new Date(col.collectionDate).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 border border-gray-300 font-semibold text-green-600">{formatCurrency(col.amount)}</td>
+                          <td className="px-4 py-3 border border-gray-300 capitalize">{col.paymentMethod?.replace('_', ' ') || 'N/A'}</td>
+                          <td className="px-4 py-3 border border-gray-300">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold capitalize ${
+                              col.status === 'paid' ? 'bg-green-100 text-green-800' :
+                              col.status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
+                              col.status === 'uncollectible' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {col.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 border border-gray-300">
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => setEditingCollection({ ...col })}
+                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <PencilIcon className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCollection(col._id)}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1047,6 +1220,258 @@ const ProjectDetails = () => {
                   Update
                 </button>
                 <button type="button" onClick={() => setEditingBilling(null)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Billing Modal */}
+      {showAddBillingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Add Billing Record</h2>
+              <button onClick={() => setShowAddBillingModal(false)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateBilling} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Invoice Number *</label>
+                <input
+                  type="text"
+                  value={newBilling.invoiceNumber}
+                  onChange={(e) => setNewBilling({ ...newBilling, invoiceNumber: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="e.g., INV-001"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Billing Date *</label>
+                <input
+                  type="date"
+                  value={newBilling.billingDate}
+                  onChange={(e) => setNewBilling({ ...newBilling, billingDate: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Due Date *</label>
+                <input
+                  type="date"
+                  value={newBilling.dueDate}
+                  onChange={(e) => setNewBilling({ ...newBilling, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newBilling.amount}
+                  onChange={(e) => {
+                    const amount = e.target.value;
+                    const tax = parseFloat(newBilling.tax) || 0;
+                    const total = parseFloat(amount) + tax;
+                    setNewBilling({ ...newBilling, amount, totalAmount: total.toString() });
+                  }}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Tax (₱)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newBilling.tax}
+                  onChange={(e) => {
+                    const tax = e.target.value;
+                    const amount = parseFloat(newBilling.amount) || 0;
+                    const total = amount + parseFloat(tax);
+                    setNewBilling({ ...newBilling, tax, totalAmount: total.toString() });
+                  }}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Total Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newBilling.totalAmount}
+                  readOnly
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-50"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status *</label>
+                <select
+                  value={newBilling.status}
+                  onChange={(e) => setNewBilling({ ...newBilling, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="draft">Draft</option>
+                  <option value="sent">Sent</option>
+                  <option value="paid">Paid</option>
+                  <option value="overdue">Overdue</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+                <textarea
+                  value={newBilling.description}
+                  onChange={(e) => setNewBilling({ ...newBilling, description: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                  placeholder="Additional description..."
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                  Add Billing
+                </button>
+                <button type="button" onClick={() => setShowAddBillingModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Collection Modal */}
+      {showAddCollectionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Add Collection Record</h2>
+              <button onClick={() => setShowAddCollectionModal(false)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateCollection} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Billing Record *</label>
+                <select
+                  value={newCollection.billingId}
+                  onChange={(e) => setNewCollection({ ...newCollection, billingId: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="">Select a billing record</option>
+                  {billings.map((bill) => (
+                    <option key={bill._id} value={bill._id}>
+                      {bill.invoiceNumber} - {formatCurrency(bill.totalAmount)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Collection Number *</label>
+                <input
+                  type="text"
+                  value={newCollection.collectionNumber}
+                  onChange={(e) => setNewCollection({ ...newCollection, collectionNumber: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="e.g., COL-001"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Collection Date *</label>
+                <input
+                  type="date"
+                  value={newCollection.collectionDate}
+                  onChange={(e) => setNewCollection({ ...newCollection, collectionDate: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newCollection.amount}
+                  onChange={(e) => setNewCollection({ ...newCollection, amount: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Payment Method *</label>
+                <select
+                  value={newCollection.paymentMethod}
+                  onChange={(e) => setNewCollection({ ...newCollection, paymentMethod: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="cash">Cash</option>
+                  <option value="check">Check</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="credit_card">Credit Card</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              {newCollection.paymentMethod === 'check' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Check Number</label>
+                  <input
+                    type="text"
+                    value={newCollection.checkNumber}
+                    onChange={(e) => setNewCollection({ ...newCollection, checkNumber: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                    placeholder="Check number"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1">Status *</label>
+                <select
+                  value={newCollection.status}
+                  onChange={(e) => setNewCollection({ ...newCollection, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="paid">Paid</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="partial">Partial</option>
+                  <option value="uncollectible">Uncollectible</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                <textarea
+                  value={newCollection.notes}
+                  onChange={(e) => setNewCollection({ ...newCollection, notes: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                  placeholder="Additional notes..."
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                  Add Collection
+                </button>
+                <button type="button" onClick={() => setShowAddCollectionModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
                   Cancel
                 </button>
               </div>

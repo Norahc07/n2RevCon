@@ -5,6 +5,15 @@
 @layer base {
   body {
     @apply bg-white text-accent;
+    background-color: #FFFFFF !important;
+  }
+  
+  html {
+    background-color: #FFFFFF !important;
+  }
+  
+  #root {
+    background-color: #FFFFFF !important;
   }
 }
 

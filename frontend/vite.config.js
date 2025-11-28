@@ -20,6 +20,7 @@ export default defineConfig({
         categories: ['business', 'productivity'],
         scope: '/',
         start_url: '/',
+        prefer_related_applications: false,
         icons: [
           {
             src: '/n2RevConLogo.png',

@@ -8,6 +8,7 @@
   "theme_color": "#DC2626",
   "orientation": "any",
   "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
   "shortcuts": [
     {
       "name": "Dashboard",

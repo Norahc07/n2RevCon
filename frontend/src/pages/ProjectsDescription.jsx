@@ -15,6 +15,7 @@ import {
   TrashIcon,
   MagnifyingGlassIcon,
   ChevronDownIcon,
+  ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import { exportAPI } from '../services/api';
 
@@ -24,6 +25,7 @@ const ProjectsDescription = () => {
   const [year, setYear] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [focusedYearDropdown, setFocusedYearDropdown] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -177,10 +179,16 @@ const ProjectsDescription = () => {
           {/* Year Filter */}
           <div className="relative flex-1 sm:flex-initial">
             <CalendarIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
-            <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
+            {focusedYearDropdown ? (
+              <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
+            ) : (
+              <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
+            )}
             <select
               value={year}
               onChange={(e) => setYear(e.target.value)}
+              onFocus={() => setFocusedYearDropdown(true)}
+              onBlur={() => setFocusedYearDropdown(false)}
               className="w-full border-2 border-gray-300 rounded-lg pl-10 pr-10 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 bg-white appearance-none cursor-pointer"
             >
               <option value="">All Years</option>
