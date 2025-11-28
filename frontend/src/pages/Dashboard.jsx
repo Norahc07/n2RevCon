@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { dashboardAPI, projectAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { PieChart } from '@mui/x-charts/PieChart';
@@ -37,11 +37,11 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
   useEffect(() => {
     fetchSummary();
-  }, [year]);
+  }, [fetchSummary]);
 
   // Check and show notification permission prompt
   useEffect(() => {
@@ -77,16 +77,16 @@ const Dashboard = () => {
     }
   }, [user]);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const response = await projectAPI.getAll();
       setProjects(response.data.projects || []);
     } catch (error) {
       console.error('Failed to load projects for year filter:', error);
     }
-  };
+  }, []);
 
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
       setLoading(true);
       const params = projectStatusViewAll ? { viewAll: true } : year === 'all' ? { viewAll: true } : { year: parseInt(year) };
@@ -97,11 +97,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchSummary();
-  }, [projectStatusViewAll]);
+  }, [year, projectStatusViewAll]);
 
   // Handle allow notification
   const handleAllowNotification = async () => {
@@ -157,6 +153,52 @@ const Dashboard = () => {
     localStorage.setItem('notification-prompt-dismissed', new Date().toISOString());
   };
 
+  // Get available years from projects
+  const availableYears = useMemo(() => {
+    if (!projects || projects.length === 0) {
+      return [new Date().getFullYear()]; // Fallback to current year
+    }
+    const years = new Set();
+    projects.forEach((project) => {
+      if (project.startDate) {
+        try {
+          const startYear = new Date(project.startDate).getFullYear();
+          if (!isNaN(startYear)) {
+            years.add(startYear);
+          }
+        } catch (e) {
+          console.warn('Invalid startDate:', project.startDate);
+        }
+      }
+      if (project.endDate) {
+        try {
+          const endYear = new Date(project.endDate).getFullYear();
+          if (!isNaN(endYear)) {
+            years.add(endYear);
+          }
+        } catch (e) {
+          console.warn('Invalid endDate:', project.endDate);
+        }
+      }
+      // Also add years in between start and end dates
+      if (project.startDate && project.endDate) {
+        try {
+          const startYear = new Date(project.startDate).getFullYear();
+          const endYear = new Date(project.endDate).getFullYear();
+          if (!isNaN(startYear) && !isNaN(endYear)) {
+            for (let y = Math.min(startYear, endYear); y <= Math.max(startYear, endYear); y++) {
+              years.add(y);
+            }
+          }
+        } catch (e) {
+          console.warn('Invalid date range:', project.startDate, project.endDate);
+        }
+      }
+    });
+    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    return sortedYears.length > 0 ? sortedYears : [new Date().getFullYear()];
+  }, [projects]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -164,30 +206,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  // Get available years from projects
-  const availableYears = useMemo(() => {
-    const years = new Set();
-    projects.forEach((project) => {
-      if (project.startDate) {
-        const startYear = new Date(project.startDate).getFullYear();
-        years.add(startYear);
-      }
-      if (project.endDate) {
-        const endYear = new Date(project.endDate).getFullYear();
-        years.add(endYear);
-      }
-      // Also add years in between start and end dates
-      if (project.startDate && project.endDate) {
-        const startYear = new Date(project.startDate).getFullYear();
-        const endYear = new Date(project.endDate).getFullYear();
-        for (let y = startYear; y <= endYear; y++) {
-          years.add(y);
-        }
-      }
-    });
-    return Array.from(years).sort((a, b) => b - a);
-  }, [projects]);
 
   if (!summary) {
     return <div className="text-center text-gray-500">No data available</div>;
