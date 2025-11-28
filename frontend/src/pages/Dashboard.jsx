@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { dashboardAPI } from '../services/api';
+import { useState, useEffect, useMemo } from 'react';
+import { dashboardAPI, projectAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { LineChart } from '@mui/x-charts/LineChart';
@@ -17,6 +17,7 @@ import {
   ArrowPathIcon,
   BellIcon,
   XMarkIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import {
   requestNotificationPermission,
@@ -27,11 +28,16 @@ import {
 const Dashboard = () => {
   const { user } = useAuth();
   const [summary, setSummary] = useState(null);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [year, setYear] = useState(new Date().getFullYear().toString());
   const [projectStatusViewAll, setProjectStatusViewAll] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [requestingPermission, setRequestingPermission] = useState(false);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   useEffect(() => {
     fetchSummary();
@@ -71,10 +77,19 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  const fetchProjects = async () => {
+    try {
+      const response = await projectAPI.getAll();
+      setProjects(response.data.projects || []);
+    } catch (error) {
+      console.error('Failed to load projects for year filter:', error);
+    }
+  };
+
   const fetchSummary = async () => {
     try {
       setLoading(true);
-      const params = projectStatusViewAll ? { viewAll: true } : { year };
+      const params = projectStatusViewAll ? { viewAll: true } : year === 'all' ? { viewAll: true } : { year: parseInt(year) };
       const response = await dashboardAPI.getSummary(params);
       setSummary(response.data);
     } catch (error) {
@@ -150,6 +165,30 @@ const Dashboard = () => {
     );
   }
 
+  // Get available years from projects
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    projects.forEach((project) => {
+      if (project.startDate) {
+        const startYear = new Date(project.startDate).getFullYear();
+        years.add(startYear);
+      }
+      if (project.endDate) {
+        const endYear = new Date(project.endDate).getFullYear();
+        years.add(endYear);
+      }
+      // Also add years in between start and end dates
+      if (project.startDate && project.endDate) {
+        const startYear = new Date(project.startDate).getFullYear();
+        const endYear = new Date(project.endDate).getFullYear();
+        for (let y = startYear; y <= endYear; y++) {
+          years.add(y);
+        }
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [projects]);
+
   if (!summary) {
     return <div className="text-center text-gray-500">No data available</div>;
   }
@@ -183,16 +222,53 @@ const Dashboard = () => {
     neutralLight: '#9CA3AF',  // Gray-400
   };
 
-  // Prepare data for Revenue vs Expenses Line Chart (by month)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const revenueVsExpensesData = months.map((month, index) => {
-    const revenueMonth = summary.revenueVsExpenses?.revenue?.find(r => r._id === index + 1);
-    const expenseMonth = summary.revenueVsExpenses?.expenses?.find(e => e._id === index + 1);
+  // Prepare data for Revenue vs Expenses Line Chart (by project)
+  const revenueData = summary.revenueVsExpenses?.revenue || [];
+  const expenseData = summary.revenueVsExpenses?.expenses || [];
+  
+  // Get all unique projects from both revenue and expense data
+  const allProjectIds = new Set();
+  revenueData.forEach(item => {
+    if (item._id) allProjectIds.add(item._id.toString());
+  });
+  expenseData.forEach(item => {
+    if (item._id) allProjectIds.add(item._id.toString());
+  });
+  
+  // Create a map for quick lookup
+  const revenueMap = new Map();
+  revenueData.forEach(item => {
+    if (item._id) {
+      revenueMap.set(item._id.toString(), item);
+    }
+  });
+  
+  const expenseMap = new Map();
+  expenseData.forEach(item => {
+    if (item._id) {
+      expenseMap.set(item._id.toString(), item);
+    }
+  });
+  
+  // Build the chart data
+  const revenueVsExpensesData = Array.from(allProjectIds).map(projectId => {
+    const revenueItem = revenueMap.get(projectId);
+    const expenseItem = expenseMap.get(projectId);
+    const projectName = revenueItem?.projectName || expenseItem?.projectName || 'Unknown Project';
+    const projectCode = revenueItem?.projectCode || expenseItem?.projectCode || 'N/A';
+    const displayName = projectCode !== 'N/A' ? `${projectCode}` : projectName;
+    
     return {
-      month,
-      Revenue: revenueMonth?.total || 0,
-      Expenses: expenseMonth?.total || 0,
+      project: displayName,
+      projectName: projectName,
+      Revenue: revenueItem?.total || 0,
+      Expenses: expenseItem?.total || 0,
     };
+  }).sort((a, b) => {
+    // Sort by total revenue + expenses descending
+    const totalA = a.Revenue + a.Expenses;
+    const totalB = b.Revenue + b.Expenses;
+    return totalB - totalA;
   });
 
   // Prepare data for Billing Status Pie Chart with consistent colors
@@ -286,18 +362,27 @@ const Dashboard = () => {
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Dashboard</h1>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <CalendarIcon className="w-5 h-5 text-gray-600 flex-shrink-0" />
+        <div className="relative w-full sm:w-auto">
+          <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+          <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
           <select
             value={year}
-            onChange={(e) => setYear(parseInt(e.target.value))}
-            className="input-field w-full sm:w-auto border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 text-sm sm:text-base"
+            onChange={(e) => setYear(e.target.value)}
+            className="w-full sm:w-auto border-2 border-gray-300 rounded-lg pl-10 pr-10 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 text-sm sm:text-base appearance-none cursor-pointer bg-white"
           >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-              <option key={y} value={y}>
-                {y}
+            <option value="all">All Years</option>
+            {availableYears.length > 0 ? (
+              availableYears.map((y) => (
+                <option key={y} value={y.toString()}>
+                  {y}
+                </option>
+              ))
+            ) : (
+              // Fallback to current year if no projects found yet
+              <option value={new Date().getFullYear().toString()}>
+                {new Date().getFullYear()}
               </option>
-            ))}
+            )}
           </select>
         </div>
       </div>
@@ -363,13 +448,14 @@ const Dashboard = () => {
         <div className="card lg:col-span-3">
           <div className="flex items-center gap-2 mb-4">
             <ChartBarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
-            <h2 className="text-lg sm:text-xl font-semibold truncate">Revenue vs Expenses ({year})</h2>
+            <h2 className="text-lg sm:text-xl font-semibold truncate">Revenue vs Expenses ({year === 'all' ? 'All Years' : year})</h2>
           </div>
           <div className="w-full overflow-x-auto" style={{ minHeight: '250px', height: '300px' }}>
             <LineChart
               xAxis={[{
                 scaleType: 'point',
-                data: revenueVsExpensesData.map(item => item.month),
+                data: revenueVsExpensesData.map(item => item.project),
+                label: 'Projects',
               }]}
               series={[
                 {
@@ -393,7 +479,7 @@ const Dashboard = () => {
         <div className="card lg:col-span-1">
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
-            <h2 className="text-lg sm:text-xl font-semibold truncate">Billing Status ({year})</h2>
+            <h2 className="text-lg sm:text-xl font-semibold truncate">Billing Status ({year === 'all' ? 'All Years' : year})</h2>
           </div>
           {billingStatusData.length > 0 ? (
             <div className="w-full flex flex-col items-center">
@@ -452,7 +538,7 @@ const Dashboard = () => {
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <BuildingOfficeIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
               <h2 className="text-lg sm:text-xl font-semibold truncate">
-                Project Status {projectStatusViewAll ? '(All Time)' : `(${year})`}
+                Project Status {projectStatusViewAll ? '(All Time)' : `(${year === 'all' ? 'All Years' : year})`}
               </h2>
             </div>
             <button
@@ -460,7 +546,7 @@ const Dashboard = () => {
               className="flex items-center gap-1 text-sm text-primary hover:text-primaryLight font-medium transition-colors duration-200 whitespace-nowrap"
             >
               <ArrowPathIcon className="w-4 h-4" />
-              {projectStatusViewAll ? `View ${year}` : 'View All'}
+              {projectStatusViewAll ? `View ${year === 'all' ? 'All Years' : year}` : 'View All'}
             </button>
           </div>
           {projectStatusDataWithColors.length > 0 ? (
@@ -493,7 +579,7 @@ const Dashboard = () => {
         <div className="card">
           <div className="flex items-center gap-2 mb-4">
             <BanknotesIcon className="w-6 h-6 text-gray-700" />
-            <h2 className="text-xl font-semibold">Payment Status ({year})</h2>
+            <h2 className="text-xl font-semibold">Payment Status ({year === 'all' ? 'All Years' : year})</h2>
           </div>
           {paymentStatusData.length > 0 ? (
             <div className="w-full" style={{ height: '300px' }}>

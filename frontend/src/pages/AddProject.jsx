@@ -302,7 +302,9 @@ const AddProject = () => {
         {step === 3 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200">
-              <CurrencyDollarIcon className="w-6 h-6 text-red-600" />
+              <div className="w-6 h-6 flex items-center justify-center text-red-600 font-bold text-xl">
+                ₱
+              </div>
               <h2 className="text-2xl font-bold text-gray-800">Transaction Price</h2>
             </div>
             <div>
@@ -310,7 +312,9 @@ const AddProject = () => {
                 Transaction Price
               </label>
               <div className="relative">
-                <CurrencyDollarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-bold text-lg">
+                  ₱
+                </div>
                 <input
                   type="number"
                   min="0"

@@ -13,6 +13,7 @@ import {
   CheckCircleIcon,
   ClockIcon,
   ChevronDownIcon,
+  ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import {
   PieChart,
@@ -45,6 +46,9 @@ const ProjectsBillingCollections = () => {
     month: '',
     project: 'all',
   });
+  
+  // Dropdown focus states
+  const [focusedDropdown, setFocusedDropdown] = useState(null);
 
   // Table states
   const [searchQuery, setSearchQuery] = useState('');
@@ -505,6 +509,8 @@ const ProjectsBillingCollections = () => {
               <select
                 value={filterYear}
                 onChange={(e) => setFilterYear(e.target.value)}
+                onFocus={() => setFocusedDropdown('year')}
+                onBlur={() => setFocusedDropdown(null)}
                 className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer"
               >
                 <option value="">All Years</option>
@@ -514,7 +520,11 @@ const ProjectsBillingCollections = () => {
                   </option>
                 ))}
               </select>
-              <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              {focusedDropdown === 'year' ? (
+                <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
             </div>
           </div>
           <div>
@@ -523,6 +533,8 @@ const ProjectsBillingCollections = () => {
               <select
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
+                onFocus={() => setFocusedDropdown('month')}
+                onBlur={() => setFocusedDropdown(null)}
                 disabled={!filterYear}
                 className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer"
               >
@@ -540,7 +552,11 @@ const ProjectsBillingCollections = () => {
                 <option value="11">November</option>
                 <option value="12">December</option>
               </select>
-              <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              {focusedDropdown === 'month' ? (
+                <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
             </div>
           </div>
           <div>
@@ -549,6 +565,8 @@ const ProjectsBillingCollections = () => {
               <select
                 value={selectedProject}
                 onChange={(e) => setSelectedProject(e.target.value)}
+                onFocus={() => setFocusedDropdown('project')}
+                onBlur={() => setFocusedDropdown(null)}
                 className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer"
               >
                 <option value="all">All Projects</option>
@@ -558,7 +576,11 @@ const ProjectsBillingCollections = () => {
                   </option>
                 ))}
               </select>
-              <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              {focusedDropdown === 'project' ? (
+                <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
             </div>
           </div>
           <div className="flex items-end gap-2">

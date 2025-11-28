@@ -63,39 +63,91 @@ export const getDashboardSummary = async (req, res) => {
       }
     ]);
 
-    // Total revenue and expenses for the year
+    // Revenue and expenses grouped by project
+    const revenueMatch = {
+      status: { $ne: 'cancelled' },
+      createdBy: userId
+    };
+    if (shouldFilterByYear) {
+      revenueMatch.date = { $gte: startDate, $lte: endDate };
+    }
+
+    const expenseMatch = {
+      status: { $ne: 'cancelled' },
+      createdBy: userId
+    };
+    if (shouldFilterByYear) {
+      expenseMatch.date = { $gte: startDate, $lte: endDate };
+    }
+
     const revenueData = await Revenue.aggregate([
       {
-        $match: {
-          date: { $gte: startDate, $lte: endDate },
-          status: { $ne: 'cancelled' },
-          createdBy: userId
-        }
+        $match: revenueMatch
       },
       {
         $group: {
-          _id: { $month: '$date' },
+          _id: '$projectId',
           total: { $sum: '$amount' }
         }
       },
-      { $sort: { _id: 1 } }
+      {
+        $lookup: {
+          from: 'projects',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'project'
+        }
+      },
+      {
+        $unwind: {
+          path: '$project',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          total: 1,
+          projectName: { $ifNull: ['$project.projectName', 'Unknown Project'] },
+          projectCode: { $ifNull: ['$project.projectCode', 'N/A'] }
+        }
+      },
+      { $sort: { total: -1 } }
     ]);
 
     const expenseData = await Expense.aggregate([
       {
-        $match: {
-          date: { $gte: startDate, $lte: endDate },
-          status: { $ne: 'cancelled' },
-          createdBy: userId
-        }
+        $match: expenseMatch
       },
       {
         $group: {
-          _id: { $month: '$date' },
+          _id: '$projectId',
           total: { $sum: '$amount' }
         }
       },
-      { $sort: { _id: 1 } }
+      {
+        $lookup: {
+          from: 'projects',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'project'
+        }
+      },
+      {
+        $unwind: {
+          path: '$project',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          total: 1,
+          projectName: { $ifNull: ['$project.projectName', 'Unknown Project'] },
+          projectCode: { $ifNull: ['$project.projectCode', 'N/A'] }
+        }
+      },
+      { $sort: { total: -1 } }
     ]);
 
     // Billing status (filtered by year and user)
