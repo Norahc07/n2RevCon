@@ -16,38 +16,79 @@ const SplashScreen = () => {
       return;
     }
 
-    // Start fade-in animation
-    setTimeout(() => {
-      setIsAnimating(true);
-    }, 50);
+    // Immediately set white background to override any default splash
+    document.body.style.backgroundColor = '#FFFFFF';
+    document.documentElement.style.backgroundColor = '#FFFFFF';
+
+    // Start fade-in animation immediately
+    setIsAnimating(true);
 
     // Hide splash screen after animation
     const timer = setTimeout(() => {
       setIsVisible(false);
+      // Clean up styles
+      document.body.style.backgroundColor = '';
+      document.documentElement.style.backgroundColor = '';
     }, 2000); // Show for 2 seconds total
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      document.body.style.backgroundColor = '';
+      document.documentElement.style.backgroundColor = '';
+    };
   }, []);
 
   if (!isVisible) return null;
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-700 ${
-        isAnimating ? 'opacity-100' : 'opacity-0'
-      }`}
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{
         backgroundColor: '#FFFFFF',
+        animation: 'fadeIn 0.3s ease-in',
       }}
     >
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes logoScale {
+          0% {
+            transform: scale(0.8);
+            opacity: 0;
+          }
+          50% {
+            transform: scale(1.05);
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .splash-logo {
+          animation: logoScale 0.8s ease-out forwards;
+        }
+        .splash-title {
+          animation: fadeInUp 0.6s ease-out 0.4s forwards;
+          opacity: 0;
+        }
+      `}</style>
+      
       <div className="flex flex-col items-center justify-center">
         {/* Logo with smooth scale and fade animation - white background container */}
         <div
-          className={`bg-white rounded-2xl p-6 shadow-lg transform transition-all duration-700 ease-out ${
-            isAnimating
-              ? 'scale-100 opacity-100'
-              : 'scale-75 opacity-0'
-          }`}
+          className="bg-white rounded-2xl p-6 shadow-lg splash-logo"
           style={{
             backgroundColor: '#FFFFFF',
           }}
@@ -68,13 +109,7 @@ const SplashScreen = () => {
         </div>
         
         {/* App name with fade-in */}
-        <div
-          className={`mt-6 transition-all duration-700 delay-300 ${
-            isAnimating
-              ? 'opacity-100 translate-y-0'
-              : 'opacity-0 translate-y-4'
-          }`}
-        >
+        <div className="mt-6 splash-title">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">N2 RevCon</h1>
         </div>
       </div>

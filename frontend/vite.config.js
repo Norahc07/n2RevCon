@@ -9,6 +9,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'n2RevConLogo.png'],
+      injectManifest: false,
+      strategies: 'generateSW',
       manifest: {
         name: 'N2 RevCon',
         short_name: 'N2 RevCon',
