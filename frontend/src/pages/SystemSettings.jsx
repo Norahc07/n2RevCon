@@ -185,6 +185,8 @@ const SystemSettings = () => {
 
 // Company Information Tab Component
 const CompanyInformationTab = ({ company, onSave, saving }) => {
+  const { currency: contextCurrency } = useCurrency();
+  
   const [formData, setFormData] = useState({
     companyName: company?.companyName || '',
     companyCode: company?.companyCode || '',
@@ -202,7 +204,7 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
       website: company?.contact?.website || '',
     },
     settings: {
-      currency: company?.settings?.currency || 'PHP',
+      currency: company?.settings?.currency || contextCurrency || 'PHP',
       dateFormat: company?.settings?.dateFormat || 'MM/DD/YYYY',
     },
   });
@@ -210,33 +212,71 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
   // Update formData when company data loads or changes
   useEffect(() => {
     if (company) {
-      setFormData({
-        companyName: company.companyName || '',
-        companyCode: company.companyCode || '',
-        logo: company.logo || '',
-        address: {
-          street: company.address?.street || '',
-          city: company.address?.city || '',
-          state: company.address?.state || '',
-          zipCode: company.address?.zipCode || '',
-          country: company.address?.country || '',
-        },
-        contact: {
-          phone: company.contact?.phone || '',
-          email: company.contact?.email || '',
-          website: company.contact?.website || '',
-        },
-        settings: {
-          currency: company.settings?.currency || 'PHP',
-          dateFormat: company.settings?.dateFormat || 'MM/DD/YYYY',
-        },
+      // Use saved currency from company, or fallback to context currency, or default to PHP
+      const savedCurrency = company.settings?.currency || contextCurrency || 'PHP';
+      
+      setFormData(prev => {
+        // Only update if currency actually changed to avoid unnecessary re-renders
+        const currencyChanged = prev.settings?.currency !== savedCurrency;
+        const companyDataChanged = prev.companyName !== company.companyName;
+        
+        // Update if currency changed or if this is initial load
+        if (currencyChanged || companyDataChanged || !prev.companyName) {
+          return {
+            companyName: company.companyName || '',
+            companyCode: company.companyCode || '',
+            logo: company.logo || '',
+            address: {
+              street: company.address?.street || '',
+              city: company.address?.city || '',
+              state: company.address?.state || '',
+              zipCode: company.address?.zipCode || '',
+              country: company.address?.country || '',
+            },
+            contact: {
+              phone: company.contact?.phone || '',
+              email: company.contact?.email || '',
+              website: company.contact?.website || '',
+            },
+            settings: {
+              currency: savedCurrency,
+              dateFormat: company.settings?.dateFormat || 'MM/DD/YYYY',
+            },
+          };
+        }
+        return prev;
       });
     }
-  }, [company]);
+  }, [company, contextCurrency]);
+  
+  // Also watch for currency changes specifically
+  const companyCurrency = company?.settings?.currency || contextCurrency || 'PHP';
+  useEffect(() => {
+    if (companyCurrency) {
+      setFormData(prev => {
+        // Only update if currency actually changed
+        if (prev.settings?.currency !== companyCurrency) {
+          return {
+            ...prev,
+            settings: {
+              ...prev.settings,
+              currency: companyCurrency,
+            },
+          };
+        }
+        return prev;
+      });
+    }
+  }, [companyCurrency]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave('company', formData);
+    const result = await onSave('company', formData);
+    // Immediately update formData currency if save was successful
+    if (result && formData.settings?.currency) {
+      // The currency is already in formData, but ensure it's synced
+      // The useEffect will handle the update when company state changes
+    }
   };
 
   return (
