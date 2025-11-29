@@ -13,6 +13,7 @@ import {
   ChevronUpIcon,
   PencilIcon,
   TrashIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -44,6 +45,12 @@ const ProjectsRevenueCosts = () => {
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  // Edit modal states
+  const [editingProject, setEditingProject] = useState(null);
+  const [editingRevenue, setEditingRevenue] = useState(null);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchAllData();
@@ -343,6 +350,118 @@ const ProjectsRevenueCosts = () => {
     }
   };
 
+  // Handle edit project - open modal with revenue/expense records
+  const handleEditProject = (project, e) => {
+    e.stopPropagation();
+    setEditingProject(project);
+    setShowEditModal(true);
+  };
+
+  // Get revenue and expense records for editing project
+  const projectRevenues = useMemo(() => {
+    if (!editingProject) return [];
+    return allRevenues.filter((r) => {
+      const projectId = r.projectId?._id || r.projectId;
+      return projectId === editingProject._id;
+    });
+  }, [allRevenues, editingProject]);
+
+  const projectExpenses = useMemo(() => {
+    if (!editingProject) return [];
+    return allExpenses.filter((e) => {
+      const projectId = e.projectId?._id || e.projectId;
+      return projectId === editingProject._id;
+    });
+  }, [allExpenses, editingProject]);
+
+  // Handle edit revenue
+  const handleEditRevenue = (revenue) => {
+    setEditingRevenue({
+      ...revenue,
+      date: revenue.date ? new Date(revenue.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    });
+  };
+
+  // Handle edit expense
+  const handleEditExpense = (expense) => {
+    setEditingExpense({
+      ...expense,
+      date: expense.date ? new Date(expense.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    });
+  };
+
+  // Handle update revenue
+  const handleUpdateRevenue = async (e) => {
+    e.preventDefault();
+    try {
+      await revenueAPI.update(editingRevenue._id, {
+        revenueCode: editingRevenue.revenueCode,
+        description: editingRevenue.description,
+        amount: parseFloat(editingRevenue.amount),
+        date: editingRevenue.date,
+        category: editingRevenue.category,
+        status: editingRevenue.status,
+        notes: editingRevenue.notes || undefined,
+      });
+      toast.success('Revenue record updated');
+      setEditingRevenue(null);
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to update revenue record');
+    }
+  };
+
+  // Handle update expense
+  const handleUpdateExpense = async (e) => {
+    e.preventDefault();
+    try {
+      await expenseAPI.update(editingExpense._id, {
+        expenseCode: editingExpense.expenseCode,
+        description: editingExpense.description,
+        amount: parseFloat(editingExpense.amount),
+        date: editingExpense.date,
+        category: editingExpense.category,
+        status: editingExpense.status,
+        notes: editingExpense.notes || undefined,
+      });
+      toast.success('Expense record updated');
+      setEditingExpense(null);
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to update expense record');
+    }
+  };
+
+  // Handle delete revenue
+  const handleDeleteRevenue = async (revenueId, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this revenue record?')) {
+      return;
+    }
+    try {
+      await revenueAPI.delete(revenueId);
+      toast.success('Revenue record deleted');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to delete revenue record');
+    }
+  };
+
+  // Handle delete expense
+  const handleDeleteExpense = async (expenseId, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this expense record?')) {
+      return;
+    }
+    try {
+      await expenseAPI.delete(expenseId);
+      toast.success('Expense record deleted');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to delete expense record');
+    }
+  };
+
   // Handle delete project
   const handleDelete = async (projectId, projectName, e) => {
     e.stopPropagation();
@@ -377,13 +496,14 @@ const ProjectsRevenueCosts = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="card p-6 shadow-md">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="card p-4 shadow-md">
+        <div className="flex items-center gap-2 mb-3">
+          <FunnelIcon className="w-5 h-5 text-gray-600" />
           <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
               Year
             </label>
             <div className="relative">
@@ -392,7 +512,7 @@ const ProjectsRevenueCosts = () => {
                 onChange={(e) => setFilterYear(e.target.value)}
                 onFocus={() => setFocusedDropdown('year')}
                 onBlur={() => setFocusedDropdown(null)}
-                className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer"
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
               >
                 <option value="">All Years</option>
                 {availableYears.map((year) => (
@@ -402,14 +522,14 @@ const ProjectsRevenueCosts = () => {
                 ))}
               </select>
               {focusedDropdown === 'year' ? (
-                <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               ) : (
-                <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               )}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
               Month
             </label>
             <div className="relative">
@@ -419,7 +539,7 @@ const ProjectsRevenueCosts = () => {
                 onFocus={() => setFocusedDropdown('month')}
                 onBlur={() => setFocusedDropdown(null)}
                 disabled={!filterYear}
-                className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
               >
                 <option value="">All Months</option>
                 <option value="1">January</option>
@@ -436,21 +556,21 @@ const ProjectsRevenueCosts = () => {
                 <option value="12">December</option>
               </select>
               {focusedDropdown === 'month' ? (
-                <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               ) : (
-                <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               )}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Project</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
             <div className="relative">
               <select
                 value={selectedProject}
                 onChange={(e) => setSelectedProject(e.target.value)}
                 onFocus={() => setFocusedDropdown('project')}
                 onBlur={() => setFocusedDropdown(null)}
-                className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer"
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
               >
                 <option value="all">All Projects</option>
                 {projects.map((project) => (
@@ -460,42 +580,46 @@ const ProjectsRevenueCosts = () => {
                 ))}
               </select>
               {focusedDropdown === 'project' ? (
-                <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               ) : (
-                <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               )}
             </div>
           </div>
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
             <button
               onClick={handleApplyFilters}
-              className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
             >
               Apply Filter
             </button>
+          </div>
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
             <button
               onClick={handleExportCurrentView}
               disabled={exporting || tableData.length === 0}
-              className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex"
             >
               {exporting ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  <span>Exporting...</span>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  <span className="hidden sm:inline">Exporting...</span>
                 </>
               ) : (
                 <>
-                  <DocumentArrowDownIcon className="w-5 h-5" />
-                  <span>Export to Excel</span>
+                  <DocumentArrowDownIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export to Excel</span>
+                  <span className="sm:hidden">Export</span>
                 </>
               )}
             </button>
             <button
               onClick={handleResetFilters}
-              className="flex items-center gap-2 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+              title="Reset Filters"
             >
-              <ArrowPathIcon className="w-5 h-5" />
-              Reset
+              <ArrowPathIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Reset</span>
             </button>
           </div>
         </div>
@@ -612,10 +736,7 @@ const ProjectsRevenueCosts = () => {
                     <td className="border border-gray-300 px-4 py-3">
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/projects/${item.project._id}/edit`);
-                          }}
+                          onClick={(e) => handleEditProject(item.project, e)}
                           className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
                           title="Edit"
                         >
@@ -666,6 +787,330 @@ const ProjectsRevenueCosts = () => {
         )}
       </div>
 
+    </div>
+  );
+};
+
+      {/* Edit Project Modal - Shows Revenue & Expense Records */}
+      {showEditModal && editingProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Records - {editingProject.projectName}</h2>
+              <button onClick={() => {
+                setShowEditModal(false);
+                setEditingProject(null);
+                setEditingRevenue(null);
+                setEditingExpense(null);
+              }} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Revenue Records Section */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 text-green-600">Revenue Records</h3>
+              {projectRevenues.length === 0 ? (
+                <p className="text-gray-500 text-sm">No revenue records found</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border border-gray-300">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Code</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Description</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Amount</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Date</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {projectRevenues.map((rev) => (
+                        <tr key={rev._id} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{rev.revenueCode}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{rev.description}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-green-600">{formatCurrency(rev.amount)}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(rev.date).toLocaleDateString()}</td>
+                          <td className="border border-gray-300 px-3 py-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditRevenue(rev)}
+                                className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                                title="Edit"
+                              >
+                                <PencilIcon className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteRevenue(rev._id, e)}
+                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Expense Records Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-red-600">Expense Records</h3>
+              {projectExpenses.length === 0 ? (
+                <p className="text-gray-500 text-sm">No expense records found</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border border-gray-300">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Code</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Description</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Amount</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Date</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {projectExpenses.map((exp) => (
+                        <tr key={exp._id} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{exp.expenseCode}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{exp.description}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-red-600">{formatCurrency(exp.amount)}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(exp.date).toLocaleDateString()}</td>
+                          <td className="border border-gray-300 px-3 py-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditExpense(exp)}
+                                className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                                title="Edit"
+                              >
+                                <PencilIcon className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteExpense(exp._id, e)}
+                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Revenue Modal - Same structure as Add Revenue Modal */}
+      {editingRevenue && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Revenue Record</h2>
+              <button onClick={() => setEditingRevenue(null)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateRevenue} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Revenue Code *</label>
+                <input
+                  type="text"
+                  value={editingRevenue.revenueCode || ''}
+                  onChange={(e) => setEditingRevenue({ ...editingRevenue, revenueCode: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description *</label>
+                <input
+                  type="text"
+                  value={editingRevenue.description || ''}
+                  onChange={(e) => setEditingRevenue({ ...editingRevenue, description: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingRevenue.amount || ''}
+                  onChange={(e) => setEditingRevenue({ ...editingRevenue, amount: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={editingRevenue.date || ''}
+                  onChange={(e) => setEditingRevenue({ ...editingRevenue, date: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  value={editingRevenue.category || 'service'}
+                  onChange={(e) => setEditingRevenue({ ...editingRevenue, category: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                >
+                  <option value="service">Service</option>
+                  <option value="product">Product</option>
+                  <option value="consultation">Consultation</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <select
+                  value={editingRevenue.status || 'recorded'}
+                  onChange={(e) => setEditingRevenue({ ...editingRevenue, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                >
+                  <option value="recorded">Recorded</option>
+                  <option value="confirmed">Confirmed</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                <textarea
+                  value={editingRevenue.notes || ''}
+                  onChange={(e) => setEditingRevenue({ ...editingRevenue, notes: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                  Update Revenue
+                </button>
+                <button type="button" onClick={() => setEditingRevenue(null)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Expense Modal - Same structure as Add Expense Modal */}
+      {editingExpense && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Expense Record</h2>
+              <button onClick={() => setEditingExpense(null)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateExpense} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Expense Code *</label>
+                <input
+                  type="text"
+                  value={editingExpense.expenseCode || ''}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, expenseCode: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description *</label>
+                <input
+                  type="text"
+                  value={editingExpense.description || ''}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, description: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingExpense.amount || ''}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, amount: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={editingExpense.date || ''}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, date: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  value={editingExpense.category || 'other'}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, category: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                >
+                  <option value="labor">Labor</option>
+                  <option value="materials">Materials</option>
+                  <option value="equipment">Equipment</option>
+                  <option value="travel">Travel</option>
+                  <option value="overhead">Overhead</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <select
+                  value={editingExpense.status || 'pending'}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="paid">Paid</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                <textarea
+                  value={editingExpense.notes || ''}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, notes: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold">
+                  Update Expense
+                </button>
+                <button type="button" onClick={() => setEditingExpense(null)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

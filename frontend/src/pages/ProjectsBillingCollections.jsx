@@ -16,6 +16,7 @@ import {
   ChevronUpIcon,
   PencilIcon,
   TrashIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -445,6 +446,126 @@ const ProjectsBillingCollections = () => {
     }
   };
 
+  // Handle edit project - open modal with billing/collection records
+  const handleEditProject = (project, e) => {
+    e.stopPropagation();
+    setEditingProject(project);
+    setShowEditModal(true);
+  };
+
+  // Get billing and collection records for editing project
+  const projectBillings = useMemo(() => {
+    if (!editingProject) return [];
+    return allBillings.filter((b) => {
+      const projectId = b.projectId?._id || b.projectId;
+      return projectId === editingProject._id;
+    });
+  }, [allBillings, editingProject]);
+
+  const projectCollections = useMemo(() => {
+    if (!editingProject) return [];
+    return allCollections.filter((c) => {
+      const projectId = c.projectId?._id || c.projectId;
+      return projectId === editingProject._id;
+    });
+  }, [allCollections, editingProject]);
+
+  // Handle edit billing
+  const handleEditBilling = (billing) => {
+    setEditingBilling({
+      ...billing,
+      billingDate: billing.billingDate ? new Date(billing.billingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      dueDate: billing.dueDate ? new Date(billing.dueDate).toISOString().split('T')[0] : '',
+      amount: billing.amount || (billing.totalAmount ? (billing.totalAmount - (billing.tax || 0)).toString() : ''),
+      tax: billing.tax || '0',
+      totalAmount: billing.totalAmount || billing.amount || '',
+    });
+  };
+
+  // Handle edit collection
+  const handleEditCollection = (collection) => {
+    setEditingCollection({
+      ...collection,
+      collectionDate: collection.collectionDate ? new Date(collection.collectionDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      billingId: collection.billingId?._id || collection.billingId || '',
+    });
+  };
+
+  // Handle update billing
+  const handleUpdateBilling = async (e) => {
+    e.preventDefault();
+    try {
+      await billingAPI.update(editingBilling._id, {
+        invoiceNumber: editingBilling.invoiceNumber,
+        billingDate: editingBilling.billingDate,
+        dueDate: editingBilling.dueDate,
+        amount: parseFloat(editingBilling.amount),
+        tax: parseFloat(editingBilling.tax) || 0,
+        totalAmount: parseFloat(editingBilling.totalAmount),
+        status: editingBilling.status,
+        description: editingBilling.description || undefined,
+        notes: editingBilling.notes || undefined,
+      });
+      toast.success('Billing record updated');
+      setEditingBilling(null);
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to update billing record');
+    }
+  };
+
+  // Handle update collection
+  const handleUpdateCollection = async (e) => {
+    e.preventDefault();
+    try {
+      await collectionAPI.update(editingCollection._id, {
+        billingId: editingCollection.billingId,
+        collectionNumber: editingCollection.collectionNumber,
+        collectionDate: editingCollection.collectionDate,
+        amount: parseFloat(editingCollection.amount),
+        paymentMethod: editingCollection.paymentMethod,
+        status: editingCollection.status,
+        checkNumber: editingCollection.checkNumber || undefined,
+        notes: editingCollection.notes || undefined,
+      });
+      toast.success('Collection record updated');
+      setEditingCollection(null);
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to update collection record');
+    }
+  };
+
+  // Handle delete billing
+  const handleDeleteBilling = async (billingId, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this billing record?')) {
+      return;
+    }
+    try {
+      await billingAPI.delete(billingId);
+      toast.success('Billing record deleted');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to delete billing record');
+    }
+  };
+
+  // Handle delete collection
+  const handleDeleteCollection = async (collectionId, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this collection record?')) {
+      return;
+    }
+    try {
+      await collectionAPI.delete(collectionId);
+      toast.success('Collection record deleted');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to delete collection record');
+    }
+  };
+
   // Handle delete project
   const handleDelete = async (projectId, projectName, e) => {
     e.stopPropagation();
@@ -479,20 +600,21 @@ const ProjectsBillingCollections = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="card p-6 shadow-md">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="card p-4 shadow-md">
+        <div className="flex items-center gap-2 mb-3">
+          <FunnelIcon className="w-5 h-5 text-gray-600" />
           <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Year</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Year</label>
             <div className="relative">
               <select
                 value={filterYear}
                 onChange={(e) => setFilterYear(e.target.value)}
                 onFocus={() => setFocusedDropdown('year')}
                 onBlur={() => setFocusedDropdown(null)}
-                className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer"
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
               >
                 <option value="">All Years</option>
                 {availableYears.map((year) => (
@@ -502,14 +624,14 @@ const ProjectsBillingCollections = () => {
                 ))}
               </select>
               {focusedDropdown === 'year' ? (
-                <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               ) : (
-                <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               )}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Month</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Month</label>
             <div className="relative">
               <select
                 value={filterMonth}
@@ -517,7 +639,7 @@ const ProjectsBillingCollections = () => {
                 onFocus={() => setFocusedDropdown('month')}
                 onBlur={() => setFocusedDropdown(null)}
                 disabled={!filterYear}
-                className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
               >
                 <option value="">All Months</option>
                 <option value="1">January</option>
@@ -534,21 +656,21 @@ const ProjectsBillingCollections = () => {
                 <option value="12">December</option>
               </select>
               {focusedDropdown === 'month' ? (
-                <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               ) : (
-                <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               )}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Project</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
             <div className="relative">
               <select
                 value={selectedProject}
                 onChange={(e) => setSelectedProject(e.target.value)}
                 onFocus={() => setFocusedDropdown('project')}
                 onBlur={() => setFocusedDropdown(null)}
-                className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer"
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
               >
                 <option value="all">All Projects</option>
                 {projects.map((project) => (
@@ -558,42 +680,46 @@ const ProjectsBillingCollections = () => {
                 ))}
               </select>
               {focusedDropdown === 'project' ? (
-                <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               ) : (
-                <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
               )}
             </div>
           </div>
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
             <button
               onClick={handleApplyFilters}
-              className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
             >
               Apply Filter
             </button>
+          </div>
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
             <button
               onClick={handleExportCurrentFilter}
               disabled={exporting || tableData.length === 0}
-              className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex"
             >
               {exporting ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  <span>Exporting...</span>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  <span className="hidden sm:inline">Exporting...</span>
                 </>
               ) : (
                 <>
-                  <DocumentArrowDownIcon className="w-5 h-5" />
-                  <span>Export to Excel</span>
+                  <DocumentArrowDownIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export to Excel</span>
+                  <span className="sm:hidden">Export</span>
                 </>
               )}
             </button>
             <button
               onClick={handleResetFilters}
-              className="flex items-center gap-2 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+              title="Reset Filters"
             >
-              <ArrowPathIcon className="w-5 h-5" />
-              Reset
+              <ArrowPathIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Reset</span>
             </button>
           </div>
         </div>
@@ -791,10 +917,7 @@ const ProjectsBillingCollections = () => {
                     <td className="border border-gray-300 px-4 py-3">
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/projects/${item.project._id}/edit`);
-                          }}
+                          onClick={(e) => handleEditProject(item.project, e)}
                           className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
                           title="Edit"
                         >
@@ -845,6 +968,392 @@ const ProjectsBillingCollections = () => {
         )}
       </div>
 
+    </div>
+  );
+};
+
+      {/* Edit Project Modal - Shows Billing & Collection Records */}
+      {showEditModal && editingProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Records - {editingProject.projectName}</h2>
+              <button onClick={() => {
+                setShowEditModal(false);
+                setEditingProject(null);
+                setEditingBilling(null);
+                setEditingCollection(null);
+              }} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Billing Records Section */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 text-blue-600">Billing Records</h3>
+              {projectBillings.length === 0 ? (
+                <p className="text-gray-500 text-sm">No billing records found</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border border-gray-300">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Invoice #</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Billing Date</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Due Date</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Amount</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Status</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {projectBillings.map((bill) => (
+                        <tr key={bill._id} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{bill.invoiceNumber}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(bill.billingDate).toLocaleDateString()}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{bill.dueDate ? new Date(bill.dueDate).toLocaleDateString() : '-'}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold">{formatCurrency(bill.totalAmount || bill.amount)}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              bill.status === 'paid' ? 'bg-green-100 text-green-800' :
+                              bill.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                              bill.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {bill.status}
+                            </span>
+                          </td>
+                          <td className="border border-gray-300 px-3 py-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditBilling(bill)}
+                                className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                                title="Edit"
+                              >
+                                <PencilIcon className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteBilling(bill._id, e)}
+                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Collection Records Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-green-600">Collection Records</h3>
+              {projectCollections.length === 0 ? (
+                <p className="text-gray-500 text-sm">No collection records found</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border border-gray-300">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Collection #</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Date</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Amount</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Method</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Status</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {projectCollections.map((col) => (
+                        <tr key={col._id} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{col.collectionNumber}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(col.collectionDate).toLocaleDateString()}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-green-600">{formatCurrency(col.amount)}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{col.paymentMethod}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              col.status === 'paid' ? 'bg-green-100 text-green-800' :
+                              col.status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
+                              col.status === 'uncollectible' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {col.status}
+                            </span>
+                          </td>
+                          <td className="border border-gray-300 px-3 py-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditCollection(col)}
+                                className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                                title="Edit"
+                              >
+                                <PencilIcon className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteCollection(col._id, e)}
+                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Billing Modal - Same structure as Add Billing Modal */}
+      {editingBilling && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Billing Record</h2>
+              <button onClick={() => setEditingBilling(null)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateBilling} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Invoice Number *</label>
+                <input
+                  type="text"
+                  value={editingBilling.invoiceNumber || ''}
+                  onChange={(e) => setEditingBilling({ ...editingBilling, invoiceNumber: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Billing Date *</label>
+                <input
+                  type="date"
+                  value={editingBilling.billingDate || ''}
+                  onChange={(e) => setEditingBilling({ ...editingBilling, billingDate: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Due Date</label>
+                <input
+                  type="date"
+                  value={editingBilling.dueDate || ''}
+                  onChange={(e) => setEditingBilling({ ...editingBilling, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingBilling.amount || ''}
+                  onChange={(e) => {
+                    const amount = e.target.value;
+                    const tax = parseFloat(editingBilling.tax) || 0;
+                    const total = parseFloat(amount) + tax;
+                    setEditingBilling({ ...editingBilling, amount, totalAmount: total.toString() });
+                  }}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Tax (₱)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingBilling.tax || '0'}
+                  onChange={(e) => {
+                    const tax = e.target.value;
+                    const amount = parseFloat(editingBilling.amount) || 0;
+                    const total = amount + parseFloat(tax);
+                    setEditingBilling({ ...editingBilling, tax, totalAmount: total.toString() });
+                  }}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Total Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingBilling.totalAmount || ''}
+                  readOnly
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-50"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status *</label>
+                <select
+                  value={editingBilling.status || 'draft'}
+                  onChange={(e) => setEditingBilling({ ...editingBilling, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="draft">Draft</option>
+                  <option value="sent">Sent</option>
+                  <option value="paid">Paid</option>
+                  <option value="overdue">Overdue</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+                <textarea
+                  value={editingBilling.description || ''}
+                  onChange={(e) => setEditingBilling({ ...editingBilling, description: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                  Update Billing
+                </button>
+                <button type="button" onClick={() => setEditingBilling(null)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Collection Modal - Same structure as Add Collection Modal */}
+      {editingCollection && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Collection Record</h2>
+              <button onClick={() => setEditingCollection(null)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateCollection} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Billing Record *</label>
+                <select
+                  value={editingCollection.billingId || ''}
+                  onChange={(e) => setEditingCollection({ ...editingCollection, billingId: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="">Select a billing record</option>
+                  {projectBillings.map((bill) => (
+                    <option key={bill._id} value={bill._id}>
+                      {bill.invoiceNumber} - {formatCurrency(bill.totalAmount || bill.amount)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Collection Number *</label>
+                <input
+                  type="text"
+                  value={editingCollection.collectionNumber || ''}
+                  onChange={(e) => setEditingCollection({ ...editingCollection, collectionNumber: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Collection Date *</label>
+                <input
+                  type="date"
+                  value={editingCollection.collectionDate || ''}
+                  onChange={(e) => setEditingCollection({ ...editingCollection, collectionDate: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingCollection.amount || ''}
+                  onChange={(e) => setEditingCollection({ ...editingCollection, amount: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Payment Method *</label>
+                <select
+                  value={editingCollection.paymentMethod || 'bank_transfer'}
+                  onChange={(e) => setEditingCollection({ ...editingCollection, paymentMethod: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                  <option value="check">Check</option>
+                  <option value="credit_card">Credit Card</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status *</label>
+                <select
+                  value={editingCollection.status || 'paid'}
+                  onChange={(e) => setEditingCollection({ ...editingCollection, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="paid">Paid</option>
+                  <option value="partial">Partial</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="uncollectible">Uncollectible</option>
+                </select>
+              </div>
+              {editingCollection.paymentMethod === 'check' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Check Number</label>
+                  <input
+                    type="text"
+                    value={editingCollection.checkNumber || ''}
+                    onChange={(e) => setEditingCollection({ ...editingCollection, checkNumber: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                <textarea
+                  value={editingCollection.notes || ''}
+                  onChange={(e) => setEditingCollection({ ...editingCollection, notes: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                  Update Collection
+                </button>
+                <button type="button" onClick={() => setEditingCollection(null)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

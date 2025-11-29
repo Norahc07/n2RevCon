@@ -21,10 +21,10 @@
     
     <!-- iOS PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="N2 RevCon" />
     
-    <!-- Prevent default splash screen and black flash -->
+    <!-- Prevent default splash screen and black flash - Set immediately before any rendering -->
     <style>
       * {
         -webkit-tap-highlight-color: transparent;
@@ -32,16 +32,22 @@
       html {
         background-color: #FFFFFF !important;
         background: #FFFFFF !important;
+        -webkit-background-size: cover;
+        background-size: cover;
       }
       body {
         background-color: #FFFFFF !important;
         background: #FFFFFF !important;
         margin: 0;
         padding: 0;
+        -webkit-background-size: cover;
+        background-size: cover;
       }
       #root {
         background-color: #FFFFFF !important;
         background: #FFFFFF !important;
+        -webkit-background-size: cover;
+        background-size: cover;
       }
       /* Hide any default splash screen elements */
       img[src*="splash"], 
@@ -50,7 +56,34 @@
       [class*="splash"] {
         background-color: #FFFFFF !important;
       }
+      /* Prevent any black background flash */
+      @media (prefers-color-scheme: dark) {
+        html, body, #root {
+          background-color: #FFFFFF !important;
+          background: #FFFFFF !important;
+        }
+      }
     </style>
+    <script>
+      // Immediately set white background before any rendering
+      (function() {
+        document.documentElement.style.backgroundColor = '#FFFFFF';
+        document.documentElement.style.background = '#FFFFFF';
+        if (document.body) {
+          document.body.style.backgroundColor = '#FFFFFF';
+          document.body.style.background = '#FFFFFF';
+        }
+        // Also set on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+          document.documentElement.style.backgroundColor = '#FFFFFF';
+          document.documentElement.style.background = '#FFFFFF';
+          if (document.body) {
+            document.body.style.backgroundColor = '#FFFFFF';
+            document.body.style.background = '#FFFFFF';
+          }
+        });
+      })();
+    </script>
     
     <title>N2 RevCon</title>
   </head>

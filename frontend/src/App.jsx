@@ -1,3 +1,4 @@
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -27,6 +28,32 @@ import ChangePassword from './pages/ChangePassword';
 
 function App() {
   const { user } = useAuth();
+
+  // Immediately set white background on mount
+  React.useEffect(() => {
+    // Set white background immediately
+    const setWhiteBg = () => {
+      if (document.documentElement) {
+        document.documentElement.style.setProperty('background-color', '#FFFFFF', 'important');
+        document.documentElement.style.setProperty('background', '#FFFFFF', 'important');
+      }
+      if (document.body) {
+        document.body.style.setProperty('background-color', '#FFFFFF', 'important');
+        document.body.style.setProperty('background', '#FFFFFF', 'important');
+      }
+      const root = document.getElementById('root');
+      if (root) {
+        root.style.setProperty('background-color', '#FFFFFF', 'important');
+        root.style.setProperty('background', '#FFFFFF', 'important');
+      }
+    };
+    
+    setWhiteBg();
+    // Set multiple times to ensure it sticks
+    requestAnimationFrame(setWhiteBg);
+    setTimeout(setWhiteBg, 0);
+    setTimeout(setWhiteBg, 10);
+  }, []);
 
   return (
     <>

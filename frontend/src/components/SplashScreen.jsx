@@ -4,6 +4,59 @@ const SplashScreen = () => {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    // Immediately set white background to override any default splash - BEFORE any checks
+    const setWhiteBackground = () => {
+      // Set on document and body immediately
+      if (document.documentElement) {
+        document.documentElement.style.backgroundColor = '#FFFFFF';
+        document.documentElement.style.background = '#FFFFFF';
+        document.documentElement.setAttribute('style', 
+          document.documentElement.getAttribute('style') + '; background-color: #FFFFFF !important; background: #FFFFFF !important;'
+        );
+      }
+      if (document.body) {
+        document.body.style.backgroundColor = '#FFFFFF';
+        document.body.style.background = '#FFFFFF';
+        document.body.setAttribute('style',
+          document.body.getAttribute('style') + '; background-color: #FFFFFF !important; background: #FFFFFF !important;'
+        );
+      }
+      
+      // Remove any black background from images or elements
+      const allImages = document.querySelectorAll('img');
+      allImages.forEach(img => {
+        if (img.src && (img.src.includes('icon') || img.src.includes('logo') || img.src.includes('splash'))) {
+          img.style.backgroundColor = '#FFFFFF';
+          img.style.background = '#FFFFFF';
+        }
+      });
+      
+      // Remove any default PWA splash screen elements
+      const splashElements = document.querySelectorAll('[class*="splash"], [id*="splash"]');
+      splashElements.forEach(el => {
+        if (el !== document.querySelector('[data-custom-splash]')) {
+          el.style.backgroundColor = '#FFFFFF';
+          el.style.background = '#FFFFFF';
+        }
+      });
+    };
+
+    // Set immediately - highest priority
+    setWhiteBackground();
+
+    // Set multiple times to ensure it sticks
+    requestAnimationFrame(setWhiteBackground);
+    setTimeout(setWhiteBackground, 0);
+    setTimeout(setWhiteBackground, 10);
+    setTimeout(setWhiteBackground, 50);
+
+    // Also set on DOMContentLoaded if not already loaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setWhiteBackground);
+    } else {
+      setWhiteBackground();
+    }
+
     // Check if running as PWA (installed app)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                         (window.navigator.standalone === true) ||
@@ -13,31 +66,6 @@ const SplashScreen = () => {
     if (!isStandalone) {
       setIsVisible(false);
       return;
-    }
-
-    // Immediately set white background to override any default splash
-    const setWhiteBackground = () => {
-      document.body.style.backgroundColor = '#FFFFFF';
-      document.body.style.background = '#FFFFFF';
-      document.documentElement.style.backgroundColor = '#FFFFFF';
-      document.documentElement.style.background = '#FFFFFF';
-      
-      // Remove any black background from images or elements
-      const allImages = document.querySelectorAll('img');
-      allImages.forEach(img => {
-        if (img.src && (img.src.includes('icon') || img.src.includes('logo'))) {
-          img.style.backgroundColor = '#FFFFFF';
-          img.style.background = '#FFFFFF';
-        }
-      });
-    };
-
-    // Set immediately
-    setWhiteBackground();
-
-    // Also set on DOMContentLoaded if not already loaded
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', setWhiteBackground);
     }
 
     // Hide splash screen after animation
@@ -55,9 +83,11 @@ const SplashScreen = () => {
 
   return (
     <div
+      data-custom-splash
       className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FFFFFF !important',
+        background: '#FFFFFF !important',
         animation: 'fadeIn 0.3s ease-in',
       }}
     >

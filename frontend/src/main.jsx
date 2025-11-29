@@ -8,6 +8,23 @@ import { Toaster } from 'react-hot-toast';
 import { initDB } from './utils/offlineStorage';
 import './index.css';
 
+// Immediately set white background before any rendering to prevent black flash
+(function() {
+  if (document.documentElement) {
+    document.documentElement.style.setProperty('background-color', '#FFFFFF', 'important');
+    document.documentElement.style.setProperty('background', '#FFFFFF', 'important');
+  }
+  if (document.body) {
+    document.body.style.setProperty('background-color', '#FFFFFF', 'important');
+    document.body.style.setProperty('background', '#FFFFFF', 'important');
+  }
+  const root = document.getElementById('root');
+  if (root) {
+    root.style.setProperty('background-color', '#FFFFFF', 'important');
+    root.style.setProperty('background', '#FFFFFF', 'important');
+  }
+})();
+
 // Initialize IndexedDB for offline storage
 initDB().catch(console.error);
 

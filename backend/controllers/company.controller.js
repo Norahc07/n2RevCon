@@ -91,7 +91,24 @@ export const updateCompanyProfile = async (req, res) => {
     } else {
       // Merge updates instead of replacing
       Object.keys(req.body).forEach(key => {
-        if (typeof req.body[key] === 'object' && !Array.isArray(req.body[key]) && req.body[key] !== null) {
+        if (key === 'company' && typeof req.body[key] === 'object' && !Array.isArray(req.body[key]) && req.body[key] !== null) {
+          // Special handling for 'company' key - merge its properties directly into company document
+          Object.keys(req.body[key]).forEach(subKey => {
+            if (typeof req.body[key][subKey] === 'object' && !Array.isArray(req.body[key][subKey]) && req.body[key][subKey] !== null) {
+              // Deep merge for nested objects like settings, address, contact
+              if (!company[subKey]) {
+                company[subKey] = {};
+              }
+              company[subKey] = { ...company[subKey], ...req.body[key][subKey] };
+            } else {
+              company[subKey] = req.body[key][subKey];
+            }
+          });
+        } else if (typeof req.body[key] === 'object' && !Array.isArray(req.body[key]) && req.body[key] !== null) {
+          // For other keys, merge normally
+          if (!company[key]) {
+            company[key] = {};
+          }
           company[key] = { ...company[key], ...req.body[key] };
         } else {
           company[key] = req.body[key];

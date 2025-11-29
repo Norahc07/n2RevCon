@@ -14,6 +14,8 @@ import {
   DevicePhoneMobileIcon,
   CheckCircleIcon,
   XMarkIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 
 const SystemSettings = () => {
@@ -83,7 +85,18 @@ const SystemSettings = () => {
       setSaving(true);
       const updateData = { [section]: data };
       const response = await companyAPI.updateProfile(updateData);
-      setCompany(response.data.company);
+      const updatedCompany = response.data.company;
+      
+      // Ensure the response has the updated settings
+      if (section === 'company' && data?.settings) {
+        // Merge the settings to ensure currency is included
+        if (!updatedCompany.settings) {
+          updatedCompany.settings = {};
+        }
+        updatedCompany.settings = { ...updatedCompany.settings, ...data.settings };
+      }
+      
+      setCompany(updatedCompany);
       
       // Update currency context if currency was changed
       if (section === 'company' && data?.settings?.currency) {
@@ -91,8 +104,10 @@ const SystemSettings = () => {
       }
       
       toast.success('Settings saved successfully');
+      return true; // Return success
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save settings');
+      return false; // Return failure
     } finally {
       setSaving(false);
     }
@@ -186,6 +201,7 @@ const SystemSettings = () => {
 // Company Information Tab Component
 const CompanyInformationTab = ({ company, onSave, saving }) => {
   const { currency: contextCurrency } = useCurrency();
+  const [focusedDropdown, setFocusedDropdown] = useState(null);
   
   const [formData, setFormData] = useState({
     companyName: company?.companyName || '',
@@ -212,70 +228,46 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
   // Update formData when company data loads or changes
   useEffect(() => {
     if (company) {
-      // Use saved currency from company, or fallback to context currency, or default to PHP
+      // Use saved currency from company, prioritizing company settings over context
+      // Only use contextCurrency as fallback if company doesn't have settings
       const savedCurrency = company.settings?.currency || contextCurrency || 'PHP';
       
       setFormData(prev => {
-        // Only update if currency actually changed to avoid unnecessary re-renders
-        const currencyChanged = prev.settings?.currency !== savedCurrency;
-        const companyDataChanged = prev.companyName !== company.companyName;
-        
-        // Update if currency changed or if this is initial load
-        if (currencyChanged || companyDataChanged || !prev.companyName) {
-          return {
-            companyName: company.companyName || '',
-            companyCode: company.companyCode || '',
-            logo: company.logo || '',
-            address: {
-              street: company.address?.street || '',
-              city: company.address?.city || '',
-              state: company.address?.state || '',
-              zipCode: company.address?.zipCode || '',
-              country: company.address?.country || '',
-            },
-            contact: {
-              phone: company.contact?.phone || '',
-              email: company.contact?.email || '',
-              website: company.contact?.website || '',
-            },
-            settings: {
-              currency: savedCurrency,
-              dateFormat: company.settings?.dateFormat || 'MM/DD/YYYY',
-            },
-          };
-        }
-        return prev;
+        // Always update formData with the latest company data
+        // This ensures the currency dropdown shows the saved value after save
+        return {
+          companyName: company.companyName || '',
+          companyCode: company.companyCode || '',
+          logo: company.logo || '',
+          address: {
+            street: company.address?.street || '',
+            city: company.address?.city || '',
+            state: company.address?.state || '',
+            zipCode: company.address?.zipCode || '',
+            country: company.address?.country || '',
+          },
+          contact: {
+            phone: company.contact?.phone || '',
+            email: company.contact?.email || '',
+            website: company.contact?.website || '',
+          },
+          settings: {
+            currency: savedCurrency,
+            dateFormat: company.settings?.dateFormat || 'MM/DD/YYYY',
+          },
+        };
       });
     }
   }, [company, contextCurrency]);
-  
-  // Also watch for currency changes specifically
-  const companyCurrency = company?.settings?.currency || contextCurrency || 'PHP';
-  useEffect(() => {
-    if (companyCurrency) {
-      setFormData(prev => {
-        // Only update if currency actually changed
-        if (prev.settings?.currency !== companyCurrency) {
-          return {
-            ...prev,
-            settings: {
-              ...prev.settings,
-              currency: companyCurrency,
-            },
-          };
-        }
-        return prev;
-      });
-    }
-  }, [companyCurrency]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await onSave('company', formData);
-    // Immediately update formData currency if save was successful
+    // The useEffect will update formData when company state changes
+    // But we also ensure formData is preserved with the selected currency
     if (result && formData.settings?.currency) {
-      // The currency is already in formData, but ensure it's synced
-      // The useEffect will handle the update when company state changes
+      // Keep the formData currency value - don't let it revert
+      // The useEffect should update it from the company response
     }
   };
 
@@ -441,36 +433,54 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-              <select
-                value={formData.settings.currency}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  settings: { ...formData.settings, currency: e.target.value }
-                })}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-              >
-                <option value="PHP">PHP (Philippine Peso)</option>
-                <option value="USD">USD (US Dollar)</option>
-                <option value="EUR">EUR (Euro)</option>
-                <option value="GBP">GBP (British Pound)</option>
-                <option value="JPY">JPY</option>
-                <option value="CNY">CNY</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.settings.currency}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    settings: { ...formData.settings, currency: e.target.value }
+                  })}
+                  onFocus={() => setFocusedDropdown('currency')}
+                  onBlur={() => setFocusedDropdown(null)}
+                  className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                >
+                  <option value="PHP">PHP (Philippine Peso)</option>
+                  <option value="USD">USD (US Dollar)</option>
+                  <option value="EUR">EUR (Euro)</option>
+                  <option value="GBP">GBP (British Pound)</option>
+                  <option value="JPY">JPY</option>
+                  <option value="CNY">CNY</option>
+                </select>
+                {focusedDropdown === 'currency' ? (
+                  <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                ) : (
+                  <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
-              <select
-                value={formData.settings.dateFormat}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  settings: { ...formData.settings, dateFormat: e.target.value }
-                })}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-              >
-                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.settings.dateFormat}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    settings: { ...formData.settings, dateFormat: e.target.value }
+                  })}
+                  onFocus={() => setFocusedDropdown('dateFormat')}
+                  onBlur={() => setFocusedDropdown(null)}
+                  className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                >
+                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                  <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                </select>
+                {focusedDropdown === 'dateFormat' ? (
+                  <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                ) : (
+                  <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -751,6 +761,7 @@ const UserManagementTab = ({ users, onRefresh }) => {
 
 // Project Configuration Tab Component
 const ProjectConfigTab = ({ company, onSave, saving }) => {
+  const [focusedDropdown, setFocusedDropdown] = useState(null);
   const [config, setConfig] = useState(company?.projectConfig || {
     autoGenerateId: true,
     idFormat: 'CompanyCode-YYYY-MM-DD-Sequence',
@@ -808,15 +819,24 @@ const ProjectConfigTab = ({ company, onSave, saving }) => {
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Default Project Status
           </label>
-          <select
-            value={config.defaultStatus}
-            onChange={(e) => setConfig({ ...config, defaultStatus: e.target.value })}
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-          >
-            <option value="pending">Pending</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
-          </select>
+          <div className="relative">
+            <select
+              value={config.defaultStatus}
+              onChange={(e) => setConfig({ ...config, defaultStatus: e.target.value })}
+              onFocus={() => setFocusedDropdown('defaultStatus')}
+              onBlur={() => setFocusedDropdown(null)}
+              className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+            >
+              <option value="pending">Pending</option>
+              <option value="ongoing">Ongoing</option>
+              <option value="completed">Completed</option>
+            </select>
+            {focusedDropdown === 'defaultStatus' ? (
+              <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            ) : (
+              <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            )}
+          </div>
         </div>
 
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -849,6 +869,8 @@ const ProjectConfigTab = ({ company, onSave, saving }) => {
 
 // Notification Configuration Tab Component
 const NotificationConfigTab = ({ company, onSave, saving }) => {
+  const [focusedDropdown, setFocusedDropdown] = useState(null);
+  
   // Helper function to convert old timing format to new format
   const convertTimingFormat = (oldTiming) => {
     if (!oldTiming) return { timingType: '3', customDays: null };
@@ -1041,23 +1063,32 @@ const NotificationConfigTab = ({ company, onSave, saving }) => {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Days Before End Date
               </label>
-              <select
-                value={config.timing.timingType}
-                onChange={(e) => setConfig({
-                  ...config,
-                  timing: {
-                    timingType: e.target.value,
-                    customDays: e.target.value === 'custom' ? (config.timing.customDays || 1) : null
-                  }
-                })}
-                disabled={!config.enabled}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              >
-                <option value="1">1 day before end date</option>
-                <option value="2">2 days before end date</option>
-                <option value="3">3 days before end date</option>
-                <option value="custom">Custom days before end date</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={config.timing.timingType}
+                  onChange={(e) => setConfig({
+                    ...config,
+                    timing: {
+                      timingType: e.target.value,
+                      customDays: e.target.value === 'custom' ? (config.timing.customDays || 1) : null
+                    }
+                  })}
+                  onFocus={() => setFocusedDropdown('timing')}
+                  onBlur={() => setFocusedDropdown(null)}
+                  disabled={!config.enabled}
+                  className="w-full px-4 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
+                >
+                  <option value="1">1 day before end date</option>
+                  <option value="2">2 days before end date</option>
+                  <option value="3">3 days before end date</option>
+                  <option value="custom">Custom days before end date</option>
+                </select>
+                {focusedDropdown === 'timing' ? (
+                  <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                ) : (
+                  <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                )}
+              </div>
             </div>
 
             {config.timing.timingType === 'custom' && (
@@ -1237,6 +1268,7 @@ const BackupTab = ({ company, onSave, onBackup, saving }) => {
 
 // Audit Logs Tab Component
 const AuditLogsTab = ({ logs, onRefresh }) => {
+  const [focusedDropdown, setFocusedDropdown] = useState(null);
   const [filter, setFilter] = useState({ entity: '', action: '' });
   const [loading, setLoading] = useState(false);
 
@@ -1283,29 +1315,47 @@ const AuditLogsTab = ({ logs, onRefresh }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Entity</label>
-          <select
-            value={filter.entity}
-            onChange={(e) => setFilter({ ...filter, entity: e.target.value })}
-            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-          >
-            <option value="">All Entities</option>
-            {uniqueEntities.map(entity => (
-              <option key={entity} value={entity}>{entity}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={filter.entity}
+              onChange={(e) => setFilter({ ...filter, entity: e.target.value })}
+              onFocus={() => setFocusedDropdown('entity')}
+              onBlur={() => setFocusedDropdown(null)}
+              className="w-full px-4 pr-10 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+            >
+              <option value="">All Entities</option>
+              {uniqueEntities.map(entity => (
+                <option key={entity} value={entity}>{entity}</option>
+              ))}
+            </select>
+            {focusedDropdown === 'entity' ? (
+              <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            ) : (
+              <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            )}
+          </div>
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Action</label>
-          <select
-            value={filter.action}
-            onChange={(e) => setFilter({ ...filter, action: e.target.value })}
-            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-          >
-            <option value="">All Actions</option>
-            {uniqueActions.map(action => (
-              <option key={action} value={action}>{action}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={filter.action}
+              onChange={(e) => setFilter({ ...filter, action: e.target.value })}
+              onFocus={() => setFocusedDropdown('action')}
+              onBlur={() => setFocusedDropdown(null)}
+              className="w-full px-4 pr-10 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+            >
+              <option value="">All Actions</option>
+              {uniqueActions.map(action => (
+                <option key={action} value={action}>{action}</option>
+              ))}
+            </select>
+            {focusedDropdown === 'action' ? (
+              <ChevronUpIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            ) : (
+              <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            )}
+          </div>
         </div>
         <div className="flex items-end">
           <button

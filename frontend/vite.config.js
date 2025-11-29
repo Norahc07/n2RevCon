@@ -23,6 +23,8 @@ export default defineConfig({
         scope: '/',
         start_url: '/',
         prefer_related_applications: false,
+        // Disable default splash screen generation
+        screenshots: [],
         icons: [
           {
             src: '/N2RevConLogo.png',
