@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
-import SplashScreen from './components/SplashScreen';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -57,7 +56,6 @@ function App() {
 
   return (
     <>
-      <SplashScreen />
       <Routes>
         <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />

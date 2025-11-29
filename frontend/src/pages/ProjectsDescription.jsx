@@ -18,6 +18,7 @@ import {
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import { exportAPI } from '../services/api';
+import { TableSkeleton, FilterSkeleton } from '../components/skeletons';
 
 const ProjectsDescription = () => {
   const [projects, setProjects] = useState([]);
@@ -149,8 +150,20 @@ const ProjectsDescription = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="h-9 w-64 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        
+        {/* Filter Skeleton */}
+        <FilterSkeleton />
+        
+        {/* Table Skeleton */}
+        <div className="card p-6 shadow-md">
+          <TableSkeleton rows={10} columns={8} />
+        </div>
       </div>
     );
   }

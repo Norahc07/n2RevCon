@@ -125,8 +125,25 @@ const SystemSettings = () => {
 
   if (loading && !company) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="h-9 w-64 bg-gray-200 rounded animate-pulse mb-4"></div>
+        
+        {/* Tabs Skeleton */}
+        <div className="flex gap-2 mb-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+          ))}
+        </div>
+        
+        {/* Content Skeleton */}
+        <div className="card p-6 shadow-md">
+          <div className="space-y-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-16 bg-gray-100 rounded animate-pulse"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

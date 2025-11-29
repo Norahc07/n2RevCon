@@ -25,6 +25,7 @@ import {
   subscribeToPushNotifications,
   isPushNotificationSupported,
 } from '../utils/pushNotifications';
+import { CardSkeleton, ChartSkeleton } from '../components/skeletons';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -204,8 +205,29 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        {/* Summary Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardSkeleton count={4} />
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="card p-6 shadow-md">
+            <div className="h-6 w-48 bg-gray-200 rounded mb-4 animate-pulse"></div>
+            <ChartSkeleton type="pie" height="300px" />
+          </div>
+          <div className="card p-6 shadow-md">
+            <div className="h-6 w-48 bg-gray-200 rounded mb-4 animate-pulse"></div>
+            <ChartSkeleton type="bar" height="300px" />
+          </div>
+        </div>
+
+        {/* Line Chart Skeleton */}
+        <div className="card p-6 shadow-md">
+          <div className="h-6 w-48 bg-gray-200 rounded mb-4 animate-pulse"></div>
+          <ChartSkeleton type="line" height="350px" />
+        </div>
       </div>
     );
   }

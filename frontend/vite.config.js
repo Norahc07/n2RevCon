@@ -122,7 +122,11 @@ export default defineConfig({
   },
   // Clear cache on build
   build: {
-    emptyOutDir: true
-  }
+    emptyOutDir: true,
+    // Ensure public assets are copied
+    copyPublicDir: true
+  },
+  // Ensure public directory is served correctly
+  publicDir: 'public'
 });
 

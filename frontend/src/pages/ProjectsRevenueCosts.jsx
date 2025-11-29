@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { TableSkeleton, FilterSkeleton, CardSkeleton } from '../components/skeletons';
 
 const ProjectsRevenueCosts = () => {
   const navigate = useNavigate();
@@ -482,8 +483,22 @@ const ProjectsRevenueCosts = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="h-9 w-64 bg-gray-200 rounded animate-pulse"></div>
+        
+        {/* Filter Skeleton */}
+        <FilterSkeleton />
+        
+        {/* Summary Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardSkeleton count={3} />
+        </div>
+        
+        {/* Table Skeleton */}
+        <div className="card p-6 shadow-md">
+          <TableSkeleton rows={10} columns={8} />
+        </div>
       </div>
     );
   }

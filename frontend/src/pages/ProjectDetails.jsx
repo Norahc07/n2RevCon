@@ -4,6 +4,7 @@ import { projectAPI, revenueAPI, expenseAPI, billingAPI, collectionAPI } from '.
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/currency';
 import { PencilIcon, TrashIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { TableSkeleton, CardSkeleton, SkeletonBox } from '../components/skeletons';
 
 const ProjectDetails = () => {
   const { id } = useParams();
@@ -378,8 +379,39 @@ const ProjectDetails = () => {
 
   if (loading || !project) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <SkeletonBox width="300px" height="32px" />
+            <SkeletonBox width="200px" height="20px" />
+          </div>
+          <SkeletonBox width="100px" height="40px" />
+        </div>
+        
+        {/* Tabs Skeleton */}
+        <div className="flex gap-2 border-b-2 border-gray-200">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonBox key={i} width="120px" height="40px" className="mb-[-2px]" />
+          ))}
+        </div>
+        
+        {/* Content Skeleton */}
+        <div className="card p-6 shadow-md">
+          <div className="space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex justify-between items-center">
+                <SkeletonBox width="150px" height="20px" />
+                <SkeletonBox width="200px" height="20px" />
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Table Skeleton */}
+        <div className="card p-6 shadow-md">
+          <TableSkeleton rows={5} columns={6} />
+        </div>
       </div>
     );
   }
