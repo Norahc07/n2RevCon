@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import { Toaster } from 'react-hot-toast';
 import { initDB } from './utils/offlineStorage';
 import './index.css';
@@ -22,8 +23,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       }}
     >
       <AuthProvider>
-        <App />
-        <Toaster
+        <CurrencyProvider>
+          <App />
+          <Toaster
           position="top-right"
           toastOptions={{
             duration: 3000,
@@ -47,6 +49,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             },
           }}
         />
+        </CurrencyProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

@@ -3,20 +3,49 @@
  * Default currency: PHP (Philippine Peso)
  */
 
+// Global currency variable that gets updated by CurrencyContext
+let globalCurrency = 'PHP';
+
 /**
- * Format amount as Philippine Peso
+ * Set the global currency (called by CurrencyContext)
+ * @param {string} currency - Currency code
+ */
+export const setGlobalCurrency = (currency) => {
+  globalCurrency = currency || 'PHP';
+};
+
+/**
+ * Get the current global currency
+ * @returns {string} Current currency code
+ */
+export const getGlobalCurrency = () => {
+  return globalCurrency;
+};
+
+/**
+ * Format amount with currency symbol
  * @param {number} amount - The amount to format
- * @param {string} currency - Currency code (default: 'PHP')
+ * @param {string} currency - Currency code (optional, uses global currency if not provided)
  * @returns {string} Formatted currency string
  */
-export const formatCurrency = (amount, currency = 'PHP') => {
+export const formatCurrency = (amount, currency = null) => {
+  const currencyToUse = currency || globalCurrency;
   if (amount === null || amount === undefined || isNaN(amount)) {
-    return '₱0.00';
+    // Return default based on currency
+    if (currencyToUse === 'PHP') {
+      return '₱0.00';
+    }
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyToUse,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(0);
   }
 
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
 
-  if (currency === 'PHP') {
+  if (currencyToUse === 'PHP') {
     // Format as Philippine Peso
     return `₱${numAmount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
@@ -24,10 +53,10 @@ export const formatCurrency = (amount, currency = 'PHP') => {
     })}`;
   }
 
-  // Fallback to Intl.NumberFormat for other currencies
+  // Use Intl.NumberFormat for other currencies
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: currency,
+    currency: currencyToUse,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(numAmount);
@@ -53,13 +82,14 @@ export const formatAmount = (amount) => {
 /**
  * Format currency for chart value formatters
  * @param {number} value - The value to format
- * @param {string} currency - Currency code (default: 'PHP')
+ * @param {string} currency - Currency code (optional, uses global currency if not provided)
  * @returns {string} Formatted currency string for charts
  */
-export const formatCurrencyForChart = (value, currency = 'PHP') => {
-  if (currency === 'PHP') {
+export const formatCurrencyForChart = (value, currency = null) => {
+  const currencyToUse = currency || globalCurrency;
+  if (currencyToUse === 'PHP') {
     return `₱${formatAmount(value)}`;
   }
-  return formatCurrency(value, currency);
+  return formatCurrency(value, currencyToUse);
 };
 

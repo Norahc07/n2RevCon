@@ -11,10 +11,14 @@ import {
   DocumentArrowDownIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  PencilIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const ProjectsRevenueCosts = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [allRevenues, setAllRevenues] = useState([]);
   const [allExpenses, setAllExpenses] = useState([]);
@@ -339,44 +343,21 @@ const ProjectsRevenueCosts = () => {
     }
   };
 
-  const handleExportSingleProject = async (projectId) => {
+  // Handle delete project
+  const handleDelete = async (projectId, projectName, e) => {
+    e.stopPropagation();
+    const confirmMessage = `Are you sure you want to delete "${projectName}"?\n\nThis project will be moved to "Recently Deleted" and can be restored within 30 days. After 30 days, it will be permanently deleted.`;
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
     try {
-      setExporting(true);
-      
-      // Find project for filename
-      const project = projects.find(p => p._id === projectId);
-      const projectCode = project?.projectCode || projectId;
-      
-      // Build params with project filter and date filters if applied
-      const params = { projectId };
-      
-      if (appliedFilters.year) {
-        const yearNum = parseInt(appliedFilters.year);
-        params.startDate = new Date(yearNum, 0, 1).toISOString();
-        params.endDate = new Date(yearNum, 11, 31, 23, 59, 59).toISOString();
-        
-        // If month is also selected, adjust dates
-        if (appliedFilters.month) {
-          const monthNum = parseInt(appliedFilters.month) - 1; // 0-indexed
-          params.startDate = new Date(yearNum, monthNum, 1).toISOString();
-          params.endDate = new Date(yearNum, monthNum + 1, 0, 23, 59, 59).toISOString();
-        }
-      }
-      
-      const response = await exportAPI.exportRevenueCosts(params);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Revenue_Expenses_${projectCode}_${Date.now()}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success('Export started');
+      await projectAPI.delete(projectId);
+      toast.success('Project moved to Recently Deleted. It will be permanently deleted after 30 days.');
+      fetchAllData();
     } catch (error) {
-      console.error('Export error:', error);
-      toast.error(error.response?.data?.message || 'Failed to export project');
-    } finally {
-      setExporting(false);
+      toast.error('Failed to delete project');
+      console.error('Delete error:', error);
     }
   };
 
@@ -393,26 +374,6 @@ const ProjectsRevenueCosts = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-800">Revenue vs. Expenses</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={handleExportCurrentView}
-            disabled={exporting}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            <DocumentArrowDownIcon className="w-5 h-5" />
-            Export Current View
-          </button>
-          {appliedFilters.year && (
-            <button
-              onClick={handleExportAllForYear}
-              disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-            >
-              <DocumentArrowDownIcon className="w-5 h-5" />
-              Export All {appliedFilters.year}
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Filter Section */}
@@ -511,6 +472,23 @@ const ProjectsRevenueCosts = () => {
               className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Apply Filter
+            </button>
+            <button
+              onClick={handleExportCurrentView}
+              disabled={exporting || tableData.length === 0}
+              className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {exporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <DocumentArrowDownIcon className="w-5 h-5" />
+                  <span>Export to Excel</span>
+                </>
+              )}
             </button>
             <button
               onClick={handleResetFilters}
@@ -632,16 +610,25 @@ const ProjectsRevenueCosts = () => {
                       {formatCurrency(item.netIncome)}
                     </td>
                     <td className="border border-gray-300 px-4 py-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleExportSingleProject(item.project._id);
-                        }}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Export Project Report"
-                      >
-                        <DocumentArrowDownIcon className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/projects/${item.project._id}/edit`);
+                          }}
+                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                          title="Edit"
+                        >
+                          <PencilIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(item.project._id, item.projectName, e)}
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

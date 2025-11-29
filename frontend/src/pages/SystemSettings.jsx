@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import toast from 'react-hot-toast';
 import {
   BuildingOfficeIcon,
@@ -17,6 +18,7 @@ import {
 
 const SystemSettings = () => {
   const { user } = useAuth();
+  const { updateCurrency } = useCurrency();
   const location = useLocation();
   
   // Get active tab from route
@@ -82,6 +84,12 @@ const SystemSettings = () => {
       const updateData = { [section]: data };
       const response = await companyAPI.updateProfile(updateData);
       setCompany(response.data.company);
+      
+      // Update currency context if currency was changed
+      if (section === 'company' && data?.settings?.currency) {
+        updateCurrency(data.settings.currency);
+      }
+      
       toast.success('Settings saved successfully');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save settings');
@@ -198,6 +206,33 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
       dateFormat: company?.settings?.dateFormat || 'MM/DD/YYYY',
     },
   });
+
+  // Update formData when company data loads or changes
+  useEffect(() => {
+    if (company) {
+      setFormData({
+        companyName: company.companyName || '',
+        companyCode: company.companyCode || '',
+        logo: company.logo || '',
+        address: {
+          street: company.address?.street || '',
+          city: company.address?.city || '',
+          state: company.address?.state || '',
+          zipCode: company.address?.zipCode || '',
+          country: company.address?.country || '',
+        },
+        contact: {
+          phone: company.contact?.phone || '',
+          email: company.contact?.email || '',
+          website: company.contact?.website || '',
+        },
+        settings: {
+          currency: company.settings?.currency || 'PHP',
+          dateFormat: company.settings?.dateFormat || 'MM/DD/YYYY',
+        },
+      });
+    }
+  }, [company]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

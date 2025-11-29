@@ -14,10 +14,14 @@ import {
   ClockIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  PencilIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const ProjectsBillingCollections = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [allBillings, setAllBillings] = useState([]);
   const [allCollections, setAllCollections] = useState([]);
@@ -441,6 +445,24 @@ const ProjectsBillingCollections = () => {
     }
   };
 
+  // Handle delete project
+  const handleDelete = async (projectId, projectName, e) => {
+    e.stopPropagation();
+    const confirmMessage = `Are you sure you want to delete "${projectName}"?\n\nThis project will be moved to "Recently Deleted" and can be restored within 30 days. After 30 days, it will be permanently deleted.`;
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      await projectAPI.delete(projectId);
+      toast.success('Project moved to Recently Deleted. It will be permanently deleted after 30 days.');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to delete project');
+      console.error('Delete error:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -454,36 +476,6 @@ const ProjectsBillingCollections = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Billings & Collections</h1>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={handleExportCurrentFilter}
-            disabled={exporting}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
-          >
-            <DocumentArrowDownIcon className="w-4 h-4" />
-            Export Current Filter
-          </button>
-          {appliedFilters.year && appliedFilters.month && (
-            <button
-              onClick={handleExportMonthlyReport}
-              disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm"
-            >
-              <DocumentArrowDownIcon className="w-4 h-4" />
-              Monthly Report
-            </button>
-          )}
-          {appliedFilters.year && (
-            <button
-              onClick={handleExportAgingReport}
-              disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 text-sm"
-            >
-              <DocumentArrowDownIcon className="w-4 h-4" />
-              Aging Report
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Filter Section */}
@@ -578,6 +570,23 @@ const ProjectsBillingCollections = () => {
               className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Apply Filter
+            </button>
+            <button
+              onClick={handleExportCurrentFilter}
+              disabled={exporting || tableData.length === 0}
+              className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {exporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <DocumentArrowDownIcon className="w-5 h-5" />
+                  <span>Export to Excel</span>
+                </>
+              )}
             </button>
             <button
               onClick={handleResetFilters}
@@ -780,16 +789,25 @@ const ProjectsBillingCollections = () => {
                     <td className="border border-gray-300 px-4 py-3">{item.month}</td>
                     <td className="border border-gray-300 px-4 py-3">{item.year}</td>
                     <td className="border border-gray-300 px-4 py-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleExportPerProject(item.project._id);
-                        }}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Export Project Report"
-                      >
-                        <DocumentArrowDownIcon className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/projects/${item.project._id}/edit`);
+                          }}
+                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                          title="Edit"
+                        >
+                          <PencilIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(item.project._id, item.projectName, e)}
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
