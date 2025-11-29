@@ -342,6 +342,10 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                 src="/N2RevConLogo.png" 
                 alt="N2 RevCon Logo" 
                 className="h-8 w-auto"
+                onError={(e) => {
+                  console.error('Failed to load logo:', e.target.src);
+                  e.target.style.display = 'none';
+                }}
               />
               <h1 className="text-xl font-bold text-accent">N2 RevCon</h1>
             </div>

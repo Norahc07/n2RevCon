@@ -132,6 +132,10 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
                 src="/N2RevConLogo.png" 
                 alt="N2 RevCon Logo" 
                 className="h-6 sm:h-8 w-auto flex-shrink-0"
+                onError={(e) => {
+                  console.error('Failed to load logo:', e.target.src);
+                  e.target.style.display = 'none';
+                }}
               />
               <h2 className="text-base sm:text-lg font-semibold text-gray-800 truncate">N2 RevCon</h2>
             </div>
