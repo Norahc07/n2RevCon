@@ -694,7 +694,7 @@ const ProjectsBillingCollections = () => {
           <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
             <button
               onClick={handleApplyFilters}
-              className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
             >
               Apply Filter
             </button>
@@ -703,7 +703,7 @@ const ProjectsBillingCollections = () => {
             <button
               onClick={handleExportCurrentFilter}
               disabled={exporting || tableData.length === 0}
-              className="flex-1 items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex"
+              className="w-full items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex h-[38px]"
             >
               {exporting ? (
                 <>
@@ -720,7 +720,7 @@ const ProjectsBillingCollections = () => {
             </button>
             <button
               onClick={handleResetFilters}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors h-[38px]"
               title="Reset Filters"
             >
               <ArrowPathIcon className="w-4 h-4" />
