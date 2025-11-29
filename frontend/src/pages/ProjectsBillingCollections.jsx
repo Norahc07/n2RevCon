@@ -51,6 +51,11 @@ const ProjectsBillingCollections = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
+  // Modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [editingBilling, setEditingBilling] = useState(null);
+  const [editingCollection, setEditingCollection] = useState(null);
 
   useEffect(() => {
     fetchAllData();

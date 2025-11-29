@@ -137,7 +137,7 @@ const SplashScreen = () => {
           }}
         >
           <img
-            src="/n2RevConLogo.png"
+            src="/N2RevConLogo.png"
             alt="N2 RevCon Logo"
             className="w-32 h-32 md:w-40 md:h-40 object-contain"
             style={{
