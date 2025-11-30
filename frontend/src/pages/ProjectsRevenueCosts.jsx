@@ -769,7 +769,7 @@ const ProjectsRevenueCosts = () => {
       {/* Project Financial Table */}
       <div className="card shadow-md">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Project Revenue & Cost Breakdown</h2>
+          <h2 className="text-xl font-semibold text-gray-800">Project Revenue & Expenses Breakdown</h2>
           <div className="relative">
             <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
