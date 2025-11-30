@@ -403,21 +403,21 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Dashboard</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+        <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-800 text-center sm:text-left w-full sm:w-auto">Dashboard</h1>
         <div className="relative w-full sm:w-auto">
-          <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+          <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 xs:w-5 xs:h-5 text-gray-400 pointer-events-none z-10" />
           {focusedYearDropdown ? (
-            <ChevronUpIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+            <ChevronUpIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 xs:w-5 xs:h-5 text-gray-400 pointer-events-none z-10" />
           ) : (
-            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 xs:w-5 xs:h-5 text-gray-400 pointer-events-none z-10" />
           )}
           <select
             value={year}
             onChange={(e) => setYear(e.target.value)}
             onFocus={() => setFocusedYearDropdown(true)}
             onBlur={() => setFocusedYearDropdown(false)}
-            className="w-full sm:w-auto border-2 border-gray-300 rounded-lg pl-10 pr-10 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 text-sm sm:text-base appearance-none cursor-pointer bg-white"
+            className="w-full sm:w-auto border-2 border-gray-300 rounded-lg pl-9 xs:pl-10 pr-9 xs:pr-10 py-2 focus:outline-none focus:border-red-600 transition-colors duration-200 text-xs xs:text-sm sm:text-base appearance-none cursor-pointer bg-white"
           >
             <option value="all">All Years</option>
             {availableYears.length > 0 ? (
@@ -437,69 +437,69 @@ const Dashboard = () => {
       </div>
 
       {/* Summary Cards - 4 columns with icons */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 xs:gap-3 sm:gap-4">
         {/* Total Revenue Card */}
-        <div className="card bg-gradient-to-br from-white to-green-50 border-l-4 border-green-500 hover:shadow-lg transition-shadow duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Total Revenue</h3>
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CurrencyDollarIcon className="w-5 h-5 text-green-600" />
+        <div className="card bg-gradient-to-br from-white to-green-50 border-l-4 border-green-500 hover:shadow-lg transition-shadow duration-200 p-3 xs:p-4 sm:p-6">
+          <div className="flex flex-col xs:flex-row items-center xs:justify-between gap-2 mb-2">
+            <h3 className="text-xs xs:text-sm font-medium text-gray-600 text-center xs:text-left">Total Revenue</h3>
+            <div className="p-1.5 xs:p-2 bg-green-100 rounded-lg">
+              <CurrencyDollarIcon className="w-4 h-4 xs:w-5 xs:h-5 text-green-600" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-green-600">
+          <p className="text-lg xs:text-xl sm:text-2xl font-bold text-green-600 text-center xs:text-left break-all">
             {formatCurrency(summary.totals?.revenue || 0)}
           </p>
         </div>
 
         {/* Total Expenses Card */}
-        <div className="card bg-gradient-to-br from-white to-red-50 border-l-4 border-red-500 hover:shadow-lg transition-shadow duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Total Expenses</h3>
-            <div className="p-2 bg-red-100 rounded-lg">
-              <ArrowTrendingDownIcon className="w-5 h-5 text-red-600" />
+        <div className="card bg-gradient-to-br from-white to-red-50 border-l-4 border-red-500 hover:shadow-lg transition-shadow duration-200 p-3 xs:p-4 sm:p-6">
+          <div className="flex flex-col xs:flex-row items-center xs:justify-between gap-2 mb-2">
+            <h3 className="text-xs xs:text-sm font-medium text-gray-600 text-center xs:text-left">Total Expenses</h3>
+            <div className="p-1.5 xs:p-2 bg-red-100 rounded-lg">
+              <ArrowTrendingDownIcon className="w-4 h-4 xs:w-5 xs:h-5 text-red-600" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-red-600">
+          <p className="text-lg xs:text-xl sm:text-2xl font-bold text-red-600 text-center xs:text-left break-all">
             {formatCurrency(summary.totals?.expenses || 0)}
           </p>
         </div>
 
         {/* Net Profit Card */}
-        <div className={`card bg-gradient-to-br from-white ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)) >= 0 ? 'to-green-50 border-l-4 border-green-500' : 'to-red-50 border-l-4 border-red-500'} hover:shadow-lg transition-shadow duration-200`}>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Net Profit</h3>
-            <div className={`p-2 rounded-lg ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)) >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-              <ChartBarIcon className={`w-5 h-5 ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+        <div className={`card bg-gradient-to-br from-white ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)) >= 0 ? 'to-green-50 border-l-4 border-green-500' : 'to-red-50 border-l-4 border-red-500'} hover:shadow-lg transition-shadow duration-200 p-3 xs:p-4 sm:p-6`}>
+          <div className="flex flex-col xs:flex-row items-center xs:justify-between gap-2 mb-2">
+            <h3 className="text-xs xs:text-sm font-medium text-gray-600 text-center xs:text-left">Net Profit</h3>
+            <div className={`p-1.5 xs:p-2 rounded-lg ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)) >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+              <ChartBarIcon className={`w-4 h-4 xs:w-5 xs:h-5 ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
             </div>
           </div>
-          <p className={`text-2xl font-bold ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-lg xs:text-xl sm:text-2xl font-bold text-center xs:text-left break-all ${((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrency((summary.totals?.revenue || 0) - (summary.totals?.expenses || 0))}
           </p>
         </div>
 
         {/* Total Projects Card */}
-        <div className="card bg-gradient-to-br from-white to-blue-50 border-l-4 border-blue-500 hover:shadow-lg transition-shadow duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Total Projects</h3>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <BuildingOfficeIcon className="w-5 h-5 text-blue-600" />
+        <div className="card bg-gradient-to-br from-white to-blue-50 border-l-4 border-blue-500 hover:shadow-lg transition-shadow duration-200 p-3 xs:p-4 sm:p-6">
+          <div className="flex flex-col xs:flex-row items-center xs:justify-between gap-2 mb-2">
+            <h3 className="text-xs xs:text-sm font-medium text-gray-600 text-center xs:text-left">Total Projects</h3>
+            <div className="p-1.5 xs:p-2 bg-blue-100 rounded-lg">
+              <BuildingOfficeIcon className="w-4 h-4 xs:w-5 xs:h-5 text-blue-600" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-blue-600">
+          <p className="text-lg xs:text-xl sm:text-2xl font-bold text-blue-600 text-center xs:text-left">
             {(summary.projectStatus?.pending || 0) + (summary.projectStatus?.ongoing || 0) + (summary.projectStatus?.completed || 0)}
           </p>
         </div>
       </div>
 
       {/* Second Row: Revenue vs Expenses (3 columns) + Billing Status (1 column) */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-6">
         {/* Revenue vs Expenses Line Chart - 3 columns */}
-        <div className="card lg:col-span-3">
-          <div className="flex items-center gap-2 mb-4">
-            <ChartBarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
-            <h2 className="text-lg sm:text-xl font-semibold truncate">Revenue vs Expenses ({year === 'all' ? 'All Years' : year})</h2>
+        <div className="card lg:col-span-3 p-3 xs:p-4 sm:p-6">
+          <div className="flex items-center justify-center sm:justify-start gap-2 mb-4">
+            <ChartBarIcon className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
+            <h2 className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold truncate text-center sm:text-left">Revenue vs Expenses ({year === 'all' ? 'All Years' : year})</h2>
           </div>
-          <div className="w-full overflow-x-auto" style={{ minHeight: '250px', height: '300px' }}>
+          <div className="w-full overflow-x-auto chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
             <LineChart
               xAxis={[{
                 scaleType: 'point',
@@ -519,32 +519,32 @@ const Dashboard = () => {
                 },
               ]}
               width={undefined}
-              height={300}
+              height={250}
             />
           </div>
         </div>
 
         {/* Billing Status Pie Chart - 1 column (same width as Total Projects) */}
-        <div className="card lg:col-span-1">
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
-            <h2 className="text-lg sm:text-xl font-semibold truncate">Billing Status ({year === 'all' ? 'All Years' : year})</h2>
+        <div className="card lg:col-span-1 p-3 xs:p-4 sm:p-6">
+          <div className="flex items-center justify-center sm:justify-start gap-2 mb-4 flex-wrap">
+            <DocumentTextIcon className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
+            <h2 className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold truncate text-center sm:text-left">Billing Status ({year === 'all' ? 'All Years' : year})</h2>
           </div>
           {billingStatusData.length > 0 ? (
             <div className="w-full flex flex-col items-center">
               {/* Chart Container - Centered */}
-              <div className="w-full flex justify-center items-center relative" style={{ minHeight: '250px', height: '250px' }}>
+              <div className="w-full flex justify-center items-center relative chart-container" style={{ minHeight: '180px', height: 'clamp(180px, 35vw, 250px)' }}>
                 <div className="w-full h-full [&_.MuiChartsLegend-root]:hidden">
                   <PieChart
                     series={[{
                       data: billingStatusData,
-                      innerRadius: 30,
-                      outerRadius: 80,
+                      innerRadius: 20,
+                      outerRadius: 60,
                       paddingAngle: 2,
                       cornerRadius: 5,
                     }]}
                     width={undefined}
-                    height={250}
+                    height={200}
                     slotProps={{
                       legend: {
                         hidden: true,
@@ -554,16 +554,16 @@ const Dashboard = () => {
                 </div>
               </div>
               {/* Custom Legend - Centered Under Chart */}
-              <div className="w-full mt-4 flex justify-center">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+              <div className="w-full mt-3 xs:mt-4 flex justify-center">
+                <div className="flex flex-row items-center justify-center gap-3 xs:gap-4 sm:gap-6 flex-wrap">
                   {billingStatusData.map((entry) => (
-                    <div key={entry.id} className="flex items-center gap-2">
+                    <div key={entry.id} className="flex items-center gap-1 xs:gap-2">
                       <div 
-                        className="w-4 h-4 rounded-full flex-shrink-0" 
+                        className="w-3 h-3 xs:w-4 xs:h-4 rounded-full flex-shrink-0" 
                         style={{ backgroundColor: entry.color }}
                       ></div>
-                      <span className="text-sm font-medium text-gray-700">{entry.label}</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs xs:text-sm font-medium text-gray-700">{entry.label}</span>
+                      <span className="text-[10px] xs:text-xs text-gray-500">
                         ({entry.value})
                       </span>
                     </div>
@@ -572,7 +572,7 @@ const Dashboard = () => {
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[200px] xs:h-[250px] sm:h-[300px] text-gray-500 text-sm">
               No data available
             </div>
           )}
@@ -580,26 +580,26 @@ const Dashboard = () => {
       </div>
 
       {/* Third Row: Project Status (2 columns) + Payment Status (2 columns) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 xs:gap-4 sm:gap-6">
         {/* Project Status Bar Chart - 2 columns (same width as Total Revenue + Total Expenses) */}
-        <div className="card">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <BuildingOfficeIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
-              <h2 className="text-lg sm:text-xl font-semibold truncate">
+        <div className="card p-3 xs:p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center sm:items-center gap-2 xs:gap-3 mb-4">
+            <div className="flex items-center justify-center sm:justify-start gap-2 flex-1 min-w-0">
+              <BuildingOfficeIcon className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0" />
+              <h2 className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold truncate text-center sm:text-left">
                 Project Status {projectStatusViewAll ? '(All Time)' : `(${year === 'all' ? 'All Years' : year})`}
               </h2>
             </div>
             <button
               onClick={() => setProjectStatusViewAll(!projectStatusViewAll)}
-              className="flex items-center gap-1 text-sm text-primary hover:text-primaryLight font-medium transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-1 text-xs xs:text-sm text-primary hover:text-primaryLight font-medium transition-colors duration-200 whitespace-nowrap"
             >
-              <ArrowPathIcon className="w-4 h-4" />
+              <ArrowPathIcon className="w-3 h-3 xs:w-4 xs:h-4" />
               {projectStatusViewAll ? `View ${year === 'all' ? 'All Years' : year}` : 'View All'}
             </button>
           </div>
           {projectStatusDataWithColors.length > 0 ? (
-            <div className="w-full overflow-x-auto" style={{ minHeight: '250px', height: '300px' }}>
+            <div className="w-full overflow-x-auto chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
               <BarChart
                 xAxis={[{
                   scaleType: 'band',
@@ -614,24 +614,24 @@ const Dashboard = () => {
                   valueFormatter: (value) => value.toString(),
                 }]}
                 width={undefined}
-                height={300}
+                height={250}
               />
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[200px] xs:h-[250px] sm:h-[300px] text-gray-500 text-sm">
               No data available
             </div>
           )}
         </div>
 
         {/* Payment Status Bar Chart - 2 columns (same width as Project Status) */}
-        <div className="card">
-          <div className="flex items-center gap-2 mb-4">
-            <BanknotesIcon className="w-6 h-6 text-gray-700" />
-            <h2 className="text-xl font-semibold">Payment Status ({year === 'all' ? 'All Years' : year})</h2>
+        <div className="card p-3 xs:p-4 sm:p-6">
+          <div className="flex items-center justify-center sm:justify-start gap-2 mb-4">
+            <BanknotesIcon className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-gray-700" />
+            <h2 className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold text-center sm:text-left">Payment Status ({year === 'all' ? 'All Years' : year})</h2>
           </div>
           {paymentStatusData.length > 0 ? (
-            <div className="w-full" style={{ height: '300px' }}>
+            <div className="w-full chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
               <BarChart
                 xAxis={[{
                   scaleType: 'band',
@@ -646,11 +646,11 @@ const Dashboard = () => {
                   valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}
                 width={undefined}
-                height={300}
+                height={250}
               />
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[200px] xs:h-[250px] sm:h-[300px] text-gray-500 text-sm">
               No data available
             </div>
           )}
