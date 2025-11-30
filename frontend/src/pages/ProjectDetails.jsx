@@ -310,7 +310,7 @@ const ProjectDetails = () => {
     try {
       const amount = parseFloat(newBilling.amount) || 0;
       const tax = parseFloat(newBilling.tax) || 0;
-      const totalAmount = amount + tax;
+      const totalAmount = amount - tax;
       
       await billingAPI.create({
         projectId: id,
@@ -1317,7 +1317,7 @@ const ProjectDetails = () => {
                   onChange={(e) => {
                     const amount = e.target.value;
                     const tax = parseFloat(newBilling.tax) || 0;
-                    const total = parseFloat(amount) + tax;
+                    const total = parseFloat(amount) - tax;
                     setNewBilling({ ...newBilling, amount, totalAmount: total.toString() });
                   }}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
@@ -1335,7 +1335,7 @@ const ProjectDetails = () => {
                   onChange={(e) => {
                     const tax = e.target.value;
                     const amount = parseFloat(newBilling.amount) || 0;
-                    const total = amount + parseFloat(tax);
+                    const total = amount - parseFloat(tax);
                     setNewBilling({ ...newBilling, tax, totalAmount: total.toString() });
                   }}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"

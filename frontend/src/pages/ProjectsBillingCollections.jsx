@@ -1316,7 +1316,7 @@ const ProjectsBillingCollections = () => {
                   onChange={(e) => {
                     const amount = e.target.value;
                     const tax = parseFloat(editingBilling.tax) || 0;
-                    const total = parseFloat(amount) + tax;
+                    const total = parseFloat(amount) - tax;
                     setEditingBilling({ ...editingBilling, amount, totalAmount: total.toString() });
                   }}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
@@ -1333,7 +1333,7 @@ const ProjectsBillingCollections = () => {
                   onChange={(e) => {
                     const tax = e.target.value;
                     const amount = parseFloat(editingBilling.amount) || 0;
-                    const total = amount + parseFloat(tax);
+                    const total = amount - parseFloat(tax);
                     setEditingBilling({ ...editingBilling, tax, totalAmount: total.toString() });
                   }}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
@@ -1616,7 +1616,7 @@ const ProjectsBillingCollections = () => {
                   onChange={(e) => {
                     const amount = e.target.value;
                     const tax = parseFloat(newBilling.tax) || 0;
-                    const total = parseFloat(amount) + tax;
+                    const total = parseFloat(amount) - tax;
                     setNewBilling({ ...newBilling, amount, totalAmount: total.toString() });
                   }}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
@@ -1634,7 +1634,7 @@ const ProjectsBillingCollections = () => {
                   onChange={(e) => {
                     const tax = e.target.value;
                     const amount = parseFloat(newBilling.amount) || 0;
-                    const total = amount + parseFloat(tax);
+                    const total = amount - parseFloat(tax);
                     setNewBilling({ ...newBilling, tax, totalAmount: total.toString() });
                   }}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
