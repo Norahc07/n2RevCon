@@ -708,11 +708,11 @@ export const exportProject = async (req, res) => {
  */
 export const exportRevenueCosts = async (req, res) => {
   try {
-    const userId = req.user._id;
     const { startDate, endDate, projectId } = req.query;
     
-    const revenueFilter = { createdBy: userId, status: { $ne: 'cancelled' } };
-    const expenseFilter = { createdBy: userId, status: { $ne: 'cancelled' } };
+    // Build filters - match page behavior (show all data, not filtered by user)
+    const revenueFilter = { status: { $ne: 'cancelled' } };
+    const expenseFilter = { status: { $ne: 'cancelled' } };
 
     // Filter by project if provided
     if (projectId) {
@@ -1037,12 +1037,11 @@ export const exportRevenueCosts = async (req, res) => {
  */
 export const exportBillingCollections = async (req, res) => {
   try {
-    const userId = req.user._id;
     const { year, month, projectId } = req.query;
     
-    // Build filters
-    const billingFilter = { createdBy: userId };
-    const collectionFilter = { createdBy: userId };
+    // Build filters - match page behavior (show all data, not filtered by user)
+    const billingFilter = {};
+    const collectionFilter = {};
     
     if (projectId && projectId !== 'all') {
       billingFilter.projectId = projectId;
@@ -1381,9 +1380,10 @@ export const exportBillingCollections = async (req, res) => {
  */
 export const exportSummary = async (req, res) => {
   try {
-    const projects = await Project.find();
-    const revenues = await Revenue.find();
-    const expenses = await Expense.find();
+    // Exclude deleted projects and cancelled items for accurate summary
+    const projects = await Project.find({ deletedAt: null });
+    const revenues = await Revenue.find({ status: { $ne: 'cancelled' } });
+    const expenses = await Expense.find({ status: { $ne: 'cancelled' } });
     const billings = await Billing.find();
     const collections = await Collection.find();
 
