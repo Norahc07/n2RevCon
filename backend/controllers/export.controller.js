@@ -65,11 +65,10 @@ export const exportProjects = async (req, res) => {
       { header: 'Client Name', key: 'clientName', width: 25 },
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Location', key: 'location', width: 25 },
-      { header: 'Budget', key: 'budget', width: 15 },
+      { header: 'Transaction Price', key: 'budget', width: 18 },
       { header: 'Total Revenue', key: 'totalRevenue', width: 15 },
       { header: 'Start Date', key: 'startDate', width: 15 },
       { header: 'End Date', key: 'endDate', width: 15 },
-      { header: 'Project Manager', key: 'projectManager', width: 20 },
       { header: 'Description', key: 'description', width: 50 },
     ];
 
@@ -84,10 +83,10 @@ export const exportProjects = async (req, res) => {
     headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
     headerRow.height = 25;
     
-    // Add auto-filter to header row (all columns: A1 to K1 for 11 columns)
+    // Add auto-filter to header row (all columns: A1 to J1 for 10 columns)
     projectsSheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: 1, column: 11 }
+      to: { row: 1, column: 10 }
     };
 
     // Get revenue, expense, billing, and collection data for all projects
@@ -157,7 +156,6 @@ export const exportProjects = async (req, res) => {
         totalRevenue: totalRevenue,
         startDate: project.startDate ? new Date(project.startDate).toLocaleDateString('en-US') : '',
         endDate: project.endDate ? new Date(project.endDate).toLocaleDateString('en-US') : '',
-        projectManager: project.projectManager || '',
         description: project.description || '',
       });
 
