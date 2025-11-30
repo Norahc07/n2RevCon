@@ -146,7 +146,7 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3">
               <img 
-                src="/N2RevConLogo.png" 
+                src="/n2RevConLogo.png" 
                 alt="N2 RevCon Logo" 
                 className="h-8 md:h-10 w-auto"
               />
