@@ -17,6 +17,9 @@ import {
   PencilIcon,
   TrashIcon,
   XMarkIcon,
+  PlusIcon,
+  DocumentTextIcon,
+  CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -57,6 +60,35 @@ const ProjectsBillingCollections = () => {
   const [editingProject, setEditingProject] = useState(null);
   const [editingBilling, setEditingBilling] = useState(null);
   const [editingCollection, setEditingCollection] = useState(null);
+
+  // Add modal states
+  const [showAddTypeModal, setShowAddTypeModal] = useState(false);
+  const [showAddBillingModal, setShowAddBillingModal] = useState(false);
+  const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
+  const [newBilling, setNewBilling] = useState({
+    projectId: '',
+    invoiceNumber: '',
+    billingDate: new Date().toISOString().split('T')[0],
+    dueDate: '',
+    amount: '',
+    tax: '0',
+    totalAmount: '',
+    status: 'draft',
+    description: '',
+    notes: '',
+  });
+  const [newCollection, setNewCollection] = useState({
+    projectId: '',
+    billingId: '',
+    collectionNumber: '',
+    collectionDate: new Date().toISOString().split('T')[0],
+    amount: '',
+    paymentMethod: 'bank_transfer',
+    status: 'paid',
+    checkNumber: '',
+    notes: '',
+  });
+  const [selectedProjectBillings, setSelectedProjectBillings] = useState([]);
 
   useEffect(() => {
     fetchAllData();
@@ -572,6 +604,103 @@ const ProjectsBillingCollections = () => {
     }
   };
 
+  // Handle project selection for collection (to get billings)
+  const handleProjectSelectForCollection = (projectId) => {
+    setNewCollection({ ...newCollection, projectId, billingId: '' });
+    if (projectId) {
+      const billings = allBillings.filter((b) => {
+        const pId = b.projectId?._id || b.projectId;
+        return pId === projectId;
+      });
+      setSelectedProjectBillings(billings);
+    } else {
+      setSelectedProjectBillings([]);
+    }
+  };
+
+  // Handle add billing
+  const handleAddBilling = async (e) => {
+    e.preventDefault();
+    if (!newBilling.projectId) {
+      toast.error('Please select a project');
+      return;
+    }
+    try {
+      await billingAPI.create({
+        projectId: newBilling.projectId,
+        invoiceNumber: newBilling.invoiceNumber,
+        billingDate: newBilling.billingDate,
+        dueDate: newBilling.dueDate || undefined,
+        amount: parseFloat(newBilling.amount),
+        tax: parseFloat(newBilling.tax) || 0,
+        totalAmount: parseFloat(newBilling.totalAmount),
+        status: newBilling.status,
+        description: newBilling.description || undefined,
+        notes: newBilling.notes || undefined,
+      });
+      toast.success('Billing record added successfully');
+      setShowAddBillingModal(false);
+      setNewBilling({
+        projectId: '',
+        invoiceNumber: '',
+        billingDate: new Date().toISOString().split('T')[0],
+        dueDate: '',
+        amount: '',
+        tax: '0',
+        totalAmount: '',
+        status: 'draft',
+        description: '',
+        notes: '',
+      });
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to add billing record');
+    }
+  };
+
+  // Handle add collection
+  const handleAddCollection = async (e) => {
+    e.preventDefault();
+    if (!newCollection.projectId) {
+      toast.error('Please select a project');
+      return;
+    }
+    if (!newCollection.billingId) {
+      toast.error('Please select a billing record');
+      return;
+    }
+    try {
+      await collectionAPI.create({
+        projectId: newCollection.projectId,
+        billingId: newCollection.billingId,
+        collectionNumber: newCollection.collectionNumber,
+        collectionDate: newCollection.collectionDate,
+        amount: parseFloat(newCollection.amount),
+        paymentMethod: newCollection.paymentMethod,
+        status: newCollection.status,
+        checkNumber: newCollection.checkNumber || undefined,
+        notes: newCollection.notes || undefined,
+      });
+      toast.success('Collection record added successfully');
+      setShowAddCollectionModal(false);
+      setNewCollection({
+        projectId: '',
+        billingId: '',
+        collectionNumber: '',
+        collectionDate: new Date().toISOString().split('T')[0],
+        amount: '',
+        paymentMethod: 'bank_transfer',
+        status: 'paid',
+        checkNumber: '',
+        notes: '',
+      });
+      setSelectedProjectBillings([]);
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to add collection record');
+    }
+  };
+
   // Handle delete project
   const handleDelete = async (projectId, projectName, e) => {
     e.stopPropagation();
@@ -617,6 +746,14 @@ const ProjectsBillingCollections = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Billings & Collections</h1>
+        <button
+          onClick={() => setShowAddTypeModal(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+        >
+          <PlusIcon className="w-5 h-5" />
+          <span className="hidden sm:inline">Add Billing/Collection</span>
+          <span className="sm:hidden">Add</span>
+        </button>
       </div>
 
       {/* Filter Section */}
@@ -1363,6 +1500,339 @@ const ProjectsBillingCollections = () => {
                   Update Collection
                 </button>
                 <button type="button" onClick={() => setEditingCollection(null)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Type Selection Modal */}
+      {showAddTypeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-800">Add New Record</h2>
+              <button onClick={() => setShowAddTypeModal(false)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6 text-center">What would you like to add?</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => {
+                  setShowAddTypeModal(false);
+                  setShowAddBillingModal(true);
+                }}
+                className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-blue-200 rounded-xl hover:bg-blue-50 hover:border-blue-400 transition-all duration-200 group"
+              >
+                <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+                  <DocumentTextIcon className="w-8 h-8 text-blue-600" />
+                </div>
+                <span className="font-semibold text-gray-700">Add Billing</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddTypeModal(false);
+                  setShowAddCollectionModal(true);
+                }}
+                className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-green-200 rounded-xl hover:bg-green-50 hover:border-green-400 transition-all duration-200 group"
+              >
+                <div className="p-3 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
+                  <CurrencyDollarIcon className="w-8 h-8 text-green-600" />
+                </div>
+                <span className="font-semibold text-gray-700">Add Collection</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Billing Modal */}
+      {showAddBillingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-blue-600">Add Billing Record</h2>
+              <button onClick={() => setShowAddBillingModal(false)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleAddBilling} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Project *</label>
+                <select
+                  value={newBilling.projectId}
+                  onChange={(e) => setNewBilling({ ...newBilling, projectId: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                  required
+                >
+                  <option value="">Select a project</option>
+                  {projects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.projectName} ({project.projectCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Invoice Number *</label>
+                <input
+                  type="text"
+                  value={newBilling.invoiceNumber}
+                  onChange={(e) => setNewBilling({ ...newBilling, invoiceNumber: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                  placeholder="e.g., INV-001"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Billing Date *</label>
+                <input
+                  type="date"
+                  value={newBilling.billingDate}
+                  onChange={(e) => setNewBilling({ ...newBilling, billingDate: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Due Date</label>
+                <input
+                  type="date"
+                  value={newBilling.dueDate}
+                  onChange={(e) => setNewBilling({ ...newBilling, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newBilling.amount}
+                  onChange={(e) => {
+                    const amount = e.target.value;
+                    const tax = parseFloat(newBilling.tax) || 0;
+                    const total = parseFloat(amount) + tax;
+                    setNewBilling({ ...newBilling, amount, totalAmount: total.toString() });
+                  }}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Tax (₱)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newBilling.tax}
+                  onChange={(e) => {
+                    const tax = e.target.value;
+                    const amount = parseFloat(newBilling.amount) || 0;
+                    const total = amount + parseFloat(tax);
+                    setNewBilling({ ...newBilling, tax, totalAmount: total.toString() });
+                  }}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Total Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newBilling.totalAmount}
+                  readOnly
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-50"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status *</label>
+                <select
+                  value={newBilling.status}
+                  onChange={(e) => setNewBilling({ ...newBilling, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                  required
+                >
+                  <option value="draft">Draft</option>
+                  <option value="sent">Sent</option>
+                  <option value="paid">Paid</option>
+                  <option value="overdue">Overdue</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+                <textarea
+                  value={newBilling.description}
+                  onChange={(e) => setNewBilling({ ...newBilling, description: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                  rows="3"
+                  placeholder="Billing description..."
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                  Add Billing
+                </button>
+                <button type="button" onClick={() => setShowAddBillingModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-2.5 rounded-lg hover:bg-gray-400 transition-colors font-medium">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Collection Modal */}
+      {showAddCollectionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-green-600">Add Collection Record</h2>
+              <button onClick={() => {
+                setShowAddCollectionModal(false);
+                setSelectedProjectBillings([]);
+              }} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleAddCollection} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Project *</label>
+                <select
+                  value={newCollection.projectId}
+                  onChange={(e) => handleProjectSelectForCollection(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  required
+                >
+                  <option value="">Select a project</option>
+                  {projects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.projectName} ({project.projectCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Billing Record *</label>
+                <select
+                  value={newCollection.billingId}
+                  onChange={(e) => setNewCollection({ ...newCollection, billingId: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  disabled={!newCollection.projectId}
+                  required
+                >
+                  <option value="">Select a billing record</option>
+                  {selectedProjectBillings.map((bill) => (
+                    <option key={bill._id} value={bill._id}>
+                      {bill.invoiceNumber} - {formatCurrency(bill.totalAmount || bill.amount)}
+                    </option>
+                  ))}
+                </select>
+                {newCollection.projectId && selectedProjectBillings.length === 0 && (
+                  <p className="text-sm text-amber-600 mt-1">No billing records found for this project. Add a billing first.</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Collection Number *</label>
+                <input
+                  type="text"
+                  value={newCollection.collectionNumber}
+                  onChange={(e) => setNewCollection({ ...newCollection, collectionNumber: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  placeholder="e.g., COL-001"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Collection Date *</label>
+                <input
+                  type="date"
+                  value={newCollection.collectionDate}
+                  onChange={(e) => setNewCollection({ ...newCollection, collectionDate: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newCollection.amount}
+                  onChange={(e) => setNewCollection({ ...newCollection, amount: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Payment Method *</label>
+                <select
+                  value={newCollection.paymentMethod}
+                  onChange={(e) => setNewCollection({ ...newCollection, paymentMethod: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  required
+                >
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                  <option value="check">Check</option>
+                  <option value="credit_card">Credit Card</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              {newCollection.paymentMethod === 'check' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Check Number</label>
+                  <input
+                    type="text"
+                    value={newCollection.checkNumber}
+                    onChange={(e) => setNewCollection({ ...newCollection, checkNumber: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                    placeholder="Check number"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1">Status *</label>
+                <select
+                  value={newCollection.status}
+                  onChange={(e) => setNewCollection({ ...newCollection, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  required
+                >
+                  <option value="paid">Paid</option>
+                  <option value="partial">Partial</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="uncollectible">Uncollectible</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                <textarea
+                  value={newCollection.notes}
+                  onChange={(e) => setNewCollection({ ...newCollection, notes: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  rows="3"
+                  placeholder="Additional notes..."
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                  Add Collection
+                </button>
+                <button type="button" onClick={() => {
+                  setShowAddCollectionModal(false);
+                  setSelectedProjectBillings([]);
+                }} className="flex-1 bg-gray-300 text-gray-700 py-2.5 rounded-lg hover:bg-gray-400 transition-colors font-medium">
                   Cancel
                 </button>
               </div>

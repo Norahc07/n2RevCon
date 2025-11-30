@@ -14,6 +14,9 @@ import {
   PencilIcon,
   TrashIcon,
   XMarkIcon,
+  PlusIcon,
+  CurrencyDollarIcon,
+  ArrowTrendingDownIcon,
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -52,6 +55,31 @@ const ProjectsRevenueCosts = () => {
   const [editingRevenue, setEditingRevenue] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  // Add modal states
+  const [showAddTypeModal, setShowAddTypeModal] = useState(false);
+  const [showAddRevenueModal, setShowAddRevenueModal] = useState(false);
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [newRevenue, setNewRevenue] = useState({
+    projectId: '',
+    revenueCode: '',
+    description: '',
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    category: 'service',
+    status: 'recorded',
+    notes: '',
+  });
+  const [newExpense, setNewExpense] = useState({
+    projectId: '',
+    expenseCode: '',
+    description: '',
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    category: 'other',
+    status: 'pending',
+    notes: '',
+  });
 
   useEffect(() => {
     fetchAllData();
@@ -463,6 +491,78 @@ const ProjectsRevenueCosts = () => {
     }
   };
 
+  // Handle add revenue
+  const handleAddRevenue = async (e) => {
+    e.preventDefault();
+    if (!newRevenue.projectId) {
+      toast.error('Please select a project');
+      return;
+    }
+    try {
+      await revenueAPI.create({
+        projectId: newRevenue.projectId,
+        revenueCode: newRevenue.revenueCode,
+        description: newRevenue.description,
+        amount: parseFloat(newRevenue.amount),
+        date: newRevenue.date,
+        category: newRevenue.category,
+        status: newRevenue.status,
+        notes: newRevenue.notes || undefined,
+      });
+      toast.success('Revenue record added successfully');
+      setShowAddRevenueModal(false);
+      setNewRevenue({
+        projectId: '',
+        revenueCode: '',
+        description: '',
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        category: 'service',
+        status: 'recorded',
+        notes: '',
+      });
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to add revenue record');
+    }
+  };
+
+  // Handle add expense
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    if (!newExpense.projectId) {
+      toast.error('Please select a project');
+      return;
+    }
+    try {
+      await expenseAPI.create({
+        projectId: newExpense.projectId,
+        expenseCode: newExpense.expenseCode,
+        description: newExpense.description,
+        amount: parseFloat(newExpense.amount),
+        date: newExpense.date,
+        category: newExpense.category,
+        status: newExpense.status,
+        notes: newExpense.notes || undefined,
+      });
+      toast.success('Expense record added successfully');
+      setShowAddExpenseModal(false);
+      setNewExpense({
+        projectId: '',
+        expenseCode: '',
+        description: '',
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        category: 'other',
+        status: 'pending',
+        notes: '',
+      });
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to add expense record');
+    }
+  };
+
   // Handle delete project
   const handleDelete = async (projectId, projectName, e) => {
     e.stopPropagation();
@@ -506,8 +606,16 @@ const ProjectsRevenueCosts = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Revenue vs. Expenses</h1>
+        <button
+          onClick={() => setShowAddTypeModal(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+        >
+          <PlusIcon className="w-5 h-5" />
+          <span className="hidden sm:inline">Add Revenue/Expense</span>
+          <span className="sm:hidden">Add</span>
+        </button>
       </div>
 
       {/* Filter Section */}
@@ -1115,6 +1223,289 @@ const ProjectsRevenueCosts = () => {
                   Update Expense
                 </button>
                 <button type="button" onClick={() => setEditingExpense(null)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Type Selection Modal */}
+      {showAddTypeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-800">Add New Record</h2>
+              <button onClick={() => setShowAddTypeModal(false)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6 text-center">What would you like to add?</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => {
+                  setShowAddTypeModal(false);
+                  setShowAddRevenueModal(true);
+                }}
+                className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-green-200 rounded-xl hover:bg-green-50 hover:border-green-400 transition-all duration-200 group"
+              >
+                <div className="p-3 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
+                  <CurrencyDollarIcon className="w-8 h-8 text-green-600" />
+                </div>
+                <span className="font-semibold text-gray-700">Add Revenue</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddTypeModal(false);
+                  setShowAddExpenseModal(true);
+                }}
+                className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-red-200 rounded-xl hover:bg-red-50 hover:border-red-400 transition-all duration-200 group"
+              >
+                <div className="p-3 bg-red-100 rounded-full group-hover:bg-red-200 transition-colors">
+                  <ArrowTrendingDownIcon className="w-8 h-8 text-red-600" />
+                </div>
+                <span className="font-semibold text-gray-700">Add Expense</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Revenue Modal */}
+      {showAddRevenueModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-green-600">Add Revenue Record</h2>
+              <button onClick={() => setShowAddRevenueModal(false)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleAddRevenue} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Project *</label>
+                <select
+                  value={newRevenue.projectId}
+                  onChange={(e) => setNewRevenue({ ...newRevenue, projectId: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  required
+                >
+                  <option value="">Select a project</option>
+                  {projects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.projectName} ({project.projectCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Revenue Code *</label>
+                <input
+                  type="text"
+                  value={newRevenue.revenueCode}
+                  onChange={(e) => setNewRevenue({ ...newRevenue, revenueCode: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  placeholder="e.g., REV-001"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description *</label>
+                <input
+                  type="text"
+                  value={newRevenue.description}
+                  onChange={(e) => setNewRevenue({ ...newRevenue, description: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  placeholder="Revenue description"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newRevenue.amount}
+                  onChange={(e) => setNewRevenue({ ...newRevenue, amount: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={newRevenue.date}
+                  onChange={(e) => setNewRevenue({ ...newRevenue, date: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  value={newRevenue.category}
+                  onChange={(e) => setNewRevenue({ ...newRevenue, category: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                >
+                  <option value="service">Service</option>
+                  <option value="product">Product</option>
+                  <option value="consultation">Consultation</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <select
+                  value={newRevenue.status}
+                  onChange={(e) => setNewRevenue({ ...newRevenue, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                >
+                  <option value="recorded">Recorded</option>
+                  <option value="confirmed">Confirmed</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                <textarea
+                  value={newRevenue.notes}
+                  onChange={(e) => setNewRevenue({ ...newRevenue, notes: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                  rows="3"
+                  placeholder="Additional notes..."
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                  Add Revenue
+                </button>
+                <button type="button" onClick={() => setShowAddRevenueModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-2.5 rounded-lg hover:bg-gray-400 transition-colors font-medium">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Expense Modal */}
+      {showAddExpenseModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-red-600">Add Expense Record</h2>
+              <button onClick={() => setShowAddExpenseModal(false)} className="text-gray-500 hover:text-gray-700">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleAddExpense} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Project *</label>
+                <select
+                  value={newExpense.projectId}
+                  onChange={(e) => setNewExpense({ ...newExpense, projectId: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="">Select a project</option>
+                  {projects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.projectName} ({project.projectCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Expense Code *</label>
+                <input
+                  type="text"
+                  value={newExpense.expenseCode}
+                  onChange={(e) => setNewExpense({ ...newExpense, expenseCode: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="e.g., EXP-001"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description *</label>
+                <input
+                  type="text"
+                  value={newExpense.description}
+                  onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="Expense description"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newExpense.amount}
+                  onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={newExpense.date}
+                  onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  value={newExpense.category}
+                  onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                >
+                  <option value="labor">Labor</option>
+                  <option value="materials">Materials</option>
+                  <option value="equipment">Equipment</option>
+                  <option value="travel">Travel</option>
+                  <option value="overhead">Overhead</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <select
+                  value={newExpense.status}
+                  onChange={(e) => setNewExpense({ ...newExpense, status: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="paid">Paid</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                <textarea
+                  value={newExpense.notes}
+                  onChange={(e) => setNewExpense({ ...newExpense, notes: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                  placeholder="Additional notes..."
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 bg-red-600 text-white py-2.5 rounded-lg hover:bg-red-700 transition-colors font-semibold">
+                  Add Expense
+                </button>
+                <button type="button" onClick={() => setShowAddExpenseModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-2.5 rounded-lg hover:bg-gray-400 transition-colors font-medium">
                   Cancel
                 </button>
               </div>
