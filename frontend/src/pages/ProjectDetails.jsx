@@ -70,8 +70,10 @@ const ProjectDetails = () => {
 
   useEffect(() => {
     fetchProject();
-    if (activeTab === 'revenue') fetchRevenues();
-    if (activeTab === 'expenses') fetchExpenses();
+    if (activeTab === 'revenue') {
+      fetchRevenues();
+      fetchExpenses(); // Also fetch expenses when on Revenue & Expenses tab
+    }
     if (activeTab === 'billing') {
       fetchBillings();
       fetchCollections();
