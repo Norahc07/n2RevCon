@@ -481,7 +481,7 @@ const ProjectDetails = () => {
           <p className="font-semibold capitalize">{project.status}</p>
         </div>
         <div>
-          <span className="text-sm text-gray-600">Budget</span>
+          <span className="text-sm text-gray-600">Transaction Price</span>
           <p className="font-semibold">{formatCurrency(project.budget)}</p>
         </div>
       </div>
