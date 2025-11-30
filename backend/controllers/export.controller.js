@@ -13,12 +13,10 @@ import Collection from '../models/Collection.model.js';
 export const exportProjects = async (req, res) => {
   try {
     const { year } = req.query;
-    const userId = req.user._id;
     
     // Build filter - match Projects Description page behavior
-    // Filter by user and exclude deleted projects
+    // Exclude deleted projects only (show all projects, not filtered by user)
     const filter = { 
-      createdBy: userId,
       deletedAt: null 
     };
     
@@ -96,21 +94,17 @@ export const exportProjects = async (req, res) => {
     const projectIds = projects.map(p => p._id);
     const revenues = await Revenue.find({ 
       projectId: { $in: projectIds },
-      createdBy: userId,
       status: { $ne: 'cancelled' }
     });
     const expenses = await Expense.find({ 
       projectId: { $in: projectIds },
-      createdBy: userId,
       status: { $ne: 'cancelled' }
     });
     const billings = await Billing.find({ 
-      projectId: { $in: projectIds },
-      createdBy: userId
+      projectId: { $in: projectIds }
     });
     const collections = await Collection.find({ 
-      projectId: { $in: projectIds },
-      createdBy: userId
+      projectId: { $in: projectIds }
     });
     
     // Calculate totals per project
