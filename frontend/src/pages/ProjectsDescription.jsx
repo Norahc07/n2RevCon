@@ -16,6 +16,8 @@ import {
   MagnifyingGlassIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { exportAPI } from '../services/api';
 import { TableSkeleton, FilterSkeleton } from '../components/skeletons';
@@ -27,6 +29,8 @@ const ProjectsDescription = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [exporting, setExporting] = useState(false);
   const [focusedYearDropdown, setFocusedYearDropdown] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,6 +76,23 @@ const ProjectsDescription = () => {
 
     return filtered;
   }, [projects, year, searchQuery]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [year, searchQuery]);
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Get status badge styling
   const getStatusBadge = (status) => {
@@ -272,7 +293,7 @@ const ProjectsDescription = () => {
         <>
           {/* Mobile Card View - Visible on small screens */}
           <div className="sm:hidden space-y-3">
-            {filteredProjects.map((project) => (
+            {paginatedProjects.map((project) => (
               <div
                 key={project._id}
                 className="mobile-data-card cursor-pointer active:bg-gray-50"
@@ -359,12 +380,13 @@ const ProjectsDescription = () => {
               </div>
             ))}
 
-            {/* Mobile Footer with Summary */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-3 py-2">
+            {/* Mobile Footer with Summary and Pagination */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-3 py-2 space-y-2">
               <div className="flex flex-col items-center gap-2 text-xs text-gray-600">
                 <span className="text-center">
-                  Showing <span className="font-semibold text-gray-900">{filteredProjects.length}</span> of{' '}
-                  <span className="font-semibold text-gray-900">{projects.length}</span> projects
+                  Showing <span className="font-semibold text-gray-900">{startIndex + 1}</span> to{' '}
+                  <span className="font-semibold text-gray-900">{Math.min(endIndex, filteredProjects.length)}</span> of{' '}
+                  <span className="font-semibold text-gray-900">{filteredProjects.length}</span> projects
                   {year && ` for ${year}`}
                 </span>
                 {(year || searchQuery) && (
@@ -379,6 +401,56 @@ const ProjectsDescription = () => {
                   </button>
                 )}
               </div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-2 border-t border-gray-200">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeftIcon className="w-4 h-4" />
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                            currentPage === pageNum
+                              ? 'bg-red-600 text-white'
+                              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRightIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -400,7 +472,7 @@ const ProjectsDescription = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredProjects.map((project, index) => (
+                  {paginatedProjects.map((project, index) => (
                     <tr
                       key={project._id}
                       className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
@@ -498,14 +570,37 @@ const ProjectsDescription = () => {
               </table>
             </div>
 
-            {/* Table Footer with Summary */}
-            <div className="bg-gray-50 border-t-2 border-gray-200 px-3 sm:px-4 py-2 sm:py-3">
+            {/* Table Footer with Summary and Pagination */}
+            <div className="bg-gray-50 border-t-2 border-gray-200 px-3 sm:px-4 py-2 sm:py-3 space-y-3">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs sm:text-sm text-gray-600">
-                <span className="text-center sm:text-left">
-                  Showing <span className="font-semibold text-gray-900">{filteredProjects.length}</span> of{' '}
-                  <span className="font-semibold text-gray-900">{projects.length}</span> projects
-                  {year && ` for ${year}`}
-                </span>
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <span className="text-center sm:text-left">
+                    Showing <span className="font-semibold text-gray-900">{startIndex + 1}</span> to{' '}
+                    <span className="font-semibold text-gray-900">{Math.min(endIndex, filteredProjects.length)}</span> of{' '}
+                    <span className="font-semibold text-gray-900">{filteredProjects.length}</span> projects
+                    {year && ` for ${year}`}
+                  </span>
+                  
+                  {/* Items per page selector */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">Show:</span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-xs bg-white focus:outline-none focus:border-red-600"
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                    <span className="text-gray-600">per page</span>
+                  </div>
+                </div>
+                
                 {(year || searchQuery) && (
                   <button
                     onClick={() => {
@@ -518,6 +613,58 @@ const ProjectsDescription = () => {
                   </button>
                 )}
               </div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-2 border-t border-gray-200">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  >
+                    <ChevronLeftIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Previous</span>
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 7) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 4) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 3) {
+                        pageNum = totalPages - 6 + i;
+                      } else {
+                        pageNum = currentPage - 3 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors min-w-[40px] ${
+                            currentPage === pageNum
+                              ? 'bg-red-600 text-white shadow-md'
+                              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRightIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </>
