@@ -157,10 +157,17 @@ async function wipeAndSeed() {
         const startDay = Math.floor(Math.random() * 28) + 1;
         const startDate = new Date(year, startMonth, startDay);
         
-        // Duration: 6 months to 3 years
-        const durationMonths = 6 + Math.floor(Math.random() * 30);
+        // Duration: 6 months to max until end of 2025
+        const maxEndDate = new Date(2025, 11, 31); // December 31, 2025
+        const maxDurationMonths = Math.floor((maxEndDate - startDate) / (1000 * 60 * 60 * 24 * 30));
+        const durationMonths = Math.min(6 + Math.floor(Math.random() * 30), maxDurationMonths);
         const endDate = new Date(startDate);
         endDate.setMonth(endDate.getMonth() + durationMonths);
+        
+        // Ensure end date doesn't exceed 2025
+        if (endDate > maxEndDate) {
+          endDate.setFullYear(2025, 11, 31);
+        }
         
         // Budget with variation
         const budgetVariation = 0.7 + (Math.random() * 0.6); // 70% to 130% of base
@@ -239,6 +246,12 @@ async function wipeAndSeed() {
         const revenueDate = new Date(projectStart);
         revenueDate.setMonth(revenueDate.getMonth() + Math.floor((i * monthsDiff) / revenueCount));
         
+        // Ensure revenue date doesn't exceed 2025
+        const maxDate = new Date(2025, 11, 31);
+        if (revenueDate > maxDate) {
+          revenueDate.setFullYear(2025, 11, 31);
+        }
+        
         // Amount based on project budget (1-5% of budget per revenue entry)
         const budgetPercent = (0.01 + Math.random() * 0.04);
         const amount = Math.floor(project.budget * budgetPercent);
@@ -281,6 +294,12 @@ async function wipeAndSeed() {
       for (let i = 0; i < expenseCount; i++) {
         const expenseDate = new Date(projectStart);
         expenseDate.setMonth(expenseDate.getMonth() + Math.floor((i * monthsDiff) / expenseCount));
+        
+        // Ensure expense date doesn't exceed 2025
+        const maxDate = new Date(2025, 11, 31);
+        if (expenseDate > maxDate) {
+          expenseDate.setFullYear(2025, 11, 31);
+        }
         
         // Amount based on project budget (0.5-3% of budget per expense entry)
         const budgetPercent = (0.005 + Math.random() * 0.025);
@@ -325,8 +344,19 @@ async function wipeAndSeed() {
         const billingDate = new Date(projectStart);
         billingDate.setMonth(billingDate.getMonth() + (i * billingInterval));
         
+        // Ensure billing date doesn't exceed 2025
+        const maxDate = new Date(2025, 11, 31);
+        if (billingDate > maxDate) {
+          billingDate.setFullYear(2025, 11, 31);
+        }
+        
         const dueDate = new Date(billingDate);
         dueDate.setMonth(dueDate.getMonth() + 1);
+        
+        // Ensure due date doesn't exceed 2025
+        if (dueDate > maxDate) {
+          dueDate.setFullYear(2025, 11, 31);
+        }
         
         // Amount based on project budget (5-15% of budget per billing)
         const budgetPercent = (0.05 + Math.random() * 0.10);
@@ -381,6 +411,12 @@ async function wipeAndSeed() {
       for (let i = 0; i < collectionCount; i++) {
         const collectionDate = new Date(billing.billingDate);
         collectionDate.setDate(collectionDate.getDate() + (i * 15)); // 15 days apart
+        
+        // Ensure collection date doesn't exceed 2025
+        const maxDate = new Date(2025, 11, 31);
+        if (collectionDate > maxDate) {
+          collectionDate.setFullYear(2025, 11, 31);
+        }
         
         let amount;
         let status;
