@@ -10,6 +10,7 @@
     "server": "nodemon server.js",
     "seed": "node scripts/seedData.js",
     "seed-all": "node scripts/seedDataForAllUsers.js",
+    "wipe-and-seed": "node scripts/wipeAndSeed.js",
     "fix-roles": "node scripts/fixUserRoles.js"
   },
   "keywords": [
