@@ -9,6 +9,8 @@ import Collection from '../models/Collection.model.js';
  * @route   GET /api/dashboard/summary
  * @desc    Get dashboard summary data
  * @access  Private
+ * @note    All registered users see the same data (no user filtering)
+ *          This ensures all accounts have access to the same dashboard information
  */
 export const getDashboardSummary = async (req, res) => {
   try {
