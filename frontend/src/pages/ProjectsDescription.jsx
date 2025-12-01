@@ -324,18 +324,6 @@ const ProjectsDescription = () => {
                       {new Date(project.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
                     </span>
                   </div>
-                  {project.variableConsiderations && (
-                    <div className="data-row">
-                      <span className="data-label">Variable Considerations</span>
-                      <span className="data-value text-xs line-clamp-2">{project.variableConsiderations}</span>
-                    </div>
-                  )}
-                  {project.notes && (
-                    <div className="data-row">
-                      <span className="data-label">Comments</span>
-                      <span className="data-value text-xs line-clamp-2">{project.notes}</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Card Footer - Actions */}
@@ -408,8 +396,6 @@ const ProjectsDescription = () => {
                     <th className="text-left p-3 sm:p-4 font-semibold text-gray-700 text-sm hidden lg:table-cell">Transaction Price</th>
                     <th className="text-left p-3 sm:p-4 font-semibold text-gray-700 text-sm hidden lg:table-cell">Start Date</th>
                     <th className="text-left p-3 sm:p-4 font-semibold text-gray-700 text-sm hidden lg:table-cell">End Date</th>
-                    <th className="text-left p-3 sm:p-4 font-semibold text-gray-700 text-sm hidden xl:table-cell">Variable Considerations, if any</th>
-                    <th className="text-left p-3 sm:p-4 font-semibold text-gray-700 text-sm hidden xl:table-cell">Comments</th>
                     <th className="text-left p-3 sm:p-4 font-semibold text-gray-700 text-sm">Actions</th>
                   </tr>
                 </thead>
@@ -473,16 +459,6 @@ const ProjectsDescription = () => {
                             month: 'short',
                             day: 'numeric',
                           })}
-                        </span>
-                      </td>
-                      <td className="p-3 sm:p-4 hidden xl:table-cell max-w-xs">
-                        <span className="text-gray-700 text-xs sm:text-sm line-clamp-2">
-                          {project.variableConsiderations || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="p-3 sm:p-4 hidden xl:table-cell max-w-xs">
-                        <span className="text-gray-700 text-xs sm:text-sm line-clamp-2">
-                          {project.notes || 'N/A'}
                         </span>
                       </td>
                       <td className="p-3 sm:p-4">

@@ -71,7 +71,7 @@ export const exportProjects = async (req, res) => {
       { header: 'End Date', key: 'endDate', width: 15 },
       { header: 'Description', key: 'description', width: 50 },
       { header: 'Variable Considerations, if any', key: 'variableConsiderations', width: 40 },
-      { header: 'Comments', key: 'comments', width: 40 },
+      { header: 'Remarks', key: 'comments', width: 40 },
     ];
 
       // Style header row
