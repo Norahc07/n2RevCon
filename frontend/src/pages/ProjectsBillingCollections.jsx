@@ -114,17 +114,21 @@ const ProjectsBillingCollections = () => {
     }
   };
 
-  // Get available years from projects
+  // Get available years from projects (exclude 2026 and beyond)
   const availableYears = useMemo(() => {
     const years = new Set();
     projects.forEach((project) => {
       const startYear = new Date(project.startDate).getFullYear();
       const endYear = new Date(project.endDate).getFullYear();
-      for (let y = startYear; y <= endYear; y++) {
-        years.add(y);
+      const minYear = Math.min(startYear, endYear);
+      const maxYear = Math.min(Math.max(startYear, endYear), 2025); // Cap at 2025
+      for (let y = minYear; y <= maxYear; y++) {
+        if (y <= 2025) {
+          years.add(y);
+        }
       }
     });
-    return Array.from(years).sort((a, b) => b - a);
+    return Array.from(years).filter(y => y <= 2025).sort((a, b) => b - a);
   }, [projects]);
 
   // Apply filters

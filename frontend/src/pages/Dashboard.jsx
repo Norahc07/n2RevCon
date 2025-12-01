@@ -157,7 +157,7 @@ const Dashboard = () => {
     localStorage.setItem('notification-prompt-dismissed', new Date().toISOString());
   };
 
-  // Get available years from projects
+  // Get available years from projects (exclude 2026 and beyond)
   const availableYears = useMemo(() => {
     if (!projects || projects.length === 0) {
       return [new Date().getFullYear()]; // Fallback to current year
@@ -167,7 +167,7 @@ const Dashboard = () => {
       if (project.startDate) {
         try {
           const startYear = new Date(project.startDate).getFullYear();
-          if (!isNaN(startYear)) {
+          if (!isNaN(startYear) && startYear <= 2025) {
             years.add(startYear);
           }
         } catch (e) {
@@ -177,21 +177,25 @@ const Dashboard = () => {
       if (project.endDate) {
         try {
           const endYear = new Date(project.endDate).getFullYear();
-          if (!isNaN(endYear)) {
+          if (!isNaN(endYear) && endYear <= 2025) {
             years.add(endYear);
           }
         } catch (e) {
           console.warn('Invalid endDate:', project.endDate);
         }
       }
-      // Also add years in between start and end dates
+      // Also add years in between start and end dates (but cap at 2025)
       if (project.startDate && project.endDate) {
         try {
           const startYear = new Date(project.startDate).getFullYear();
           const endYear = new Date(project.endDate).getFullYear();
           if (!isNaN(startYear) && !isNaN(endYear)) {
-            for (let y = Math.min(startYear, endYear); y <= Math.max(startYear, endYear); y++) {
-              years.add(y);
+            const minYear = Math.min(startYear, endYear);
+            const maxYear = Math.min(Math.max(startYear, endYear), 2025); // Cap at 2025
+            for (let y = minYear; y <= maxYear; y++) {
+              if (y <= 2025) {
+                years.add(y);
+              }
             }
           }
         } catch (e) {
@@ -199,7 +203,7 @@ const Dashboard = () => {
         }
       }
     });
-    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    const sortedYears = Array.from(years).filter(y => y <= 2025).sort((a, b) => b - a);
     return sortedYears.length > 0 ? sortedYears : [new Date().getFullYear()];
   }, [projects]);
 
