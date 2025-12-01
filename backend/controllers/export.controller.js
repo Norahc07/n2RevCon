@@ -596,7 +596,8 @@ export const exportProject = async (req, res) => {
       { header: 'Amount', key: 'amount', width: 15 },
       { header: 'Date', key: 'date', width: 15 },
       { header: 'Category', key: 'category', width: 15 },
-      { header: 'Status', key: 'status', width: 15 }
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Notes', key: 'notes', width: 40 }
     ];
     revenues.forEach(rev => {
       revenueSheet.addRow({
@@ -605,7 +606,8 @@ export const exportProject = async (req, res) => {
         amount: rev.amount,
         date: rev.date,
         category: rev.category,
-        status: rev.status
+        status: rev.status,
+        notes: rev.notes || ''
       });
     });
 
@@ -617,8 +619,8 @@ export const exportProject = async (req, res) => {
       { header: 'Amount', key: 'amount', width: 15 },
       { header: 'Date', key: 'date', width: 15 },
       { header: 'Category', key: 'category', width: 15 },
-      { header: 'Vendor', key: 'vendor', width: 20 },
-      { header: 'Status', key: 'status', width: 15 }
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Notes', key: 'notes', width: 40 }
     ];
     expenses.forEach(exp => {
       expenseSheet.addRow({
@@ -627,8 +629,8 @@ export const exportProject = async (req, res) => {
         amount: exp.amount,
         date: exp.date,
         category: exp.category,
-        vendor: exp.vendor,
-        status: exp.status
+        status: exp.status,
+        notes: exp.notes || ''
       });
     });
 
@@ -641,6 +643,7 @@ export const exportProject = async (req, res) => {
       { header: 'Amount', key: 'amount', width: 15 },
       { header: 'Tax', key: 'tax', width: 15 },
       { header: 'Total Amount', key: 'totalAmount', width: 15 },
+      { header: 'Description', key: 'description', width: 40 },
       { header: 'Status', key: 'status', width: 15 }
     ];
     billings.forEach(bill => {
@@ -651,6 +654,7 @@ export const exportProject = async (req, res) => {
         amount: bill.amount,
         tax: bill.tax,
         totalAmount: bill.totalAmount,
+        description: bill.description || '',
         status: bill.status
       });
     });
@@ -663,7 +667,8 @@ export const exportProject = async (req, res) => {
       { header: 'Collection Date', key: 'collectionDate', width: 15 },
       { header: 'Amount', key: 'amount', width: 15 },
       { header: 'Payment Method', key: 'paymentMethod', width: 15 },
-      { header: 'Status', key: 'status', width: 15 }
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Notes', key: 'notes', width: 40 }
     ];
     collections.forEach(col => {
       collectionSheet.addRow({
@@ -672,7 +677,8 @@ export const exportProject = async (req, res) => {
         collectionDate: col.collectionDate,
         amount: col.amount,
         paymentMethod: col.paymentMethod,
-        status: col.status
+        status: col.status,
+        notes: col.notes || ''
       });
     });
 
@@ -761,7 +767,8 @@ export const exportRevenueCosts = async (req, res) => {
       { header: 'Description', key: 'description', width: 40 },
       { header: 'Amount', key: 'amount', width: 18 },
       { header: 'Category', key: 'category', width: 18 },
-      { header: 'Status', key: 'status', width: 12 }
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Notes', key: 'notes', width: 40 }
     ];
 
     // Style header row
@@ -778,7 +785,7 @@ export const exportRevenueCosts = async (req, res) => {
     // Add auto-filter
     revenueSheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: 1, column: 9 }
+      to: { row: 1, column: 10 }
     };
 
     revenues.forEach((rev, index) => {
@@ -791,7 +798,8 @@ export const exportRevenueCosts = async (req, res) => {
         description: rev.description || '',
         amount: rev.amount || 0,
         category: rev.category ? rev.category.charAt(0).toUpperCase() + rev.category.slice(1) : '',
-        status: rev.status ? rev.status.charAt(0).toUpperCase() + rev.status.slice(1) : ''
+        status: rev.status ? rev.status.charAt(0).toUpperCase() + rev.status.slice(1) : '',
+        notes: rev.notes || ''
       });
 
       // Alternate row colors
@@ -855,8 +863,8 @@ export const exportRevenueCosts = async (req, res) => {
       { header: 'Description', key: 'description', width: 40 },
       { header: 'Amount', key: 'amount', width: 18 },
       { header: 'Category', key: 'category', width: 18 },
-      { header: 'Vendor', key: 'vendor', width: 20 },
-      { header: 'Status', key: 'status', width: 12 }
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Notes', key: 'notes', width: 40 }
     ];
 
     // Style header row
@@ -886,8 +894,8 @@ export const exportRevenueCosts = async (req, res) => {
         description: exp.description || '',
         amount: exp.amount || 0,
         category: exp.category ? exp.category.charAt(0).toUpperCase() + exp.category.slice(1) : '',
-        vendor: exp.vendor || '',
-        status: exp.status ? exp.status.charAt(0).toUpperCase() + exp.status.slice(1) : ''
+        status: exp.status ? exp.status.charAt(0).toUpperCase() + exp.status.slice(1) : '',
+        notes: exp.notes || ''
       });
 
       // Alternate row colors
@@ -1102,6 +1110,7 @@ export const exportBillingCollections = async (req, res) => {
       { header: 'Amount', key: 'amount', width: 15 },
       { header: 'Tax', key: 'tax', width: 15 },
       { header: 'Total Amount', key: 'totalAmount', width: 18 },
+      { header: 'Description', key: 'description', width: 40 },
       { header: 'Status', key: 'status', width: 12 }
     ];
 
@@ -1119,7 +1128,7 @@ export const exportBillingCollections = async (req, res) => {
     // Add auto-filter
     billingSheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: 1, column: 10 }
+      to: { row: 1, column: 11 }
     };
 
     billings.forEach((bill, index) => {
@@ -1133,6 +1142,7 @@ export const exportBillingCollections = async (req, res) => {
         amount: bill.amount || 0,
         tax: bill.tax || 0,
         totalAmount: bill.totalAmount || bill.amount || 0,
+        description: bill.description || '',
         status: bill.status ? bill.status.charAt(0).toUpperCase() + bill.status.slice(1) : ''
       });
 
@@ -1204,7 +1214,8 @@ export const exportBillingCollections = async (req, res) => {
       { header: 'Check Number', key: 'checkNumber', width: 18 },
       { header: 'Amount', key: 'amount', width: 18 },
       { header: 'Payment Method', key: 'paymentMethod', width: 18 },
-      { header: 'Status', key: 'status', width: 12 }
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Notes', key: 'notes', width: 40 }
     ];
 
     // Style header row
@@ -1221,7 +1232,7 @@ export const exportBillingCollections = async (req, res) => {
     // Add auto-filter
     collectionSheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: 1, column: 10 }
+      to: { row: 1, column: 11 }
     };
 
     collections.forEach((col, index) => {
@@ -1235,7 +1246,8 @@ export const exportBillingCollections = async (req, res) => {
         checkNumber: col.checkNumber || '',
         amount: col.amount || 0,
         paymentMethod: col.paymentMethod ? col.paymentMethod.charAt(0).toUpperCase() + col.paymentMethod.slice(1) : '',
-        status: col.status ? col.status.charAt(0).toUpperCase() + col.status.slice(1) : ''
+        status: col.status ? col.status.charAt(0).toUpperCase() + col.status.slice(1) : '',
+        notes: col.notes || ''
       });
 
       // Alternate row colors
