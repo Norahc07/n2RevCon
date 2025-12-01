@@ -160,3 +160,169 @@
   overflow: hidden;
 }
 
+/* ========================================
+   THIN PHONE RESPONSIVE STYLES (320px)
+   For compact phones ~69-70mm width
+   ======================================== */
+
+/* Responsive card for mobile - converts table rows to cards */
+.mobile-card-view {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .mobile-card-view {
+    display: block;
+  }
+  
+  .desktop-table-view {
+    display: none;
+  }
+}
+
+/* Center data in cards and containers on mobile */
+@media (max-width: 639px) {
+  .mobile-center {
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .mobile-center-flex {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* Extra small phone adjustments (320px) */
+@media (max-width: 359px) {
+  /* Reduce base font size slightly */
+  html {
+    font-size: 14px;
+  }
+  
+  /* Tighter padding */
+  .xs-p-2 {
+    padding: 0.5rem !important;
+  }
+  
+  .xs-px-2 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  .xs-py-1 {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* Smaller text on very thin phones */
+  .xs-text-xs {
+    font-size: 0.75rem !important;
+  }
+  
+  .xs-text-sm {
+    font-size: 0.875rem !important;
+  }
+  
+  /* Hide less important elements on tiny screens */
+  .xs-hide {
+    display: none !important;
+  }
+  
+  /* Full width on extra small */
+  .xs-w-full {
+    width: 100% !important;
+  }
+  
+  /* Center text on extra small */
+  .xs-text-center {
+    text-align: center !important;
+  }
+  
+  /* Stack items vertically on tiny screens */
+  .xs-flex-col {
+    flex-direction: column !important;
+  }
+  
+  /* Smaller gaps on tiny screens */
+  .xs-gap-1 {
+    gap: 0.25rem !important;
+  }
+  
+  .xs-gap-2 {
+    gap: 0.5rem !important;
+  }
+}
+
+/* Mobile data card styling */
+.mobile-data-card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.mobile-data-card .data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.mobile-data-card .data-row:last-child {
+  border-bottom: none;
+}
+
+.mobile-data-card .data-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.mobile-data-card .data-value {
+  font-size: 0.875rem;
+  color: #111827;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Chart responsiveness */
+@media (max-width: 639px) {
+  .chart-container {
+    min-height: 200px !important;
+    height: 220px !important;
+  }
+  
+  /* Scale down MUI charts on mobile */
+  .MuiChartsAxis-tickLabel {
+    font-size: 10px !important;
+  }
+  
+  .MuiChartsLegend-label {
+    font-size: 11px !important;
+  }
+}
+
+/* Summary card responsive centering */
+@media (max-width: 639px) {
+  .summary-card {
+    text-align: center;
+  }
+  
+  .summary-card .card-header {
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .summary-card .card-value {
+    font-size: 1.5rem;
+  }
+}
+

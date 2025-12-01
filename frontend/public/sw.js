@@ -7,8 +7,8 @@
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'New notification',
-    icon: '/N2RevConLogo.png',
-    badge: '/N2RevConLogo.png',
+    icon: '/n2RevConLogo.png',
+    badge: '/n2RevConLogo.png',
     vibrate: [200, 100, 200],
     tag: 'n2revcon-notification',
     requireInteraction: false,

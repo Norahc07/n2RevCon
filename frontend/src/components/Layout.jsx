@@ -34,7 +34,7 @@ const Layout = ({ children }) => {
           sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'
         }`}
       >
-        <main className="p-3 sm:p-4 md:p-6 lg:p-8">
+        <main className="p-2 xs:p-3 sm:p-4 md:p-6 lg:p-8">
           {children}
         </main>
       </div>

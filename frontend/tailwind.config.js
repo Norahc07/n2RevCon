@@ -5,6 +5,14 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    screens: {
+      'xs': '320px',   // Extra small - thin phones (69-70mm width)
+      'sm': '640px',   // Small
+      'md': '768px',   // Medium
+      'lg': '1024px',  // Large
+      'xl': '1280px',  // Extra large
+      '2xl': '1536px', // 2X large
+    },
     extend: {
       colors: {
         primary: {
