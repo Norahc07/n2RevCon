@@ -32,6 +32,7 @@ const AddProject = () => {
     endDate: '',
     budget: '',
     variableConsiderations: '',
+    comments: '',
     location: '',
     projectManager: '',
     tags: [],
@@ -62,6 +63,7 @@ const AddProject = () => {
         endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
         budget: project.budget || '',
         variableConsiderations: project.variableConsiderations || '',
+        comments: project.comments || '',
         location: project.location || '',
         projectManager: project.projectManager || '',
         tags: project.tags || [],
@@ -89,6 +91,7 @@ const AddProject = () => {
         budget: parseFloat(formData.budget) || 0,
         tags: formData.tags.filter(tag => tag.trim() !== ''),
         variableConsiderations: formData.variableConsiderations || '',
+        comments: formData.comments || '',
       };
       
       if (isEditMode) {
@@ -339,6 +342,18 @@ const AddProject = () => {
                 placeholder="Retention, Penalties, Bonuses, etc."
               />
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Comments
+              </label>
+              <textarea
+                value={formData.comments}
+                onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200 resize-none"
+                rows="4"
+                placeholder="Enter any additional comments about the project..."
+              />
+            </div>
           </div>
         )}
 
@@ -491,6 +506,12 @@ const AddProject = () => {
                   <div className="space-y-1 md:col-span-2">
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Variable Considerations</span>
                     <p className="text-base text-gray-700 leading-relaxed">{formData.variableConsiderations}</p>
+                  </div>
+                )}
+                {formData.comments && (
+                  <div className="space-y-1 md:col-span-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Comments</span>
+                    <p className="text-base text-gray-700 leading-relaxed">{formData.comments}</p>
                   </div>
                 )}
                 {formData.notes && (

@@ -73,6 +73,8 @@ export const exportProjects = async (req, res) => {
       { header: 'End Date', key: 'endDate', width: 15 },
       { header: 'Project Manager', key: 'projectManager', width: 20 },
       { header: 'Description', key: 'description', width: 50 },
+      { header: 'Variable Considerations, if any', key: 'variableConsiderations', width: 40 },
+      { header: 'Comments', key: 'comments', width: 40 },
     ];
 
       // Style header row
@@ -86,10 +88,10 @@ export const exportProjects = async (req, res) => {
     headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
     headerRow.height = 25;
     
-    // Add auto-filter to header row (all columns: A1 to K1 for 11 columns)
+    // Add auto-filter to header row (all columns: A1 to M1 for 13 columns)
     projectsSheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: 1, column: 11 }
+      to: { row: 1, column: 13 }
     };
 
     // Get revenue, expense, billing, and collection data for all projects
@@ -165,6 +167,8 @@ export const exportProjects = async (req, res) => {
         endDate: project.endDate ? new Date(project.endDate).toLocaleDateString('en-US') : '',
         projectManager: project.projectManager || '',
         description: project.description || '',
+        variableConsiderations: project.variableConsiderations || '',
+        comments: project.comments || '',
       });
 
       // Alternate row colors for better readability

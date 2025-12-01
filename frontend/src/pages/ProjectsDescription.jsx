@@ -277,6 +277,8 @@ const ProjectsDescription = () => {
                   <th className="text-left p-4 font-semibold text-gray-700">Transaction Price</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Start Date</th>
                   <th className="text-left p-4 font-semibold text-gray-700">End Date</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Variable Considerations, if any</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Comments</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
@@ -340,6 +342,16 @@ const ProjectsDescription = () => {
                           month: 'short',
                           day: 'numeric',
                         })}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-700 text-sm">
+                        {project.variableConsiderations || 'N/A'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-700 text-sm">
+                        {project.comments || 'N/A'}
                       </span>
                     </td>
                     <td className="p-4">
