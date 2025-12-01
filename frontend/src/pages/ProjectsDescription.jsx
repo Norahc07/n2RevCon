@@ -344,14 +344,14 @@ const ProjectsDescription = () => {
                         })}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <span className="text-gray-700 text-sm">
+                    <td className="p-4 max-w-xs">
+                      <span className="text-gray-700 text-sm line-clamp-2">
                         {project.variableConsiderations || 'N/A'}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <span className="text-gray-700 text-sm">
-                        {project.comments || 'N/A'}
+                    <td className="p-4 max-w-xs">
+                      <span className="text-gray-700 text-sm line-clamp-2">
+                        {project.notes || 'N/A'}
                       </span>
                     </td>
                     <td className="p-4">

@@ -168,7 +168,7 @@ export const exportProjects = async (req, res) => {
         projectManager: project.projectManager || '',
         description: project.description || '',
         variableConsiderations: project.variableConsiderations || '',
-        comments: project.comments || '',
+        comments: project.notes || '',
       });
 
       // Alternate row colors for better readability
