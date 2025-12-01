@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectAPI, revenueAPI, expenseAPI, billingAPI, collectionAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/currency';
-import { PencilIcon, TrashIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, XMarkIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { TableSkeleton, CardSkeleton, SkeletonBox } from '../components/skeletons';
 
 const ProjectDetails = () => {
@@ -16,6 +16,13 @@ const ProjectDetails = () => {
   const [billings, setBillings] = useState([]);
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Pagination states for each table
+  const [revenuePage, setRevenuePage] = useState(1);
+  const [expensePage, setExpensePage] = useState(1);
+  const [billingPage, setBillingPage] = useState(1);
+  const [collectionPage, setCollectionPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   // Edit modal states
   const [editingRevenue, setEditingRevenue] = useState(null);
@@ -424,6 +431,129 @@ const ProjectDetails = () => {
     { id: 'billing', label: 'Billing & Collections' },
   ];
 
+  // Pagination logic for each table
+  const revenueTotalPages = Math.ceil(revenues.length / itemsPerPage);
+  const revenueStartIndex = (revenuePage - 1) * itemsPerPage;
+  const revenueEndIndex = revenueStartIndex + itemsPerPage;
+  const paginatedRevenues = useMemo(() => {
+    return revenues.slice(revenueStartIndex, revenueEndIndex);
+  }, [revenues, revenueStartIndex, revenueEndIndex]);
+
+  const expenseTotalPages = Math.ceil(expenses.length / itemsPerPage);
+  const expenseStartIndex = (expensePage - 1) * itemsPerPage;
+  const expenseEndIndex = expenseStartIndex + itemsPerPage;
+  const paginatedExpenses = useMemo(() => {
+    return expenses.slice(expenseStartIndex, expenseEndIndex);
+  }, [expenses, expenseStartIndex, expenseEndIndex]);
+
+  const billingTotalPages = Math.ceil(billings.length / itemsPerPage);
+  const billingStartIndex = (billingPage - 1) * itemsPerPage;
+  const billingEndIndex = billingStartIndex + itemsPerPage;
+  const paginatedBillings = useMemo(() => {
+    return billings.slice(billingStartIndex, billingEndIndex);
+  }, [billings, billingStartIndex, billingEndIndex]);
+
+  const collectionTotalPages = Math.ceil(collections.length / itemsPerPage);
+  const collectionStartIndex = (collectionPage - 1) * itemsPerPage;
+  const collectionEndIndex = collectionStartIndex + itemsPerPage;
+  const paginatedCollections = useMemo(() => {
+    return collections.slice(collectionStartIndex, collectionEndIndex);
+  }, [collections, collectionStartIndex, collectionEndIndex]);
+
+  // Reset pages when data changes
+  useEffect(() => {
+    setRevenuePage(1);
+    setExpensePage(1);
+    setBillingPage(1);
+    setCollectionPage(1);
+  }, [revenues.length, expenses.length, billings.length, collections.length]);
+
+  // Pagination helper function
+  const renderPagination = (currentPage, totalPages, onPageChange, startIndex, endIndex, totalItems, itemsPerPage) => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="bg-gray-50 border-t-2 border-gray-200 px-3 sm:px-4 py-2 sm:py-3 space-y-3">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs sm:text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <span className="text-center sm:text-left">
+              Showing <span className="font-semibold text-gray-900">{startIndex + 1}</span> to{' '}
+              <span className="font-semibold text-gray-900">{Math.min(endIndex, totalItems)}</span> of{' '}
+              <span className="font-semibold text-gray-900">{totalItems}</span> records
+            </span>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600">Show:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  onPageChange(1);
+                }}
+                className="border border-gray-300 rounded px-2 py-1 text-xs bg-white focus:outline-none focus:border-red-600"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span className="text-gray-600">per page</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-center gap-2 pt-2 border-t border-gray-200">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+          >
+            <ChevronLeftIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Previous</span>
+          </button>
+          
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 7) {
+                pageNum = i + 1;
+              } else if (currentPage <= 4) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 3) {
+                pageNum = totalPages - 6 + i;
+              } else {
+                pageNum = currentPage - 3 + i;
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => onPageChange(pageNum)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors min-w-[40px] ${
+                    currentPage === pageNum
+                      ? 'bg-red-600 text-white shadow-md'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+          >
+            <span className="hidden sm:inline">Next</span>
+            <ChevronRightIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const totalRevenue = revenues.reduce((sum, r) => sum + (r.amount || 0), 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
@@ -600,7 +730,7 @@ const ProjectDetails = () => {
                         </td>
                       </tr>
                     ) : (
-                      revenues.map((rev) => (
+                      paginatedRevenues.map((rev) => (
                         <tr key={rev._id} className="border-b border-gray-200 hover:bg-gray-50">
                           <td className="px-4 py-3 border border-gray-300">{rev.revenueCode}</td>
                           <td className="px-4 py-3 border border-gray-300">{rev.description}</td>
@@ -629,6 +759,7 @@ const ProjectDetails = () => {
                     )}
                   </tbody>
                 </table>
+                {renderPagination(revenuePage, revenueTotalPages, setRevenuePage, revenueStartIndex, revenueEndIndex, revenues.length, itemsPerPage)}
               </div>
             </div>
             <div>
@@ -661,7 +792,7 @@ const ProjectDetails = () => {
                         </td>
                       </tr>
                     ) : (
-                      expenses.map((exp) => (
+                      paginatedExpenses.map((exp) => (
                         <tr key={exp._id} className="border-b border-gray-200 hover:bg-gray-50">
                           <td className="px-4 py-3 border border-gray-300">{exp.expenseCode}</td>
                           <td className="px-4 py-3 border border-gray-300">{exp.description}</td>
@@ -690,6 +821,7 @@ const ProjectDetails = () => {
                     )}
                   </tbody>
                 </table>
+                {renderPagination(expensePage, expenseTotalPages, setExpensePage, expenseStartIndex, expenseEndIndex, expenses.length, itemsPerPage)}
               </div>
             </div>
           </div>
@@ -728,7 +860,7 @@ const ProjectDetails = () => {
                         </td>
                       </tr>
                     ) : (
-                      billings.map((bill) => (
+                      paginatedBillings.map((bill) => (
                         <tr key={bill._id} className="border-b border-gray-200 hover:bg-gray-50">
                           <td className="px-4 py-3 border border-gray-300">{bill.invoiceNumber}</td>
                           <td className="px-4 py-3 border border-gray-300">{new Date(bill.billingDate).toLocaleDateString()}</td>
@@ -767,6 +899,7 @@ const ProjectDetails = () => {
                     )}
                   </tbody>
                 </table>
+                {renderPagination(billingPage, billingTotalPages, setBillingPage, billingStartIndex, billingEndIndex, billings.length, itemsPerPage)}
               </div>
             </div>
             <div>
@@ -800,7 +933,7 @@ const ProjectDetails = () => {
                         </td>
                       </tr>
                     ) : (
-                      collections.map((col) => (
+                      paginatedCollections.map((col) => (
                         <tr key={col._id} className="border-b border-gray-200 hover:bg-gray-50">
                           <td className="px-4 py-3 border border-gray-300">{col.collectionNumber}</td>
                           <td className="px-4 py-3 border border-gray-300">{new Date(col.collectionDate).toLocaleDateString()}</td>
@@ -839,6 +972,7 @@ const ProjectDetails = () => {
                     )}
                   </tbody>
                 </table>
+                {renderPagination(collectionPage, collectionTotalPages, setCollectionPage, collectionStartIndex, collectionEndIndex, collections.length, itemsPerPage)}
               </div>
             </div>
           </div>

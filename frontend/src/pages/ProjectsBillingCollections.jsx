@@ -14,6 +14,8 @@ import {
   ClockIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   PencilIcon,
   TrashIcon,
   XMarkIcon,
@@ -53,7 +55,7 @@ const ProjectsBillingCollections = () => {
   const [billingStatusFilter, setBillingStatusFilter] = useState('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -330,12 +332,24 @@ const ProjectsBillingCollections = () => {
     return data;
   }, [tableData, searchQuery, billingStatusFilter, paymentStatusFilter, sortBy, sortOrder]);
 
-  // Pagination
+  // Pagination logic
   const totalPages = Math.ceil(filteredTableData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
   const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredTableData.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredTableData, currentPage, itemsPerPage]);
+    return filteredTableData.slice(startIndex, endIndex);
+  }, [filteredTableData, startIndex, endIndex]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, billingStatusFilter, paymentStatusFilter, appliedFilters]);
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Calculate totals
   const totals = useMemo(() => {
@@ -1096,33 +1110,89 @@ const ProjectsBillingCollections = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-            <div className="text-sm text-gray-600">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredTableData.length)} of {filteredTableData.length} entries
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <span className="px-4 py-2 text-gray-700">
-                Page {currentPage} of {totalPages}
+        {/* Table Footer with Summary and Pagination */}
+        <div className="bg-gray-50 border-t-2 border-gray-200 px-3 sm:px-4 py-2 sm:py-3 space-y-3">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs sm:text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <span className="text-center sm:text-left">
+                Showing <span className="font-semibold text-gray-900">{startIndex + 1}</span> to{' '}
+                <span className="font-semibold text-gray-900">{Math.min(endIndex, filteredTableData.length)}</span> of{' '}
+                <span className="font-semibold text-gray-900">{filteredTableData.length}</span> projects
               </span>
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+              
+              {/* Items per page selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-600">Show:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="border border-gray-300 rounded px-2 py-1 text-xs bg-white focus:outline-none focus:border-red-600"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span className="text-gray-600">per page</span>
+              </div>
             </div>
           </div>
-        )}
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2 border-t border-gray-200">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                <ChevronLeftIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Previous</span>
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 7) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 4) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 3) {
+                    pageNum = totalPages - 6 + i;
+                  } else {
+                    pageNum = currentPage - 3 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors min-w-[40px] ${
+                        currentPage === pageNum
+                          ? 'bg-red-600 text-white shadow-md'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRightIcon className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Edit Project Modal - Shows Billing & Collection Records */}
