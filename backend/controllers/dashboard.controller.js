@@ -15,29 +15,12 @@ export const getDashboardSummary = async (req, res) => {
     const { year, viewAll } = req.query;
     const currentYear = year ? parseInt(year) : new Date().getFullYear();
     const shouldFilterByYear = !viewAll && year;
-    // Use _id (ObjectId) for MongoDB queries - Mongoose documents have _id as ObjectId
-    const userId = req.user._id;
     
     const startDate = new Date(currentYear, 0, 1);
     const endDate = new Date(currentYear, 11, 31, 23, 59, 59);
-    
-    // Debug: Check if collections exist for this user
-    const totalCollections = await Collection.countDocuments({ createdBy: userId });
-    const collectionsInYear = await Collection.countDocuments({ 
-      createdBy: userId,
-      collectionDate: { $gte: startDate, $lte: endDate }
-    });
-    console.log('Dashboard Debug:', { 
-      userId: userId.toString(), 
-      currentYear, 
-      totalCollections, 
-      collectionsInYear,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
-    });
 
-    // Project status counts (filtered by year if not viewing all, and by user)
-    const projectStatusMatch = { createdBy: userId };
+    // Project status counts (filtered by year if not viewing all, exclude deleted projects)
+    const projectStatusMatch = { deletedAt: null };
     if (shouldFilterByYear) {
       projectStatusMatch.$or = [
         { startDate: { $gte: startDate, $lte: endDate } },
@@ -65,16 +48,14 @@ export const getDashboardSummary = async (req, res) => {
 
     // Revenue and expenses grouped by project
     const revenueMatch = {
-      status: { $ne: 'cancelled' },
-      createdBy: userId
+      status: { $ne: 'cancelled' }
     };
     if (shouldFilterByYear) {
       revenueMatch.date = { $gte: startDate, $lte: endDate };
     }
 
     const expenseMatch = {
-      status: { $ne: 'cancelled' },
-      createdBy: userId
+      status: { $ne: 'cancelled' }
     };
     if (shouldFilterByYear) {
       expenseMatch.date = { $gte: startDate, $lte: endDate };
@@ -150,12 +131,11 @@ export const getDashboardSummary = async (req, res) => {
       { $sort: { total: -1 } }
     ]);
 
-    // Billing status (filtered by year and user)
+    // Billing status (filtered by year)
     const billingStatus = await Billing.aggregate([
       {
         $match: {
-          billingDate: { $gte: startDate, $lte: endDate },
-          createdBy: userId
+          billingDate: { $gte: startDate, $lte: endDate }
         }
       },
       {
@@ -167,12 +147,11 @@ export const getDashboardSummary = async (req, res) => {
       }
     ]);
 
-    // Collection/Payment status (filtered by year and user)
+    // Collection/Payment status (filtered by year)
     const paymentStatus = await Collection.aggregate([
       {
         $match: {
-          collectionDate: { $gte: startDate, $lte: endDate },
-          createdBy: userId
+          collectionDate: { $gte: startDate, $lte: endDate }
         }
       },
       {
@@ -189,8 +168,7 @@ export const getDashboardSummary = async (req, res) => {
       {
         $match: {
           date: { $gte: startDate, $lte: endDate },
-          status: { $ne: 'cancelled' },
-          createdBy: userId
+          status: { $ne: 'cancelled' }
         }
       },
       {
@@ -205,8 +183,7 @@ export const getDashboardSummary = async (req, res) => {
       {
         $match: {
           date: { $gte: startDate, $lte: endDate },
-          status: { $ne: 'cancelled' },
-          createdBy: userId
+          status: { $ne: 'cancelled' }
         }
       },
       {
@@ -235,13 +212,6 @@ export const getDashboardSummary = async (req, res) => {
         acc[item._id] = { count: item.count, totalAmount: item.totalAmount };
         return acc;
       }, {}),
-      // Debug: include raw payment status data
-      _debug: {
-        paymentStatusRaw: paymentStatus,
-        userId: userId.toString(),
-        totalCollections,
-        collectionsInYear
-      },
       totals: {
         revenue: totalRevenue[0]?.total || 0,
         expenses: totalExpenses[0]?.total || 0
