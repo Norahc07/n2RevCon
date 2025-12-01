@@ -18,6 +18,9 @@ export const getDashboardSummary = async (req, res) => {
     
     const startDate = new Date(currentYear, 0, 1);
     const endDate = new Date(currentYear, 11, 31, 23, 59, 59);
+    
+    // Log for debugging - all users should see all data
+    console.log(`[Dashboard] Fetching data for year ${currentYear}, viewAll: ${viewAll}, user: ${req.user?.email || 'unknown'}`);
 
     // Project status counts (filtered by year if not viewing all, exclude deleted projects)
     const projectStatusMatch = { deletedAt: null };
