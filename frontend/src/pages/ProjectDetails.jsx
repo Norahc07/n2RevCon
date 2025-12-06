@@ -87,6 +87,43 @@ const ProjectDetails = () => {
     }
   }, [id, activeTab]);
 
+  // Pagination calculations - must be before any conditional returns
+  const revenueTotalPages = Math.ceil(revenues.length / itemsPerPage);
+  const revenueStartIndex = (revenuePage - 1) * itemsPerPage;
+  const revenueEndIndex = revenueStartIndex + itemsPerPage;
+  const paginatedRevenues = useMemo(() => {
+    return revenues.slice(revenueStartIndex, revenueEndIndex);
+  }, [revenues, revenueStartIndex, revenueEndIndex]);
+
+  const expenseTotalPages = Math.ceil(expenses.length / itemsPerPage);
+  const expenseStartIndex = (expensePage - 1) * itemsPerPage;
+  const expenseEndIndex = expenseStartIndex + itemsPerPage;
+  const paginatedExpenses = useMemo(() => {
+    return expenses.slice(expenseStartIndex, expenseEndIndex);
+  }, [expenses, expenseStartIndex, expenseEndIndex]);
+
+  const billingTotalPages = Math.ceil(billings.length / itemsPerPage);
+  const billingStartIndex = (billingPage - 1) * itemsPerPage;
+  const billingEndIndex = billingStartIndex + itemsPerPage;
+  const paginatedBillings = useMemo(() => {
+    return billings.slice(billingStartIndex, billingEndIndex);
+  }, [billings, billingStartIndex, billingEndIndex]);
+
+  const collectionTotalPages = Math.ceil(collections.length / itemsPerPage);
+  const collectionStartIndex = (collectionPage - 1) * itemsPerPage;
+  const collectionEndIndex = collectionStartIndex + itemsPerPage;
+  const paginatedCollections = useMemo(() => {
+    return collections.slice(collectionStartIndex, collectionEndIndex);
+  }, [collections, collectionStartIndex, collectionEndIndex]);
+
+  // Reset pages when data changes
+  useEffect(() => {
+    setRevenuePage(1);
+    setExpensePage(1);
+    setBillingPage(1);
+    setCollectionPage(1);
+  }, [revenues.length, expenses.length, billings.length, collections.length]);
+
   const fetchProject = async () => {
     try {
       const response = await projectAPI.getById(id);
@@ -430,43 +467,6 @@ const ProjectDetails = () => {
     { id: 'revenue', label: 'Revenue & Expenses' },
     { id: 'billing', label: 'Billing & Collections' },
   ];
-
-  // Pagination logic for each table
-  const revenueTotalPages = Math.ceil(revenues.length / itemsPerPage);
-  const revenueStartIndex = (revenuePage - 1) * itemsPerPage;
-  const revenueEndIndex = revenueStartIndex + itemsPerPage;
-  const paginatedRevenues = useMemo(() => {
-    return revenues.slice(revenueStartIndex, revenueEndIndex);
-  }, [revenues, revenueStartIndex, revenueEndIndex]);
-
-  const expenseTotalPages = Math.ceil(expenses.length / itemsPerPage);
-  const expenseStartIndex = (expensePage - 1) * itemsPerPage;
-  const expenseEndIndex = expenseStartIndex + itemsPerPage;
-  const paginatedExpenses = useMemo(() => {
-    return expenses.slice(expenseStartIndex, expenseEndIndex);
-  }, [expenses, expenseStartIndex, expenseEndIndex]);
-
-  const billingTotalPages = Math.ceil(billings.length / itemsPerPage);
-  const billingStartIndex = (billingPage - 1) * itemsPerPage;
-  const billingEndIndex = billingStartIndex + itemsPerPage;
-  const paginatedBillings = useMemo(() => {
-    return billings.slice(billingStartIndex, billingEndIndex);
-  }, [billings, billingStartIndex, billingEndIndex]);
-
-  const collectionTotalPages = Math.ceil(collections.length / itemsPerPage);
-  const collectionStartIndex = (collectionPage - 1) * itemsPerPage;
-  const collectionEndIndex = collectionStartIndex + itemsPerPage;
-  const paginatedCollections = useMemo(() => {
-    return collections.slice(collectionStartIndex, collectionEndIndex);
-  }, [collections, collectionStartIndex, collectionEndIndex]);
-
-  // Reset pages when data changes
-  useEffect(() => {
-    setRevenuePage(1);
-    setExpensePage(1);
-    setBillingPage(1);
-    setCollectionPage(1);
-  }, [revenues.length, expenses.length, billings.length, collections.length]);
 
   // Pagination helper function
   const renderPagination = (currentPage, totalPages, onPageChange, startIndex, endIndex, totalItems, itemsPerPage) => {
