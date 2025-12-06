@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { Toaster } from 'react-hot-toast';
 import { initDB } from './utils/offlineStorage';
+import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 
 // Immediately set white background before any rendering to prevent black flash
@@ -32,43 +33,45 @@ initDB().catch(console.error);
 // The Vite PWA plugin automatically registers the service worker
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <AuthProvider>
-        <CurrencyProvider>
-          <App />
-          <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
+  <ErrorBoundary>
+    <React.StrictMode>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <AuthProvider>
+          <CurrencyProvider>
+            <App />
+            <Toaster
+            position="top-right"
+            toastOptions={{
               duration: 3000,
-              iconTheme: {
-                primary: '#10B981',
-                secondary: '#fff',
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              duration: 4000,
-              iconTheme: {
-                primary: '#EF4444',
-                secondary: '#fff',
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10B981',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
-        </CurrencyProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  </React.StrictMode>
+              error: {
+                duration: 4000,
+                iconTheme: {
+                  primary: '#EF4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+          </CurrencyProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </React.StrictMode>
+  </ErrorBoundary>
 );
 

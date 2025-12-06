@@ -7,23 +7,44 @@ import Notification from '../models/Notification.model.js';
  */
 export const getNotifications = async (req, res) => {
   try {
-    const { isRead, type } = req.query;
+    const { isRead, type, page = 1, limit = 20 } = req.query;
     const filter = { userId: req.user.id };
 
     if (isRead !== undefined) filter.isRead = isRead === 'true';
     if (type) filter.type = type;
 
+    // Convert page and limit to numbers
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count for pagination
+    const total = await Notification.countDocuments(filter);
+
+    // Get notifications with pagination
     const notifications = await Notification.find(filter)
       .populate('relatedId')
       .sort({ createdAt: -1 })
-      .limit(100);
+      .skip(skip)
+      .limit(limitNum);
 
     const unreadCount = await Notification.countDocuments({
       userId: req.user.id,
       isRead: false
     });
 
-    res.json({ notifications, unreadCount });
+    res.json({
+      notifications,
+      unreadCount,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(total / limitNum),
+        totalItems: total,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < Math.ceil(total / limitNum),
+        hasPrevPage: pageNum > 1
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -46,7 +67,17 @@ export const markAsRead = async (req, res) => {
       return res.status(404).json({ message: 'Notification not found' });
     }
 
-    res.json({ message: 'Notification marked as read', notification });
+    // Get updated unread count after marking as read
+    const unreadCount = await Notification.countDocuments({
+      userId: req.user.id,
+      isRead: false
+    });
+
+    res.json({ 
+      message: 'Notification marked as read', 
+      notification,
+      unreadCount 
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -59,12 +90,22 @@ export const markAsRead = async (req, res) => {
  */
 export const markAllAsRead = async (req, res) => {
   try {
-    await Notification.updateMany(
+    const result = await Notification.updateMany(
       { userId: req.user.id, isRead: false },
       { isRead: true }
     );
 
-    res.json({ message: 'All notifications marked as read' });
+    // Get updated unread count (should be 0 after marking all as read)
+    const unreadCount = await Notification.countDocuments({
+      userId: req.user.id,
+      isRead: false
+    });
+
+    res.json({ 
+      message: 'All notifications marked as read',
+      updatedCount: result.modifiedCount,
+      unreadCount 
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

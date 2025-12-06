@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { companyAPI } from '../services/api';
 import { useAuth } from './AuthContext';
 import { setGlobalCurrency } from '../utils/currency';
@@ -18,16 +18,7 @@ export const CurrencyProvider = ({ children }) => {
   const [currency, setCurrency] = useState('PHP'); // Default to PHP
   const [loading, setLoading] = useState(true);
 
-  // Load currency from company profile
-  useEffect(() => {
-    if (user) {
-      loadCurrency();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const loadCurrency = async () => {
+  const loadCurrency = useCallback(async () => {
     try {
       const response = await companyAPI.getProfile();
       const companyCurrency = response.data.company?.settings?.currency || 'PHP';
@@ -42,7 +33,16 @@ export const CurrencyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Load currency from company profile
+  useEffect(() => {
+    if (user) {
+      loadCurrency();
+    } else {
+      setLoading(false);
+    }
+  }, [user, loadCurrency]);
 
   const updateCurrency = (newCurrency) => {
     setCurrency(newCurrency);
