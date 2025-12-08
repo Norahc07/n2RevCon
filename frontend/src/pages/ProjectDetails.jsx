@@ -255,12 +255,20 @@ const ProjectDetails = () => {
   const handleUpdateBilling = async (e) => {
     e.preventDefault();
     try {
+      const amount = parseFloat(editingBilling.amount) || 0;
+      const tax = parseFloat(editingBilling.tax) || 0;
+      const totalAmount = amount - tax; // Amount minus Tax equals Total Amount
+      
       await billingAPI.update(editingBilling._id, {
         invoiceNumber: editingBilling.invoiceNumber,
         billingDate: editingBilling.billingDate,
         dueDate: editingBilling.dueDate,
-        totalAmount: parseFloat(editingBilling.totalAmount),
+        amount: amount,
+        tax: tax,
+        totalAmount: totalAmount,
         status: editingBilling.status,
+        description: editingBilling.description || undefined,
+        notes: editingBilling.notes || undefined,
       });
       toast.success('Billing record updated');
       setEditingBilling(null);
@@ -848,6 +856,8 @@ const ProjectDetails = () => {
                       <th className="text-left px-4 py-3 font-semibold border border-gray-300">Billing Date</th>
                       <th className="text-left px-4 py-3 font-semibold border border-gray-300">Due Date</th>
                       <th className="text-left px-4 py-3 font-semibold border border-gray-300">Amount</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Tax</th>
+                      <th className="text-left px-4 py-3 font-semibold border border-gray-300">Total Amount</th>
                       <th className="text-left px-4 py-3 font-semibold border border-gray-300">Status</th>
                       <th className="text-left px-4 py-3 font-semibold border border-gray-300">Actions</th>
                     </tr>
@@ -855,7 +865,7 @@ const ProjectDetails = () => {
                   <tbody>
                     {billings.length === 0 ? (
                       <tr>
-                        <td colSpan="6" className="px-4 py-8 text-center text-gray-500 border border-gray-300">
+                        <td colSpan="8" className="px-4 py-8 text-center text-gray-500 border border-gray-300">
                           No billing records found. Click "Add Billing" to create one.
                         </td>
                       </tr>
@@ -864,8 +874,10 @@ const ProjectDetails = () => {
                         <tr key={bill._id} className="border-b border-gray-200 hover:bg-gray-50">
                           <td className="px-4 py-3 border border-gray-300">{bill.invoiceNumber}</td>
                           <td className="px-4 py-3 border border-gray-300">{new Date(bill.billingDate).toLocaleDateString()}</td>
-                          <td className="px-4 py-3 border border-gray-300">{new Date(bill.dueDate).toLocaleDateString()}</td>
-                          <td className="px-4 py-3 border border-gray-300 font-semibold">{formatCurrency(bill.totalAmount)}</td>
+                          <td className="px-4 py-3 border border-gray-300">{bill.dueDate ? new Date(bill.dueDate).toLocaleDateString() : '-'}</td>
+                          <td className="px-4 py-3 border border-gray-300 font-semibold text-blue-600">{formatCurrency(bill.amount || 0)}</td>
+                          <td className="px-4 py-3 border border-gray-300 font-semibold text-orange-600">{formatCurrency(bill.tax || 0)}</td>
+                          <td className="px-4 py-3 border border-gray-300 font-semibold text-green-600">{formatCurrency(bill.totalAmount || 0)}</td>
                           <td className="px-4 py-3 border border-gray-300">
                             <span className={`px-2 py-1 rounded text-xs font-semibold capitalize ${
                               bill.status === 'paid' ? 'bg-green-100 text-green-800' :
@@ -878,13 +890,20 @@ const ProjectDetails = () => {
                           </td>
                           <td className="px-4 py-3 border border-gray-300">
                             <div className="flex gap-3">
-                              <button
-                                onClick={() => setEditingBilling({ ...bill })}
-                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Edit"
-                              >
-                                <PencilIcon className="w-5 h-5" />
-                              </button>
+              <button
+                onClick={() => setEditingBilling({
+                  ...bill,
+                  billingDate: bill.billingDate ? new Date(bill.billingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                  dueDate: bill.dueDate ? new Date(bill.dueDate).toISOString().split('T')[0] : '',
+                  amount: (bill.amount || 0).toString(),
+                  tax: (bill.tax || 0).toString(),
+                  totalAmount: (bill.totalAmount || 0).toString(),
+                })}
+                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Edit"
+              >
+                <PencilIcon className="w-5 h-5" />
+              </button>
                               <button
                                 onClick={() => handleDeleteBilling(bill._id)}
                                 className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
@@ -1338,7 +1357,7 @@ const ProjectDetails = () => {
                   type="text"
                   value={editingBilling.invoiceNumber || ''}
                   onChange={(e) => setEditingBilling({ ...editingBilling, invoiceNumber: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
                   required
                 />
               </div>
@@ -1346,9 +1365,9 @@ const ProjectDetails = () => {
                 <label className="block text-sm font-medium mb-1">Billing Date</label>
                 <input
                   type="date"
-                  value={editingBilling.billingDate ? new Date(editingBilling.billingDate).toISOString().split('T')[0] : ''}
+                  value={editingBilling.billingDate || ''}
                   onChange={(e) => setEditingBilling({ ...editingBilling, billingDate: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
                   required
                 />
               </div>
@@ -1356,35 +1375,93 @@ const ProjectDetails = () => {
                 <label className="block text-sm font-medium mb-1">Due Date</label>
                 <input
                   type="date"
-                  value={editingBilling.dueDate ? new Date(editingBilling.dueDate).toISOString().split('T')[0] : ''}
+                  value={editingBilling.dueDate || ''}
                   onChange={(e) => setEditingBilling({ ...editingBilling, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Total Amount</label>
+                <label className="block text-sm font-medium mb-1">Amount (₱) *</label>
                 <input
                   type="number"
                   step="0.01"
-                  value={editingBilling.totalAmount || ''}
-                  onChange={(e) => setEditingBilling({ ...editingBilling, totalAmount: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  min="0"
+                  value={editingBilling.amount || ''}
+                  onChange={(e) => {
+                    const amount = e.target.value;
+                    const tax = parseFloat(editingBilling.tax) || 0;
+                    const total = parseFloat(amount) - tax;
+                    setEditingBilling({ ...editingBilling, amount, totalAmount: total.toString() });
+                  }}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="0.00"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Status</label>
+                <label className="block text-sm font-medium mb-1">Tax (₱)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingBilling.tax || '0'}
+                  onChange={(e) => {
+                    const tax = e.target.value;
+                    const amount = parseFloat(editingBilling.amount) || 0;
+                    const total = amount - parseFloat(tax);
+                    setEditingBilling({ ...editingBilling, tax, totalAmount: total.toString() });
+                  }}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Total Amount (₱) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingBilling.totalAmount || ''}
+                  readOnly
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-50"
+                  placeholder="0.00"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Calculated as: Amount - Tax</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status *</label>
                 <select
                   value={editingBilling.status || 'draft'}
                   onChange={(e) => setEditingBilling({ ...editingBilling, status: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
                   required
                 >
                   <option value="draft">Draft</option>
                   <option value="sent">Sent</option>
                   <option value="paid">Paid</option>
+                  <option value="overdue">Overdue</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+                <textarea
+                  value={editingBilling.description || ''}
+                  onChange={(e) => setEditingBilling({ ...editingBilling, description: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                  placeholder="Additional description..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                <textarea
+                  value={editingBilling.notes || ''}
+                  onChange={(e) => setEditingBilling({ ...editingBilling, notes: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                  placeholder="Additional notes..."
+                />
               </div>
               <div className="flex gap-2">
                 <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
