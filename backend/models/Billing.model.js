@@ -70,9 +70,14 @@ billingSchema.index({ status: 1 });
 billingSchema.index({ dueDate: 1 });
 
 // Calculate total before saving
+// Logic: Amount - Tax = Total Amount (subtraction, not addition)
 billingSchema.pre('save', function(next) {
   if (this.isModified('amount') || this.isModified('tax')) {
-    this.totalAmount = this.amount + (this.tax || 0);
+    // Only auto-calculate if totalAmount wasn't explicitly set
+    // This allows frontend to send the calculated value, but ensures consistency
+    if (!this.isModified('totalAmount') || this.totalAmount === undefined) {
+      this.totalAmount = this.amount - (this.tax || 0);
+    }
   }
   next();
 });

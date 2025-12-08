@@ -532,9 +532,9 @@ const ProjectsBillingCollections = () => {
       ...billing,
       billingDate: billing.billingDate ? new Date(billing.billingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       dueDate: billing.dueDate ? new Date(billing.dueDate).toISOString().split('T')[0] : '',
-      amount: billing.amount || (billing.totalAmount ? (billing.totalAmount - (billing.tax || 0)).toString() : ''),
-      tax: billing.tax || '0',
-      totalAmount: billing.totalAmount || billing.amount || '',
+      amount: (billing.amount || 0).toString(),
+      tax: (billing.tax || 0).toString(),
+      totalAmount: (billing.totalAmount || 0).toString(),
     });
   };
 
@@ -551,13 +551,17 @@ const ProjectsBillingCollections = () => {
   const handleUpdateBilling = async (e) => {
     e.preventDefault();
     try {
+      const amount = parseFloat(editingBilling.amount) || 0;
+      const tax = parseFloat(editingBilling.tax) || 0;
+      const totalAmount = amount - tax; // Amount minus Tax equals Total Amount
+      
       await billingAPI.update(editingBilling._id, {
         invoiceNumber: editingBilling.invoiceNumber,
         billingDate: editingBilling.billingDate,
         dueDate: editingBilling.dueDate,
-        amount: parseFloat(editingBilling.amount),
-        tax: parseFloat(editingBilling.tax) || 0,
-        totalAmount: parseFloat(editingBilling.totalAmount),
+        amount: amount,
+        tax: tax,
+        totalAmount: totalAmount,
         status: editingBilling.status,
         description: editingBilling.description || undefined,
         notes: editingBilling.notes || undefined,
@@ -644,14 +648,18 @@ const ProjectsBillingCollections = () => {
       return;
     }
     try {
+      const amount = parseFloat(newBilling.amount) || 0;
+      const tax = parseFloat(newBilling.tax) || 0;
+      const totalAmount = amount - tax; // Amount minus Tax equals Total Amount
+      
       await billingAPI.create({
         projectId: newBilling.projectId,
         invoiceNumber: newBilling.invoiceNumber,
         billingDate: newBilling.billingDate,
         dueDate: newBilling.dueDate || undefined,
-        amount: parseFloat(newBilling.amount),
-        tax: parseFloat(newBilling.tax) || 0,
-        totalAmount: parseFloat(newBilling.totalAmount),
+        amount: amount,
+        tax: tax,
+        totalAmount: totalAmount,
         status: newBilling.status,
         description: newBilling.description || undefined,
         notes: newBilling.notes || undefined,
@@ -1229,6 +1237,8 @@ const ProjectsBillingCollections = () => {
                         <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Billing Date</th>
                         <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Due Date</th>
                         <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Amount</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Tax</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Total Amount</th>
                         <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Status</th>
                         <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Actions</th>
                       </tr>
@@ -1239,7 +1249,9 @@ const ProjectsBillingCollections = () => {
                           <td className="border border-gray-300 px-3 py-2 text-sm">{bill.invoiceNumber}</td>
                           <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(bill.billingDate).toLocaleDateString()}</td>
                           <td className="border border-gray-300 px-3 py-2 text-sm">{bill.dueDate ? new Date(bill.dueDate).toLocaleDateString() : '-'}</td>
-                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold">{formatCurrency(bill.totalAmount || bill.amount)}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-blue-600">{formatCurrency(bill.amount || 0)}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-orange-600">{formatCurrency(bill.tax || 0)}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-green-600">{formatCurrency(bill.totalAmount || 0)}</td>
                           <td className="border border-gray-300 px-3 py-2 text-sm">
                             <span className={`px-2 py-1 rounded text-xs font-semibold ${
                               bill.status === 'paid' ? 'bg-green-100 text-green-800' :
@@ -1424,6 +1436,7 @@ const ProjectsBillingCollections = () => {
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-50"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Calculated as: Amount - Tax</p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Status *</label>
@@ -1726,6 +1739,7 @@ const ProjectsBillingCollections = () => {
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-50"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Calculated as: Amount - Tax</p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Status *</label>
