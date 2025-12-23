@@ -68,8 +68,16 @@ const createTransporter = () => {
         console.error('   Error Code:', error.code);
         console.error('   Command:', error.command);
         if (isBrevo) {
-          console.error('   💡 Brevo Tip: Make sure you\'re using SMTP password, not account password');
-          console.error('   💡 Verify your sender email in Brevo dashboard');
+          console.error('   💡 Brevo Troubleshooting:');
+          if (error.code === 'ENOTFOUND' || error.message.includes('getaddrinfo')) {
+            console.error('      ⚠️  DNS Error: Check SMTP_HOST is correct');
+            console.error('      ✅ Should be: smtp-relay.brevo.com');
+            console.error('      ❌ NOT: smtp.brevo.com');
+          }
+          console.error('      • Use SMTP password (NOT API key)');
+          console.error('      • Use SMTP login from dashboard (NOT your email)');
+          console.error('      • Verify sender email in Brevo dashboard');
+          console.error('      • Try port 465 with SMTP_SECURE=true if 587 fails');
         } else if (isGmail) {
           console.error('   💡 Gmail Tip: Make sure you\'re using App Password, not regular password');
           console.error('   💡 Enable 2-Factor Authentication and generate App Password');

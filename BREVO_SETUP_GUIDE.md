@@ -14,10 +14,15 @@ Brevo is a great alternative to Gmail SMTP with better deliverability and a free
 2. Go to **Settings** → **SMTP & API**
 3. Click on **SMTP** tab
 4. You'll see your SMTP credentials:
-   - **SMTP Server**: `smtp-relay.brevo.com`
+   - **SMTP Server**: `smtp-relay.brevo.com` ⚠️ **MUST use this exact hostname**
    - **Port**: `587` (or `465` for SSL)
-   - **Login**: Your Brevo account email (or create a dedicated SMTP user)
-   - **Password**: Your SMTP password (click "Generate" if you don't have one)
+   - **Login**: Your SMTP login (e.g., `9ea7c1001@smtp-brevo.com`) - **NOT your email**
+   - **Password**: Your SMTP password (click "Generate" if you don't have one) - **NOT the API key**
+
+**⚠️ Important:**
+- Use `smtp-relay.brevo.com` (NOT `smtp.brevo.com`)
+- Use the SMTP Login shown (NOT your email address)
+- Generate SMTP password if you don't have one (NOT the API key)
 
 ## Step 3: Configure in Render
 
