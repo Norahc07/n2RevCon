@@ -1350,13 +1350,25 @@ const generateAccountApprovalTemplate = (userName) => {
       text-align: center;
       position: relative;
     }
+    .header-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0.1;
+      background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
     .logo-container {
       display: inline-block;
       background-color: #ffffff;
-      padding: 12px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      padding: 16px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1;
     }
     .logo {
       max-width: 140px;
@@ -1465,12 +1477,13 @@ const generateAccountApprovalTemplate = (userName) => {
 <body>
   <div class="email-wrapper">
     <div class="email-header">
+      <div class="header-pattern"></div>
       <div class="logo-container">
         <!--[if mso]>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="160">
           <tr>
-            <td style="text-align: center; padding: 16px; background: white; border-radius: 12px;">
-              <span style="color: #DC2626; font-size: 24px; font-weight: 700;">n2 RevCon</span>
+            <td style="text-align: center; padding: 16px; background: white; border-radius: 16px;">
+              <span style="color: #10B981; font-size: 24px; font-weight: 700;">n2 RevCon</span>
             </td>
           </tr>
         </table>
@@ -1482,12 +1495,12 @@ const generateAccountApprovalTemplate = (userName) => {
           class="logo"
           width="160"
           height="auto"
-          style="display: block; max-width: 160px; height: auto; border: none; outline: none;"
+          style="display: block; max-width: 160px; width: 160px; height: auto; border: none; outline: none; -ms-interpolation-mode: bicubic;"
           title="n2 RevCon"
         />
         <!--<![endif]-->
       </div>
-      <h1 class="system-name">n2 RevCon</h1>
+      <h1 class="system-name" style="position: relative; z-index: 1;">n2 RevCon</h1>
     </div>
     
     <div class="email-body">
