@@ -351,7 +351,13 @@ export const forgotPassword = async (req, res) => {
         resetUrl: resetUrl,
       });
 
-      console.log('✅ Password reset email sent successfully to:', user.email);
+      if (emailResult.isConsoleMode) {
+        console.log('⚠️  Email service is in CONSOLE MODE - No real email sent');
+        console.log('   To send real emails, configure BREVO_API_KEY or SMTP in .env file');
+        console.log('   Reset URL is available in console above');
+      } else {
+        console.log('✅ Password reset email sent successfully to:', user.email);
+      }
       
       // In development, always include the URL in response for testing
       const response = { 
@@ -359,14 +365,12 @@ export const forgotPassword = async (req, res) => {
       };
       
       if (process.env.NODE_ENV === 'development') {
-        response.resetUrl = resetUrl;
+        // Use the URL from email result if available (console mode), otherwise use generated URL
+        response.resetUrl = emailResult.resetUrl || emailResult.passwordChangeUrl || resetUrl;
         response.emailSent = emailResult.success;
+        response.apiMode = emailResult.apiMode || false;
         if (emailResult.previewUrl) {
           response.previewUrl = emailResult.previewUrl;
-        }
-        // If using console mode, include the URL from the result
-        if (emailResult.passwordChangeUrl) {
-          response.resetUrl = emailResult.passwordChangeUrl;
         }
       }
       

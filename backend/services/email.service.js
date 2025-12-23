@@ -589,6 +589,13 @@ export const sendPasswordChangeEmail = async ({ to, userName, changePasswordUrl 
  */
 export const sendPasswordResetEmail = async ({ to, userName, resetUrl }) => {
   try {
+    // Check if using Brevo API
+    const usingBrevoAPI = BREVO_API_KEY !== undefined;
+    
+    // Check if transporter is in console mode
+    const isConsoleMode = !usingBrevoAPI && transporter && transporter.sendMail && 
+      transporter.sendMail.toString().includes('EMAIL WOULD BE SENT');
+
     const mailOptions = {
       from: `"n2 RevCon System" <${process.env.EMAIL_FROM || 'ntworevcon@gmail.com'}>`,
       to: to,
@@ -596,14 +603,30 @@ export const sendPasswordResetEmail = async ({ to, userName, resetUrl }) => {
       html: generatePasswordChangeEmailTemplate(userName, resetUrl), // Reuse same template
     };
 
+    console.log('📧 Attempting to send password reset email to:', to);
+    if (usingBrevoAPI) {
+      console.log('   Using Brevo API (HTTPS)');
+    }
+    
     const info = await transporter.sendMail(mailOptions);
     
-    // In development with Ethereal, log the preview URL
+    // In development, log the reset URL (especially for console mode)
     let previewUrl = null;
     let passwordChangeUrl = null;
     
-    if (process.env.NODE_ENV === 'development' && info.messageId) {
-      console.log('📧 Password reset email sent!');
+    if (isConsoleMode) {
+      console.log('✅ Email logged to console (Console Mode)');
+      // Extract URL from console mode response
+      if (info.passwordChangeUrl || info.resetUrl) {
+        passwordChangeUrl = info.passwordChangeUrl || info.resetUrl;
+        console.log('🔗 PASSWORD RESET URL (Copy this to test):');
+        console.log('   ' + passwordChangeUrl);
+        console.log('\n   ⚠️  This URL will expire in 1 hour');
+      }
+    } else if (info.apiMode) {
+      console.log('✅ Password reset email sent via Brevo API!');
+    } else if (process.env.NODE_ENV === 'development') {
+      console.log('📧 Password reset email sent via SMTP!');
       // Only log preview URL if using Ethereal (getTestMessageUrl is only available for Ethereal)
       if (typeof nodemailer.getTestMessageUrl === 'function') {
         previewUrl = nodemailer.getTestMessageUrl(info);
@@ -612,16 +635,28 @@ export const sendPasswordResetEmail = async ({ to, userName, resetUrl }) => {
           console.log('   Open this URL in your browser to view the email');
         }
       }
-      
-      // If using console mode, extract URL from result
-      if (info.passwordChangeUrl) {
-        passwordChangeUrl = info.passwordChangeUrl;
-      }
+    } else {
+      console.log('✅ Password reset email sent successfully!');
     }
     
-    return { success: true, messageId: info.messageId, previewUrl, passwordChangeUrl };
+    return { 
+      success: true, 
+      messageId: info.messageId, 
+      previewUrl, 
+      passwordChangeUrl: passwordChangeUrl || resetUrl,
+      resetUrl: passwordChangeUrl || resetUrl,
+      isConsoleMode: isConsoleMode,
+      apiMode: info.apiMode || false
+    };
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+    console.error('❌ Error sending password reset email:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      stack: error.stack
+    });
     throw error;
   }
 };
