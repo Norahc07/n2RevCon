@@ -13,7 +13,9 @@ const createTransporter = () => {
     console.log('📧 Using SMTP configuration:', smtpHost);
     console.log('   SMTP User:', smtpUser);
     console.log('   SMTP Port:', process.env.SMTP_PORT || 587);
-    return nodemailer.createTransport({
+    console.log('   SMTP Secure:', process.env.SMTP_SECURE === 'true');
+    
+    const transporter = nodemailer.createTransport({
       host: smtpHost,
       port: parseInt(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
@@ -21,7 +23,26 @@ const createTransporter = () => {
         user: smtpUser,
         pass: smtpPass,
       },
+      // Add connection timeout and retry options
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+      // Enable debug for troubleshooting
+      debug: process.env.NODE_ENV === 'development',
+      logger: process.env.NODE_ENV === 'development',
     });
+    
+    // Verify connection on startup
+    transporter.verify(function (error, success) {
+      if (error) {
+        console.error('❌ SMTP Connection Error:', error.message);
+        console.error('   Check your SMTP credentials and network connection');
+      } else {
+        console.log('✅ SMTP Server is ready to send emails');
+      }
+    });
+    
+    return transporter;
   }
   
   // Debug: Log what's missing

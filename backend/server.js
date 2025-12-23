@@ -17,6 +17,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import exportRoutes from './routes/export.routes.js';
 import companyRoutes from './routes/company.routes.js';
+import testRoutes from './routes/test.routes.js';
 
 // Import notification service
 import { checkNotifications } from './services/notification.service.js';
@@ -137,6 +138,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/company', companyRoutes);
+app.use('/api/test', testRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
