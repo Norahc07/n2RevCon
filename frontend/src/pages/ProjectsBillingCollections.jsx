@@ -258,6 +258,19 @@ const ProjectsBillingCollections = () => {
       const latestBilling = projectBillings.sort((a, b) => new Date(b.billingDate) - new Date(a.billingDate))[0];
       const latestCollection = projectCollections.sort((a, b) => new Date(b.collectionDate) - new Date(a.collectionDate))[0];
 
+      // Calculate days past due or days until due
+      let daysPastDue = null;
+      let dueDate = null;
+      if (latestBilling?.dueDate) {
+        dueDate = latestBilling.dueDate;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(dueDate);
+        due.setHours(0, 0, 0, 0);
+        const diffTime = today - due;
+        daysPastDue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+
       // Get month and year for display
       const year = appliedFilters.year || new Date(project.startDate).getFullYear();
       const month = appliedFilters.month
@@ -277,6 +290,8 @@ const ProjectsBillingCollections = () => {
         remarks: latestBilling?.notes || latestCollection?.notes || '',
         month: month,
         year: year,
+        dueDate: dueDate,
+        daysPastDue: daysPastDue,
         project: project,
         projectBillings: projectBillings,
         projectCollections: projectCollections,
@@ -1000,6 +1015,8 @@ const ProjectsBillingCollections = () => {
                 <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Project ID</th>
                 <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Client Name</th>
                 <th className="border border-gray-300 px-4 py-3 text-left font-semibold">BI No.</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Due Date</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Days Past Due</th>
                 <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Billing Status</th>
                 <th
                   className="border border-gray-300 px-4 py-3 text-left font-semibold cursor-pointer hover:bg-gray-200"
@@ -1045,7 +1062,7 @@ const ProjectsBillingCollections = () => {
             <tbody>
               {paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan="13" className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                  <td colSpan="15" className="border border-gray-300 px-4 py-8 text-center text-gray-500">
                     No data found
                   </td>
                 </tr>
@@ -1058,6 +1075,34 @@ const ProjectsBillingCollections = () => {
                     <td className="border border-gray-300 px-4 py-3">{item.projectId}</td>
                     <td className="border border-gray-300 px-4 py-3 font-medium">{item.clientName}</td>
                     <td className="border border-gray-300 px-4 py-3">{item.biNo}</td>
+                    <td className="border border-gray-300 px-4 py-3">
+                      {item.dueDate ? new Date(item.dueDate).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      }) : '-'}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-3">
+                      {item.daysPastDue !== null ? (
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                            item.daysPastDue > 0
+                              ? 'bg-red-100 text-red-800'
+                              : item.daysPastDue === 0
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}
+                        >
+                          {item.daysPastDue > 0
+                            ? `${item.daysPastDue} day${item.daysPastDue !== 1 ? 's' : ''} overdue`
+                            : item.daysPastDue === 0
+                            ? 'Due today'
+                            : `Due in ${Math.abs(item.daysPastDue)} day${Math.abs(item.daysPastDue) !== 1 ? 's' : ''}`}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
                     <td className="border border-gray-300 px-4 py-3">
                       <span
                         className={`px-2 py-1 rounded text-xs font-semibold ${
