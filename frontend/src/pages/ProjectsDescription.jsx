@@ -265,7 +265,8 @@ const ProjectsDescription = () => {
                   <span className="xs:hidden sm:hidden">Export</span>
                 </>
               )}
-            </button>
+              </button>
+            )}
 
             {/* Add Project Button - Requires VIEW_REPORTS permission */}
             {canViewReports && (
