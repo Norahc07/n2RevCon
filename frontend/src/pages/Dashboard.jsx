@@ -339,26 +339,40 @@ const Dashboard = () => {
     { 
       status: 'Paid', 
       amount: summary.paymentStatus?.paid?.totalAmount || 0,
-      color: COLORS.success
+      color: '#10B981' // Green
     },
     { 
       status: 'Unpaid', 
       amount: summary.paymentStatus?.unpaid?.totalAmount || 0,
-      color: COLORS.warning
+      color: '#F59E0B' // Orange/Amber
     },
     { 
       status: 'Uncollectible', 
       amount: summary.paymentStatus?.uncollectible?.totalAmount || 0,
-      color: COLORS.danger
+      color: '#EF4444' // Red
     },
   ].filter(item => item.amount > 0);
   
+  // Create separate series for each payment status to enable different colors per bar
+  const paymentStatusSeries = paymentStatusData.map((item, index) => ({
+    data: paymentStatusData.map((d, i) => i === index ? d.amount : 0),
+    color: item.color,
+    valueFormatter: (value) => value > 0 ? formatCurrencyForChart(value) : '',
+  }));
+  
   // Prepare data for Project Status with colors
   const projectStatusDataWithColors = [
-    { status: 'Pending', value: summary.projectStatus?.pending || 0, color: COLORS.warning },
-    { status: 'Ongoing', value: summary.projectStatus?.ongoing || 0, color: COLORS.info },
-    { status: 'Completed', value: summary.projectStatus?.completed || 0, color: COLORS.success },
+    { status: 'Pending', value: summary.projectStatus?.pending || 0, color: '#F59E0B' }, // Orange/Amber
+    { status: 'Ongoing', value: summary.projectStatus?.ongoing || 0, color: '#3B82F6' }, // Blue
+    { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' }, // Green
   ].filter(item => item.value > 0);
+  
+  // Create separate series for each project status to enable different colors per bar
+  const projectStatusSeries = projectStatusDataWithColors.map((item, index) => ({
+    data: projectStatusDataWithColors.map((d, i) => i === index ? d.value : 0),
+    color: item.color,
+    valueFormatter: (value) => value > 0 ? value.toString() : '',
+  }));
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -609,11 +623,7 @@ const Dashboard = () => {
                   scaleType: 'band',
                   data: projectStatusDataWithColors.map(item => item.status),
                 }]}
-                series={[{
-                  data: projectStatusDataWithColors.map(item => item.value),
-                  color: COLORS.info,
-                  valueFormatter: (value) => value.toString(),
-                }]}
+                series={projectStatusSeries}
                 yAxis={[{
                   valueFormatter: (value) => value.toString(),
                 }]}
@@ -641,11 +651,7 @@ const Dashboard = () => {
                   scaleType: 'band',
                   data: paymentStatusData.map(item => item.status),
                 }]}
-                series={[{
-                  data: paymentStatusData.map(item => item.amount),
-                  color: COLORS.primary,
-                  valueFormatter: (value) => formatCurrencyForChart(value),
-                }]}
+                series={paymentStatusSeries}
                 yAxis={[{
                   valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}

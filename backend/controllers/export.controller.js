@@ -622,8 +622,8 @@ export const exportProject = async (req, res) => {
       { header: 'Status', key: 'status', width: 15 },
       { header: 'Notes', key: 'notes', width: 40 }
     ];
-    expenses.forEach(exp => {
-      expenseSheet.addRow({
+    expenses.forEach((exp, index) => {
+      const row = expenseSheet.addRow({
         expenseCode: exp.expenseCode,
         description: exp.description,
         amount: exp.amount,
@@ -632,6 +632,24 @@ export const exportProject = async (req, res) => {
         status: exp.status,
         notes: exp.notes || ''
       });
+      
+      // Style status column with colors
+      const statusCell = row.getCell('status');
+      const status = exp.status?.toLowerCase();
+      if (status === 'paid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } }; // Light green
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true }; // Dark green
+      } else if (status === 'approved') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Light blue
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true }; // Dark blue
+      } else if (status === 'pending') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light yellow/orange
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true }; // Dark orange
+      } else if (status === 'cancelled' || status === 'canceled') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }; // Light gray
+        statusCell.font = { color: { argb: 'FF6B7280' }, bold: true }; // Dark gray
+      }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
 
     // Billing Sheet
@@ -646,8 +664,8 @@ export const exportProject = async (req, res) => {
       { header: 'Description', key: 'description', width: 40 },
       { header: 'Status', key: 'status', width: 15 }
     ];
-    billings.forEach(bill => {
-      billingSheet.addRow({
+    billings.forEach((bill, index) => {
+      const row = billingSheet.addRow({
         invoiceNumber: bill.invoiceNumber,
         billingDate: bill.billingDate,
         dueDate: bill.dueDate,
@@ -657,6 +675,27 @@ export const exportProject = async (req, res) => {
         description: bill.description || '',
         status: bill.status
       });
+      
+      // Style status column with colors
+      const statusCell = row.getCell('status');
+      const status = bill.status?.toLowerCase();
+      if (status === 'paid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } }; // Light green
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true }; // Dark green
+      } else if (status === 'sent') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Light blue
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true }; // Dark blue
+      } else if (status === 'draft') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light yellow/orange
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true }; // Dark orange
+      } else if (status === 'overdue') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }; // Light red
+        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true }; // Dark red
+      } else if (status === 'cancelled' || status === 'canceled') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }; // Light gray
+        statusCell.font = { color: { argb: 'FF6B7280' }, bold: true }; // Dark gray
+      }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
 
     // Collections Sheet
@@ -670,8 +709,8 @@ export const exportProject = async (req, res) => {
       { header: 'Status', key: 'status', width: 15 },
       { header: 'Notes', key: 'notes', width: 40 }
     ];
-    collections.forEach(col => {
-      collectionSheet.addRow({
+    collections.forEach((col, index) => {
+      const row = collectionSheet.addRow({
         collectionNumber: col.collectionNumber,
         invoiceNumber: col.billingId?.invoiceNumber || '',
         collectionDate: col.collectionDate,
@@ -680,6 +719,27 @@ export const exportProject = async (req, res) => {
         status: col.status,
         notes: col.notes || ''
       });
+      
+      // Style status column with colors
+      const statusCell = row.getCell('status');
+      const status = col.status?.toLowerCase();
+      if (status === 'paid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } }; // Light green
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true }; // Dark green
+      } else if (status === 'unpaid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light yellow/orange
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true }; // Dark orange
+      } else if (status === 'partial') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Light blue
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true }; // Dark blue
+      } else if (status === 'uncollectible') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }; // Light red
+        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true }; // Dark red
+      } else if (status === 'cancelled' || status === 'canceled') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }; // Light gray
+        statusCell.font = { color: { argb: 'FF6B7280' }, bold: true }; // Dark gray
+      }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
 
     // Format currency columns
@@ -911,15 +971,21 @@ export const exportRevenueCosts = async (req, res) => {
       row.getCell('amount').numFmt = '₱#,##0.00';
       row.getCell('amount').font = { color: { argb: 'FFDC2626' }, bold: true };
 
-      // Style status column
+      // Style status column with colors
       const statusCell = row.getCell('status');
       const status = exp.status?.toLowerCase();
-      if (status === 'approved' || status === 'completed') {
-        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
-        statusCell.font = { color: { argb: 'FF059669' }, bold: true };
+      if (status === 'paid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } }; // Light green
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true }; // Dark green
+      } else if (status === 'approved') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Light blue
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true }; // Dark blue
       } else if (status === 'pending') {
-        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
-        statusCell.font = { color: { argb: 'FFD97706' }, bold: true };
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light yellow/orange
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true }; // Dark orange
+      } else if (status === 'cancelled' || status === 'canceled') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }; // Light gray
+        statusCell.font = { color: { argb: 'FF6B7280' }, bold: true }; // Dark gray
       }
       statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
@@ -1162,18 +1228,24 @@ export const exportBillingCollections = async (req, res) => {
       row.getCell('amount').font = { color: { argb: 'FF059669' }, bold: true };
       row.getCell('totalAmount').font = { color: { argb: 'FF3B82F6' }, bold: true };
 
-      // Style status column
+      // Style status column with colors
       const statusCell = row.getCell('status');
       const status = bill.status?.toLowerCase();
-      if (status === 'paid' || status === 'sent') {
-        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
-        statusCell.font = { color: { argb: 'FF059669' }, bold: true };
+      if (status === 'paid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } }; // Light green
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true }; // Dark green
+      } else if (status === 'sent') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Light blue
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true }; // Dark blue
       } else if (status === 'draft') {
-        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
-        statusCell.font = { color: { argb: 'FFD97706' }, bold: true };
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light yellow/orange
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true }; // Dark orange
       } else if (status === 'overdue') {
-        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
-        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true };
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }; // Light red
+        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true }; // Dark red
+      } else if (status === 'cancelled' || status === 'canceled') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }; // Light gray
+        statusCell.font = { color: { argb: 'FF6B7280' }, bold: true }; // Dark gray
       }
       statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
@@ -1263,15 +1335,24 @@ export const exportBillingCollections = async (req, res) => {
       row.getCell('amount').numFmt = '₱#,##0.00';
       row.getCell('amount').font = { color: { argb: 'FF10B981' }, bold: true };
 
-      // Style status column
+      // Style status column with colors
       const statusCell = row.getCell('status');
       const status = col.status?.toLowerCase();
-      if (status === 'paid' || status === 'completed') {
-        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
-        statusCell.font = { color: { argb: 'FF059669' }, bold: true };
-      } else if (status === 'pending') {
-        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
-        statusCell.font = { color: { argb: 'FFD97706' }, bold: true };
+      if (status === 'paid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } }; // Light green
+        statusCell.font = { color: { argb: 'FF059669' }, bold: true }; // Dark green
+      } else if (status === 'unpaid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light yellow/orange
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true }; // Dark orange
+      } else if (status === 'partial') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Light blue
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true }; // Dark blue
+      } else if (status === 'uncollectible') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }; // Light red
+        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true }; // Dark red
+      } else if (status === 'cancelled' || status === 'canceled') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }; // Light gray
+        statusCell.font = { color: { argb: 'FF6B7280' }, bold: true }; // Dark gray
       }
       statusCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
