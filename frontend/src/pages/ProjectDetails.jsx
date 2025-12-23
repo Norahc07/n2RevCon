@@ -566,6 +566,7 @@ const ProjectDetails = () => {
 
   const totalRevenue = revenues.reduce((sum, r) => sum + (r.amount || 0), 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const netIncome = totalRevenue - totalExpenses;
 
   return (
     <div className="space-y-6">
@@ -702,7 +703,7 @@ const ProjectDetails = () => {
 
         {activeTab === 'revenue' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="card">
                 <h3 className="text-sm text-gray-600 mb-1">Total Revenue</h3>
                 <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
@@ -710,6 +711,12 @@ const ProjectDetails = () => {
               <div className="card">
                 <h3 className="text-sm text-gray-600 mb-1">Total Expenses</h3>
                 <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
+              </div>
+              <div className="card">
+                <h3 className="text-sm text-gray-600 mb-1">Net Income</h3>
+                <p className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(netIncome)}
+                </p>
               </div>
             </div>
             <div>
