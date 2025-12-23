@@ -260,17 +260,17 @@ const LandingPage = () => {
                 <h4 className="text-lg font-semibold text-white mb-4">Quick Links</h4>
                 <ul className="space-y-2">
                   <li>
-                    <a href="#security" className="text-white/80 hover:text-white transition-colors duration-200">
+                    <a href="/security" className="text-white/80 hover:text-white transition-colors duration-200">
                       Security
                     </a>
                   </li>
                   <li>
-                    <a href="#privacy" className="text-white/80 hover:text-white transition-colors duration-200">
+                    <a href="/privacy" className="text-white/80 hover:text-white transition-colors duration-200">
                       Privacy
                     </a>
                   </li>
                   <li>
-                    <a href="#terms" className="text-white/80 hover:text-white transition-colors duration-200">
+                    <a href="/terms" className="text-white/80 hover:text-white transition-colors duration-200">
                       Terms
                     </a>
                   </li>

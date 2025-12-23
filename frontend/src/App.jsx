@@ -26,6 +26,9 @@ import Profile from './pages/Profile';
 import AccountSettings from './pages/AccountSettings';
 import SystemSettings from './pages/SystemSettings';
 import ChangePassword from './pages/ChangePassword';
+import Security from './pages/Security';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 
 function App() {
   const { user } = useAuth();
@@ -69,6 +72,11 @@ function App() {
         
         {/* Password change page - standalone, no auth needed (token is verification) */}
         <Route path="/change-password/:token" element={!user ? <ChangePassword /> : <Navigate to="/dashboard" />} />
+        
+        {/* Public pages - accessible without authentication */}
+        <Route path="/security" element={<Security />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
           
           <Route
             path="/*"
