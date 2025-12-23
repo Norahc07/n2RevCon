@@ -1,9 +1,100 @@
 import nodemailer from 'nodemailer';
 
+// Brevo API configuration
+const BREVO_API_KEY = process.env.BREVO_API_KEY?.trim();
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+
+/**
+ * Send email using Brevo API (more reliable than SMTP on Render)
+ */
+const sendEmailViaBrevoAPI = async ({ to, subject, html, from }) => {
+  if (!BREVO_API_KEY) {
+    throw new Error('BREVO_API_KEY is not configured');
+  }
+
+  try {
+    // Extract email from "Name <email>" format
+    const fromEmail = from?.match(/<(.+)>/)?.[1] || from || process.env.EMAIL_FROM || 'ntworevcon@gmail.com';
+    
+    const response = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': BREVO_API_KEY,
+      },
+      body: JSON.stringify({
+        sender: {
+          name: 'n2 RevCon System',
+          email: fromEmail,
+        },
+        to: [
+          {
+            email: to,
+          },
+        ],
+        subject: subject,
+        htmlContent: html,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        `Brevo API error: ${response.status} - ${errorData.message || response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      messageId: data.messageId,
+      apiMode: true,
+    };
+  } catch (error) {
+    console.error('Brevo API Error:', error);
+    throw error;
+  }
+};
+
 // Create reusable transporter object using SMTP transport
 // For production, configure with actual SMTP settings (Gmail, SendGrid, etc.)
 // For development, you can use Ethereal Email or Mailtrap for testing
 const createTransporter = () => {
+  // Check if Brevo API key is available (preferred over SMTP on Render)
+  if (BREVO_API_KEY) {
+    console.log('📧 Using Brevo API (more reliable than SMTP on Render)');
+    console.log('   ✅ Uses HTTPS - no port blocking issues');
+    return {
+      sendMail: async (options) => {
+        return await sendEmailViaBrevoAPI({
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          from: options.from,
+        });
+      },
+      verify: async (callback) => {
+        // Test API connection
+        try {
+          const testResponse = await fetch('https://api.brevo.com/v3/account', {
+            headers: {
+              'Accept': 'application/json',
+              'api-key': BREVO_API_KEY,
+            },
+          });
+          if (testResponse.ok) {
+            callback(null, true);
+          } else {
+            callback(new Error('Brevo API key is invalid'), false);
+          }
+        } catch (error) {
+          callback(error, false);
+        }
+      },
+    };
+  }
+
   // If SMTP credentials are provided in .env, use them
   const smtpHost = process.env.SMTP_HOST?.trim();
   const smtpUser = process.env.SMTP_USER?.trim();
@@ -895,8 +986,11 @@ const generateAccountRejectionTemplate = (userName, reason) => {
  */
 export const sendEmailVerificationEmail = async ({ to, userName, verificationUrl }) => {
   try {
+    // Check if using Brevo API
+    const usingBrevoAPI = BREVO_API_KEY !== undefined;
+    
     // Check if transporter is in console mode
-    const isConsoleMode = transporter && transporter.sendMail && 
+    const isConsoleMode = !usingBrevoAPI && transporter && transporter.sendMail && 
       transporter.sendMail.toString().includes('EMAIL WOULD BE SENT');
     
     if (isConsoleMode) {
@@ -913,6 +1007,10 @@ export const sendEmailVerificationEmail = async ({ to, userName, verificationUrl
     };
 
     console.log('📧 Attempting to send verification email to:', to);
+    if (usingBrevoAPI) {
+      console.log('   Using Brevo API (HTTPS - no port blocking)');
+    }
+    
     const info = await transporter.sendMail(mailOptions);
     
     // In development, log the verification URL (especially for console mode)
@@ -927,6 +1025,8 @@ export const sendEmailVerificationEmail = async ({ to, userName, verificationUrl
         console.log('🔗 VERIFICATION URL (Copy this to verify email):');
         console.log('   ' + extractedVerificationUrl);
       }
+    } else if (info.apiMode) {
+      console.log('✅ Email verification sent via Brevo API!');
     } else if (process.env.NODE_ENV === 'development') {
       console.log('📧 Email verification sent via SMTP!');
       
