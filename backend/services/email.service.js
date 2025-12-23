@@ -297,6 +297,249 @@ if (transporter && transporter.sendMail && transporter.sendMail.toString().inclu
 /**
  * Generate HTML email template for password change
  */
+/**
+ * Generate HTML email template for password reset (forgot password)
+ */
+const generatePasswordResetEmailTemplate = (userName, resetUrl) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const logoUrl = `${frontendUrl}/N2RevConLogo.png`;
+  
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Password Reset Request - n2 RevCon</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      background-color: #f3f4f6;
+      margin: 0;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .email-wrapper {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    .email-header {
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      padding: 40px 30px;
+      text-align: center;
+      position: relative;
+    }
+    .logo-container {
+      display: inline-block;
+      background-color: #ffffff;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .logo {
+      max-width: 140px;
+      height: auto;
+      display: block;
+    }
+    .system-name {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    .email-body {
+      padding: 48px 40px;
+    }
+    .greeting {
+      font-size: 20px;
+      color: #111827;
+      margin-bottom: 24px;
+      font-weight: 600;
+    }
+    .message {
+      font-size: 16px;
+      color: #4b5563;
+      margin-bottom: 32px;
+      line-height: 1.75;
+    }
+    .button-container {
+      text-align: center;
+      margin: 40px 0;
+    }
+    .change-password-button {
+      display: inline-block;
+      padding: 16px 40px;
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .change-password-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+    }
+    .link-section {
+      background-color: #f9fafb;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 32px 0;
+      border: 1px solid #e5e7eb;
+    }
+    .link-label {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .link-url {
+      font-size: 13px;
+      color: #DC2626;
+      word-break: break-all;
+      text-decoration: none;
+    }
+    .link-url:hover {
+      text-decoration: underline;
+    }
+    .warning {
+      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+      border-left: 4px solid #F59E0B;
+      padding: 20px;
+      margin: 32px 0;
+      border-radius: 8px;
+    }
+    .warning-title {
+      color: #92400E;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .warning-text {
+      color: #92400E;
+      font-size: 14px;
+      margin: 0;
+      line-height: 1.6;
+    }
+    .email-footer {
+      background-color: #f9fafb;
+      padding: 32px 40px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+    .footer-text {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 4px 0;
+      line-height: 1.6;
+    }
+    .signature {
+      margin-top: 20px;
+      font-weight: 600;
+      color: #1f2937;
+      font-size: 14px;
+    }
+    @media only screen and (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .email-body {
+        padding: 32px 24px;
+      }
+      .email-header {
+        padding: 30px 20px;
+      }
+      .system-name {
+        font-size: 26px;
+      }
+      .change-password-button {
+        padding: 14px 32px;
+        font-size: 15px;
+      }
+      .email-footer {
+        padding: 24px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-header">
+      <div class="logo-container">
+        <img src="${logoUrl}" alt="n2 RevCon Logo" class="logo" />
+      </div>
+      <h1 class="system-name">n2 RevCon</h1>
+    </div>
+    
+    <div class="email-body">
+      <p class="greeting">Hello ${userName},</p>
+      
+      <p class="message">
+        We received a request to reset your password for your n2 RevCon account. 
+        To reset your password, please click the button below.
+      </p>
+      
+      <div class="button-container">
+        <a href="${resetUrl}" class="change-password-button">
+          Reset Password
+        </a>
+      </div>
+      
+      <div class="link-section">
+        <div class="link-label">If the button doesn't work, copy and paste this link:</div>
+        <a href="${resetUrl}" class="link-url">${resetUrl}</a>
+      </div>
+      
+      <div class="warning">
+        <div class="warning-title">
+          <span>⚠️</span>
+          <span>Security Notice</span>
+        </div>
+        <p class="warning-text">
+          This link will expire in 1 hour for your security. If you didn't request this password reset, 
+          please ignore this email or contact support immediately. Your password will remain unchanged.
+        </p>
+      </div>
+      
+      <p class="message">
+        If you have any questions or concerns, please don't hesitate to contact us.
+      </p>
+    </div>
+    
+    <div class="email-footer">
+      <p class="footer-text">This is an automated message from n2 RevCon System.</p>
+      <p class="footer-text">Please do not reply to this email.</p>
+      <p class="signature">Best regards,<br>System Admin<br>n2 RevCon</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+};
+
+/**
+ * Generate HTML email template for password change (when logged in)
+ */
 const generatePasswordChangeEmailTemplate = (userName, changePasswordUrl) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const logoUrl = `${frontendUrl}/N2RevConLogo.png`;
@@ -600,7 +843,7 @@ export const sendPasswordResetEmail = async ({ to, userName, resetUrl }) => {
       from: `"n2 RevCon System" <${process.env.EMAIL_FROM || 'ntworevcon@gmail.com'}>`,
       to: to,
       subject: 'Password Reset Request - n2 RevCon',
-      html: generatePasswordChangeEmailTemplate(userName, resetUrl), // Reuse same template
+      html: generatePasswordResetEmailTemplate(userName, resetUrl), // Use dedicated password reset template
     };
 
     console.log('📧 Attempting to send password reset email to:', to);

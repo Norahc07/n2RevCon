@@ -215,8 +215,7 @@ ISC
 - git add/status
 - git commit ""
 - git remote -v
-- git remote set-url origin https://[YOUR_TOKEN]@github.com/Norahc07/n2RevCon.git
-- git push origin main
+- git remote set-url origin https://[YOUR_TOKEN]@github.com/Norahc07/n2RevCon.git && git push origin main
 
 **Note:** Replace `[YOUR_TOKEN]` with your GitHub Personal Access Token. Never commit tokens to the repository.
 

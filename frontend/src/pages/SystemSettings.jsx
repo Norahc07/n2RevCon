@@ -196,7 +196,9 @@ const SystemSettings = () => {
                   onRefresh={() => {
                     fetchUsers();
                     fetchPendingUsers();
-                  }} 
+                  }}
+                  onUsersUpdate={setUsers}
+                  onPendingUsersUpdate={setPendingUsers}
                 />
               </div>
             )}
@@ -540,7 +542,7 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
 };
 
 // User Management Tab Component
-const UserManagementTab = ({ users, pendingUsers = [], onRefresh }) => {
+const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate, onPendingUsersUpdate }) => {
   const { role: currentUserRole } = usePermissions();
   const isMasterAdmin = currentUserRole === ROLES.MASTER_ADMIN;
   const [editingUser, setEditingUser] = useState(null);
@@ -575,11 +577,45 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh }) => {
     try {
       setLoading(true);
       const userId = user.id || user._id;
+      
+      // Optimistically update the UI immediately
+      const updatedUser = { ...user, accountStatus: 'approved' };
+      
+      // Remove from pending users immediately
+      if (onPendingUsersUpdate) {
+        onPendingUsersUpdate((prevPendingUsers) => 
+          prevPendingUsers.filter(u => (u.id || u._id) !== userId)
+        );
+      }
+      
+      // Add to active users immediately
+      if (onUsersUpdate) {
+        onUsersUpdate((prevUsers) => {
+          // Check if user already exists in the list
+          const userExists = prevUsers.some(u => (u.id || u._id) === userId);
+          if (userExists) {
+            // Update existing user
+            return prevUsers.map(u => 
+              (u.id || u._id) === userId ? updatedUser : u
+            );
+          } else {
+            // Add new user to the list
+            return [...prevUsers, updatedUser];
+          }
+        });
+      }
+      
+      // Make API call
       await userAPI.approveUser(userId);
       toast.success('User approved successfully');
+      
+      // Refresh from server to ensure consistency
       onRefresh();
     } catch (error) {
+      // Revert optimistic update on error
       toast.error(error.response?.data?.message || 'Failed to approve user');
+      // Refresh to get correct state
+      onRefresh();
     } finally {
       setLoading(false);
     }
@@ -595,13 +631,39 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh }) => {
     try {
       setLoading(true);
       const userId = rejectingUser.id || rejectingUser._id;
+      
+      // Optimistically update the UI immediately
+      const updatedUser = { ...rejectingUser, accountStatus: 'rejected' };
+      
+      // Remove from pending users immediately
+      if (onPendingUsersUpdate) {
+        onPendingUsersUpdate((prevPendingUsers) => 
+          prevPendingUsers.filter(u => (u.id || u._id) !== userId)
+        );
+      }
+      
+      // Update in users list if exists
+      if (onUsersUpdate) {
+        onUsersUpdate((prevUsers) => 
+          prevUsers.map(u => 
+            (u.id || u._id) === userId ? updatedUser : u
+          )
+        );
+      }
+      
+      // Make API call
       await userAPI.rejectUser(userId, rejectionReason);
       toast.success('User rejected successfully');
       setRejectingUser(null);
       setRejectionReason('');
+      
+      // Refresh from server to ensure consistency
       onRefresh();
     } catch (error) {
+      // Revert optimistic update on error
       toast.error(error.response?.data?.message || 'Failed to reject user');
+      // Refresh to get correct state
+      onRefresh();
     } finally {
       setLoading(false);
     }

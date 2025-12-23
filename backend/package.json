@@ -14,7 +14,9 @@
     "fix-roles": "node scripts/fixUserRoles.js",
     "migrate-roles": "node scripts/migrateUserRoles.js",
     "remove-2026": "node scripts/remove2026Data.js",
-    "check-email": "node scripts/checkEmailVerification.js"
+    "check-email": "node scripts/checkEmailVerification.js",
+    "list-admins": "node scripts/listMasterAdmins.js",
+    "approve-users": "node scripts/approveUsers.js"
   },
   "keywords": [
     "n2revcon",
