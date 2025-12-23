@@ -130,11 +130,11 @@ const Login = () => {
       // Check if it's an account status error
       let displayMessage = errorMessage;
       if (errorMessage.includes('verify your email')) {
-        displayMessage = `${errorMessage} You can request a new verification email if needed.`;
+        displayMessage = `Please verify your email address first. Check your inbox for the verification link.`;
       } else if (errorMessage.includes('pending approval')) {
-        displayMessage = `${errorMessage} Please wait for an administrator to approve your account.`;
+        displayMessage = `Your account is pending administrator approval. You'll receive an email notification once your account has been approved.`;
       } else if (errorMessage.includes('rejected')) {
-        displayMessage = `${errorMessage} Please contact support for assistance.`;
+        displayMessage = `Your account registration has been rejected. Please contact support for more information.`;
       }
       
       setErrors(prev => ({ 

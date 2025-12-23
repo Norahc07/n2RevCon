@@ -891,12 +891,13 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
       <div class="info-box">
         <div class="info-title">
           <span>📋</span>
-          <span>Next Steps</span>
+          <span>What Happens Next?</span>
         </div>
         <ul class="info-list">
-          <li>Verify your email address using the button above</li>
-          <li>Wait for administrator approval</li>
-          <li>You'll receive an email once your account is approved</li>
+          <li>Click the button above to verify your email address</li>
+          <li>An administrator will review your account</li>
+          <li>You'll receive an approval email when your account is ready</li>
+          <li>Then you can log in and start using the system</li>
         </ul>
       </div>
       
