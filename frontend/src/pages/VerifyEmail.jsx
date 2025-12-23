@@ -124,7 +124,12 @@ const VerifyEmail = () => {
               </div>
               <h1 className="text-3xl font-bold text-gray-800 mb-4">Verification Failed</h1>
               <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 text-left">
-                <p className="text-red-800">{message}</p>
+                <p className="text-red-800 font-medium mb-2">{message}</p>
+                {message.includes('expired') && (
+                  <p className="text-red-700 text-sm mt-2">
+                    💡 You can request a new verification email from the login page.
+                  </p>
+                )}
               </div>
               <div className="space-y-4">
                 <Link
@@ -133,6 +138,25 @@ const VerifyEmail = () => {
                 >
                   Go to Login
                 </Link>
+                {message.includes('expired') && (
+                  <button
+                    onClick={async () => {
+                      // Extract email from URL or prompt user
+                      const email = prompt('Please enter your email address to resend verification:');
+                      if (email) {
+                        try {
+                          await authAPI.resendVerification(email);
+                          toast.success('Verification email sent! Please check your inbox.');
+                        } catch (error) {
+                          toast.error(error.response?.data?.message || 'Failed to resend verification email');
+                        }
+                      }
+                    }}
+                    className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors text-center"
+                  >
+                    Resend Verification Email
+                  </button>
+                )}
                 <Link
                   to="/signup"
                   className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg transition-colors text-center"
