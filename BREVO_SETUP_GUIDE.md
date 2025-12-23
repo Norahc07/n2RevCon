@@ -28,14 +28,32 @@ Brevo is a great alternative to Gmail SMTP with better deliverability and a free
 
 Add these environment variables in your Render dashboard:
 
+### ✅ Recommended Configuration (Port 2525 - Works Great on Render!)
+
 ```env
 SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=2525
+SMTP_SECURE=false
+SMTP_USER=9ea7c1001@smtp-brevo.com
+SMTP_PASS=your-generated-smtp-password
+EMAIL_FROM=ntworevcon@gmail.com
+FRONTEND_URL=https://n2-rev-con.vercel.app/
+```
+
+**✅ Port 2525 is tested and confirmed working on Render!**
+
+### Alternative Port Options:
+
+**Option 2: Port 587**
+```env
 SMTP_PORT=587
 SMTP_SECURE=false
-SMTP_USER=your-brevo-email@example.com
-SMTP_PASS=your-brevo-smtp-password
-EMAIL_FROM=your-verified-sender-email@example.com
-FRONTEND_URL=https://n2-rev-con.vercel.app/
+```
+
+**Option 3: Port 465**
+```env
+SMTP_PORT=465
+SMTP_SECURE=true
 ```
 
 ### Important Notes:
@@ -48,7 +66,8 @@ FRONTEND_URL=https://n2-rev-con.vercel.app/
    - Enter your email and verify it
 
 3. **Port Options**:
-   - Port `587` with `SMTP_SECURE=false` (recommended)
+   - Port `2525` with `SMTP_SECURE=false` (✅ **Recommended for Render** - avoids timeout issues)
+   - Port `587` with `SMTP_SECURE=false` (alternative)
    - Port `465` with `SMTP_SECURE=true` (alternative)
 
 ## Step 4: Test Email Sending
@@ -78,7 +97,17 @@ After configuring, restart your backend and test:
 ### "Connection timeout" (ETIMEDOUT)
 This is a common issue with Render. Try these solutions:
 
-**Solution 1: Use Port 465 with SSL (Recommended)**
+**Solution 1: Use Port 2525 (✅ Recommended - Tested and Working!)**
+```env
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=2525
+SMTP_SECURE=false
+SMTP_USER=9ea7c1001@smtp-brevo.com
+SMTP_PASS=your-generated-smtp-password
+```
+✅ **This configuration works great on Render and avoids timeout issues!**
+
+**Solution 2: Use Port 465 with SSL**
 ```env
 SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=465
@@ -87,12 +116,13 @@ SMTP_USER=your-brevo-email@example.com
 SMTP_PASS=your-brevo-smtp-password
 ```
 
-**Solution 2: Try Alternative Brevo SMTP Server**
-Some users report success with:
+**Solution 3: Try Port 587**
 ```env
-SMTP_HOST=smtp.brevo.com
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
 SMTP_SECURE=false
+SMTP_USER=your-brevo-email@example.com
+SMTP_PASS=your-brevo-smtp-password
 ```
 
 **Solution 3: Use Brevo API Instead of SMTP**

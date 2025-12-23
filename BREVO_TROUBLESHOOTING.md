@@ -4,9 +4,28 @@
 
 If you're seeing `Connection timeout` errors, Render may be blocking SMTP connections. Here are solutions:
 
-## Solution 1: Use Port 465 with SSL (Most Reliable)
+## Solution 1: Use Port 2525 (✅ Recommended - Tested and Working!)
 
 Update your Render environment variables:
+
+```env
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=2525
+SMTP_SECURE=false
+SMTP_USER=9ea7c1001@smtp-brevo.com
+SMTP_PASS=your-generated-smtp-password
+EMAIL_FROM=ntworevcon@gmail.com
+```
+
+**Why this works:**
+- ✅ Port 2525 avoids timeout issues on Render
+- ✅ Tested and confirmed working
+- ✅ Less likely to be blocked by firewalls
+- ✅ Reliable connection
+
+## Solution 2: Use Port 465 with SSL (Alternative)
+
+If port 2525 doesn't work, try:
 
 ```env
 SMTP_HOST=smtp-relay.brevo.com
@@ -83,7 +102,9 @@ If SMTP continues to fail, consider using Brevo's API:
 
 ## Quick Fix Checklist
 
+- [ ] ✅ **Try port 2525 with `SMTP_SECURE=false`** (Recommended - works great on Render!)
 - [ ] Try port 465 with `SMTP_SECURE=true`
+- [ ] Try port 587 with `SMTP_SECURE=false`
 - [ ] Verify SMTP password is correct (not account password)
 - [ ] Verify sender email in Brevo dashboard
 - [ ] Check Render logs for detailed error
