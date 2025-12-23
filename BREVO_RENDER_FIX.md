@@ -3,9 +3,29 @@
 ## Problem
 Connection timeout even with correct credentials. Render may be blocking or throttling SMTP connections.
 
-## Solution 1: Try Port 587 with STARTTLS (Recommended)
+## Solution 1: Use Port 2525 (Recommended - Works Great on Render!)
 
 Update Render environment variables:
+
+```env
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=2525
+SMTP_SECURE=false
+SMTP_USER=9ea7c1001@smtp-brevo.com
+SMTP_PASS=your-generated-smtp-password
+EMAIL_FROM=ntworevcon@gmail.com
+FRONTEND_URL=https://n2-rev-con.vercel.app/
+```
+
+**Why this works:**
+- ✅ Port 2525 is less likely to be blocked by Render
+- ✅ Avoids connection timeout issues
+- ✅ Works reliably for SMTP connections
+- ✅ Tested and confirmed working!
+
+## Solution 1b: Try Port 587 with STARTTLS (Alternative)
+
+If port 2525 doesn't work, try:
 
 ```env
 SMTP_HOST=smtp-relay.brevo.com
