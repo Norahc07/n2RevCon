@@ -393,8 +393,24 @@ export const approveUser = async (req, res) => {
     }
 
     if (user.accountStatus !== 'pending') {
+      // If already approved, return success with user data (idempotent operation)
+      if (user.accountStatus === 'approved') {
+        return res.json({ 
+          message: 'User is already approved',
+          user: {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            accountStatus: user.accountStatus,
+            isActive: user.isActive
+          }
+        });
+      }
+      // For rejected status, return error
       return res.status(400).json({ 
-        message: `User account is already ${user.accountStatus}. Cannot approve.` 
+        message: `User account is ${user.accountStatus}. Cannot approve.` 
       });
     }
 

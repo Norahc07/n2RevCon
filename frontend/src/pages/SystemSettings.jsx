@@ -79,12 +79,18 @@ const SystemSettings = () => {
   const fetchPendingUsers = async () => {
     try {
       const response = await userAPI.getPending();
-      setPendingUsers(response.data.users || []);
+      // Filter out any users that are not actually pending (safety check)
+      const actualPendingUsers = (response.data.users || []).filter(
+        user => user.accountStatus === 'pending' && user.emailVerified
+      );
+      setPendingUsers(actualPendingUsers);
     } catch (error) {
       // Only show error if user has permission (not a 403)
       if (error.response?.status !== 403) {
         toast.error('Failed to load pending users');
       }
+      // Set empty array on error to clear stale data
+      setPendingUsers([]);
     }
   };
 
@@ -193,9 +199,12 @@ const SystemSettings = () => {
                 <UserManagementTab 
                   users={users} 
                   pendingUsers={pendingUsers}
-                  onRefresh={() => {
-                    fetchUsers();
-                    fetchPendingUsers();
+                  onRefresh={async () => {
+                    // Force refresh both lists
+                    await Promise.all([
+                      fetchUsers(),
+                      fetchPendingUsers()
+                    ]);
                   }}
                   onUsersUpdate={setUsers}
                   onPendingUsersUpdate={setPendingUsers}
@@ -612,10 +621,19 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
       // Refresh from server to ensure consistency
       onRefresh();
     } catch (error) {
-      // Revert optimistic update on error
-      toast.error(error.response?.data?.message || 'Failed to approve user');
-      // Refresh to get correct state
-      onRefresh();
+      const errorMessage = error.response?.data?.message || 'Failed to approve user';
+      
+      // If user is already approved, treat it as success and refresh
+      if (errorMessage.includes('already') && errorMessage.includes('approved')) {
+        toast.success('User is already approved');
+        // Refresh to update the UI
+        onRefresh();
+      } else {
+        // For other errors, show error and refresh
+        toast.error(errorMessage);
+        // Refresh to get correct state
+        onRefresh();
+      }
     } finally {
       setLoading(false);
     }
