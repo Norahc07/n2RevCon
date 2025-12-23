@@ -455,8 +455,16 @@ export const verifyEmail = async (req, res) => {
   try {
     const { token } = req.params;
 
+    if (!token) {
+      return res.status(400).json({ message: 'Verification token is required' });
+    }
+
     // Hash the token to compare with stored token
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    console.log('🔍 Verifying email with token...');
+    console.log('   Token length:', token.length);
+    console.log('   Hashed token (first 20 chars):', hashedToken.substring(0, 20));
 
     // Find user with valid verification token
     const user = await User.findOne({
@@ -465,20 +473,57 @@ export const verifyEmail = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired verification token' });
+      // Check if token exists but expired
+      const expiredUser = await User.findOne({
+        emailVerificationToken: hashedToken
+      });
+      
+      if (expiredUser) {
+        console.log('❌ Token found but expired for user:', expiredUser.email);
+        return res.status(400).json({ 
+          message: 'Verification token has expired. Please request a new verification email.' 
+        });
+      }
+      
+      console.log('❌ No user found with this verification token');
+      return res.status(400).json({ message: 'Invalid verification token' });
+    }
+
+    console.log('✅ User found:', user.email);
+    console.log('   Current emailVerified status:', user.emailVerified);
+    console.log('   Current accountStatus:', user.accountStatus);
+
+    // Check if already verified
+    if (user.emailVerified) {
+      console.log('ℹ️  Email already verified');
+      return res.json({ 
+        message: 'Email is already verified. You can now log in (pending admin approval).' 
+      });
     }
 
     // Verify email
     user.emailVerified = true;
     user.emailVerificationToken = undefined;
     user.emailVerificationExpire = undefined;
-    await user.save();
+    
+    await user.save({ validateBeforeSave: false });
+    
+    console.log('✅ Email verified successfully for:', user.email);
+    console.log('   New emailVerified status:', user.emailVerified);
+    console.log('   Account status:', user.accountStatus);
 
     res.json({ 
-      message: 'Email verified successfully! Your account is now pending admin approval. You will be notified once approved.' 
+      message: 'Email verified successfully! Your account is now pending admin approval. You will be notified once approved.',
+      emailVerified: true,
+      accountStatus: user.accountStatus
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('❌ Error verifying email:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: error.message || 'Failed to verify email' });
   }
 };
 
