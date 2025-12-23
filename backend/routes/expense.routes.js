@@ -7,7 +7,7 @@ import {
   updateExpense,
   deleteExpense
 } from '../controllers/expense.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
+import { authenticate, requirePermission, ACTIONS } from '../middleware/auth.middleware.js';
 import { validate, sanitizeInput } from '../middleware/validation.middleware.js';
 
 const router = express.Router();
@@ -15,15 +15,16 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Get all expenses
-router.get('/', getAllExpenses);
+// Get all expenses - requires VIEW_REPORTS permission
+router.get('/', requirePermission(ACTIONS.VIEW_REPORTS), getAllExpenses);
 
-// Get expense by ID
-router.get('/:id', getExpenseById);
+// Get expense by ID - requires VIEW_REPORTS permission
+router.get('/:id', requirePermission(ACTIONS.VIEW_REPORTS), getExpenseById);
 
-// Create expense
+// Create expense - requires EXPENSES permission
 router.post(
   '/',
+  requirePermission(ACTIONS.EXPENSES),
   [
     body('projectId').notEmpty().withMessage('Project ID is required'),
     body('expenseCode').trim().notEmpty().withMessage('Expense code is required'),
@@ -36,9 +37,10 @@ router.post(
   createExpense
 );
 
-// Update expense
+// Update expense - requires EXPENSES permission
 router.put(
   '/:id',
+  requirePermission(ACTIONS.EXPENSES),
   [
     body('amount').optional().isFloat({ min: 0 }),
     body('date').optional().isISO8601(),
@@ -48,8 +50,8 @@ router.put(
   updateExpense
 );
 
-// Delete expense
-router.delete('/:id', deleteExpense);
+// Delete expense - requires EXPENSES permission
+router.delete('/:id', requirePermission(ACTIONS.EXPENSES), deleteExpense);
 
 export default router;
 

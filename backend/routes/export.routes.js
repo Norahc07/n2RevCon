@@ -6,28 +6,27 @@ import {
   exportBillingCollections,
   exportSummary
 } from '../controllers/export.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
-import { authorize } from '../middleware/auth.middleware.js';
+import { authenticate, requirePermission, ACTIONS } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(authenticate);
 
-// Export all projects
-router.get('/projects', exportProjects);
+// Export all projects - requires VIEW_REPORTS permission
+router.get('/projects', requirePermission(ACTIONS.VIEW_REPORTS), exportProjects);
 
-// Export project report
-router.get('/project/:id', exportProject);
+// Export project report - requires VIEW_REPORTS permission
+router.get('/project/:id', requirePermission(ACTIONS.VIEW_REPORTS), exportProject);
 
-// Export revenue vs expenses
-router.get('/revenue-costs', exportRevenueCosts);
+// Export revenue vs expenses - requires VIEW_REPORTS permission
+router.get('/revenue-costs', requirePermission(ACTIONS.VIEW_REPORTS), exportRevenueCosts);
 
-// Export billing & collections
-router.get('/billing-collections', exportBillingCollections);
+// Export billing & collections - requires VIEW_REPORTS permission
+router.get('/billing-collections', requirePermission(ACTIONS.VIEW_REPORTS), exportBillingCollections);
 
-// Export full summary (Admin only)
-router.get('/summary', authorize('admin'), exportSummary);
+// Export full summary - requires VIEW_REPORTS permission
+router.get('/summary', requirePermission(ACTIONS.VIEW_REPORTS), exportSummary);
 
 export default router;
 

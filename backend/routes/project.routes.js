@@ -8,10 +8,12 @@ import {
   deleteProject,
   getDeletedProjects,
   restoreProject,
-  permanentDeleteProject
+  permanentDeleteProject,
+  closeProject,
+  lockProject,
+  unlockProject
 } from '../controllers/project.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
-import { authorize } from '../middleware/auth.middleware.js';
+import { authenticate, requirePermission, requireAnyPermission, ACTIONS } from '../middleware/auth.middleware.js';
 import { validate, sanitizeInput } from '../middleware/validation.middleware.js';
 
 const router = express.Router();
@@ -19,18 +21,20 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Get all projects
-router.get('/', getAllProjects);
+// Get all projects - requires VIEW_REPORTS permission
+router.get('/', requirePermission(ACTIONS.VIEW_REPORTS), getAllProjects);
 
-// Get deleted projects
-router.get('/deleted', getDeletedProjects);
+// Get deleted projects - requires VIEW_REPORTS permission
+router.get('/deleted', requirePermission(ACTIONS.VIEW_REPORTS), getDeletedProjects);
 
-// Get project by ID
-router.get('/:id', getProjectById);
+// Get project by ID - requires VIEW_REPORTS permission
+router.get('/:id', requirePermission(ACTIONS.VIEW_REPORTS), getProjectById);
 
-// Create project
+// Create project - requires VIEW_REPORTS permission (anyone who can view can create projects)
+// Note: You may want to restrict this further based on your business logic
 router.post(
   '/',
+  requirePermission(ACTIONS.VIEW_REPORTS),
   [
     body('projectCode').trim().notEmpty().withMessage('Project code is required'),
     body('projectName').trim().notEmpty().withMessage('Project name is required'),
@@ -43,9 +47,11 @@ router.post(
   createProject
 );
 
-// Update project
+// Update project - requires VIEW_REPORTS permission
+// Note: You may want to add a check to prevent updates if project is locked
 router.put(
   '/:id',
+  requirePermission(ACTIONS.VIEW_REPORTS),
   [
     body('startDate').optional().isISO8601(),
     body('endDate').optional().isISO8601(),
@@ -55,14 +61,24 @@ router.put(
   updateProject
 );
 
-// Restore deleted project
-router.post('/:id/restore', restoreProject);
+// Restore deleted project - requires VIEW_REPORTS permission
+router.post('/:id/restore', requirePermission(ACTIONS.VIEW_REPORTS), restoreProject);
 
-// Delete project (soft delete - moves to recently deleted)
-router.delete('/:id', authorize('admin'), deleteProject);
+// Close project - requires CLOSE_LOCK_PROJECT permission
+router.post('/:id/close', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), closeProject);
 
-// Permanently delete project (Admin only)
-router.delete('/:id/permanent', authorize('admin'), permanentDeleteProject);
+// Lock project - requires CLOSE_LOCK_PROJECT permission
+router.post('/:id/lock', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), lockProject);
+
+// Unlock project - requires CLOSE_LOCK_PROJECT permission
+router.post('/:id/unlock', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), unlockProject);
+
+// Delete project (soft delete) - requires CLOSE_LOCK_PROJECT permission
+// Note: Based on user's comment, delete might be used instead of approve
+router.delete('/:id', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), deleteProject);
+
+// Permanently delete project - requires CLOSE_LOCK_PROJECT permission
+router.delete('/:id/permanent', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), permanentDeleteProject);
 
 export default router;
 

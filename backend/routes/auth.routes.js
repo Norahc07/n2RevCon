@@ -1,6 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getMe, logout, forgotPassword, resetPassword } from '../controllers/auth.controller.js';
+import { register, login, getMe, logout, forgotPassword, resetPassword, verifyEmail, resendVerificationEmail } from '../controllers/auth.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { validate, sanitizeInput } from '../middleware/validation.middleware.js';
 
@@ -58,6 +58,20 @@ router.post(
     sanitizeInput
   ],
   resetPassword
+);
+
+// Verify Email
+router.get('/verify-email/:token', verifyEmail);
+
+// Resend Verification Email
+router.post(
+  '/resend-verification',
+  [
+    body('email').isEmail().withMessage('Please provide a valid email'),
+    validate,
+    sanitizeInput
+  ],
+  resendVerificationEmail
 );
 
 export default router;

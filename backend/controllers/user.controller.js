@@ -1,7 +1,7 @@
 import User from '../models/User.model.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { sendPasswordChangeEmail } from '../services/email.service.js';
+import { sendPasswordChangeEmail, sendAccountApprovalEmail, sendAccountRejectionEmail } from '../services/email.service.js';
 
 /**
  * @route   GET /api/users
@@ -51,11 +51,36 @@ export const updateUser = async (req, res) => {
       }
     }
     
-    // Update user data (role is always admin, but allow isActive changes)
+    // Only master_admin can change roles
+    const currentUser = await User.findById(req.user.id);
+    const canChangeRole = currentUser && currentUser.role === 'master_admin';
+    
+    // Update user data
     const updateData = { firstName, lastName, email, profile, preferences };
+    
     // Allow isActive changes (for account deactivation)
     if (isActive !== undefined) updateData.isActive = isActive;
-    // Role is always admin, no need to update
+    
+    // Allow role changes only if user is master_admin
+    if (role && canChangeRole) {
+      // Validate role
+      const validRoles = [
+        'master_admin',
+        'system_admin',
+        'revenue_officer',
+        'disbursing_officer',
+        'billing_officer',
+        'collecting_officer',
+        'viewer'
+      ];
+      if (validRoles.includes(role)) {
+        updateData.role = role;
+      } else {
+        return res.status(400).json({ message: 'Invalid role specified' });
+      }
+    } else if (role && !canChangeRole) {
+      return res.status(403).json({ message: 'Only Master Admin can change user roles' });
+    }
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
@@ -318,6 +343,161 @@ export const deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   GET /api/users/pending
+ * @desc    Get all pending users (awaiting approval)
+ * @access  Private (Master Admin only)
+ */
+export const getPendingUsers = async (req, res) => {
+  try {
+    // Check if user is master_admin
+    const currentUser = await User.findById(req.user.id);
+    if (currentUser.role !== 'master_admin') {
+      return res.status(403).json({ message: 'Only Master Admin can view pending users' });
+    }
+
+    const pendingUsers = await User.find({ 
+      accountStatus: 'pending',
+      emailVerified: true // Only show users who have verified their email
+    })
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.json({ users: pendingUsers, count: pendingUsers.length });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   POST /api/users/:id/approve
+ * @desc    Approve a pending user account
+ * @access  Private (Master Admin only)
+ */
+export const approveUser = async (req, res) => {
+  try {
+    // Check if user is master_admin
+    const currentUser = await User.findById(req.user.id);
+    if (currentUser.role !== 'master_admin') {
+      return res.status(403).json({ message: 'Only Master Admin can approve users' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.accountStatus !== 'pending') {
+      return res.status(400).json({ 
+        message: `User account is already ${user.accountStatus}. Cannot approve.` 
+      });
+    }
+
+    if (!user.emailVerified) {
+      return res.status(400).json({ 
+        message: 'User must verify their email before approval' 
+      });
+    }
+
+    // Approve user
+    user.accountStatus = 'approved';
+    user.approvedBy = req.user.id;
+    user.approvedAt = new Date();
+    user.isActive = true;
+    await user.save();
+
+    // Send approval email
+    try {
+      const userName = `${user.firstName} ${user.lastName}`;
+      await sendAccountApprovalEmail({
+        to: user.email,
+        userName: userName,
+      });
+      console.log('✅ Approval email sent to:', user.email);
+    } catch (emailError) {
+      console.error('❌ Error sending approval email:', emailError);
+      // Don't fail the approval if email fails
+    }
+
+    res.json({ 
+      message: 'User approved successfully',
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        accountStatus: user.accountStatus
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   POST /api/users/:id/reject
+ * @desc    Reject a pending user account
+ * @access  Private (Master Admin only)
+ */
+export const rejectUser = async (req, res) => {
+  try {
+    // Check if user is master_admin
+    const currentUser = await User.findById(req.user.id);
+    if (currentUser.role !== 'master_admin') {
+      return res.status(403).json({ message: 'Only Master Admin can reject users' });
+    }
+
+    const { reason } = req.body;
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.accountStatus !== 'pending') {
+      return res.status(400).json({ 
+        message: `User account is already ${user.accountStatus}. Cannot reject.` 
+      });
+    }
+
+    // Reject user
+    user.accountStatus = 'rejected';
+    user.rejectedBy = req.user.id;
+    user.rejectedAt = new Date();
+    user.rejectionReason = reason || 'No reason provided';
+    user.isActive = false;
+    await user.save();
+
+    // Send rejection email
+    try {
+      const userName = `${user.firstName} ${user.lastName}`;
+      await sendAccountRejectionEmail({
+        to: user.email,
+        userName: userName,
+        reason: user.rejectionReason,
+      });
+      console.log('✅ Rejection email sent to:', user.email);
+    } catch (emailError) {
+      console.error('❌ Error sending rejection email:', emailError);
+      // Don't fail the rejection if email fails
+    }
+
+    res.json({ 
+      message: 'User rejected successfully',
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        accountStatus: user.accountStatus
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

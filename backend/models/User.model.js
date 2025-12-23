@@ -30,12 +30,55 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin'],
-    default: 'admin'
+    enum: [
+      'master_admin',
+      'system_admin',
+      'revenue_officer',
+      'disbursing_officer',
+      'billing_officer',
+      'collecting_officer',
+      'viewer'
+    ],
+    default: 'viewer'
   },
   isActive: {
     type: Boolean,
     default: true
+  },
+  // Email verification
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: {
+    type: String
+  },
+  emailVerificationExpire: {
+    type: Date
+  },
+  // Account approval status (pending, approved, rejected)
+  accountStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  approvedAt: {
+    type: Date
+  },
+  rejectedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  rejectedAt: {
+    type: Date
+  },
+  rejectionReason: {
+    type: String,
+    trim: true
   },
   lastLogin: {
     type: Date

@@ -24,8 +24,19 @@ const projectSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'ongoing', 'completed', 'cancelled'],
+    enum: ['pending', 'ongoing', 'completed', 'cancelled', 'closed'],
     default: 'pending'
+  },
+  isLocked: {
+    type: Boolean,
+    default: false
+  },
+  lockedAt: {
+    type: Date
+  },
+  lockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   },
   startDate: {
     type: Date,

@@ -12,6 +12,7 @@
     "seed-all": "node scripts/seedDataForAllUsers.js",
     "wipe-and-seed": "node scripts/wipeAndSeed.js",
     "fix-roles": "node scripts/fixUserRoles.js",
+    "migrate-roles": "node scripts/migrateUserRoles.js",
     "remove-2026": "node scripts/remove2026Data.js"
   },
   "keywords": [

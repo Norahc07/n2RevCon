@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.model.js';
-import { sendPasswordResetEmail } from '../services/email.service.js';
+import { sendPasswordResetEmail, sendEmailVerificationEmail, sendAccountApprovalEmail, sendAccountRejectionEmail } from '../services/email.service.js';
 import { createSeedDataForUser } from '../services/seedData.service.js';
 
 /**
@@ -15,7 +15,7 @@ const generateToken = (id) => {
 
 /**
  * @route   POST /api/auth/register
- * @desc    Register a new user - Open to anyone
+ * @desc    Register a new user - Requires email verification and admin approval
  * @access  Public
  */
 export const register = async (req, res) => {
@@ -28,39 +28,80 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create user (always admin - role is automatically set to 'admin' by default in schema)
-    // Ignore any role value from request body
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+
+    // Create user with default role 'viewer' and pending status
+    // Account status: pending (requires email verification + admin approval)
     const user = await User.create({
       firstName,
       lastName,
       email,
       password,
-      role: 'admin' // Always admin, regardless of request
+      role: 'viewer', // Default to viewer role
+      accountStatus: 'pending', // Requires admin approval
+      emailVerificationToken: hashedToken,
+      emailVerificationExpire: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
     });
 
-    const token = generateToken(user._id);
+    // Generate email verification URL
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${verificationToken}`;
+    
+    // Send email verification email
+    try {
+      const userName = `${user.firstName} ${user.lastName}`;
+      await sendEmailVerificationEmail({
+        to: user.email,
+        userName: userName,
+        verificationUrl: verificationUrl,
+      });
+      console.log('✅ Email verification sent to:', user.email);
+    } catch (emailError) {
+      console.error('❌ Error sending verification email:', emailError);
+      // Don't fail registration if email fails, but log it
+    }
 
-    // Automatically create seed data for new user (in background, don't wait)
-    createSeedDataForUser(user._id).catch(error => {
-      console.error('Error creating seed data for new user:', error);
-      // Don't fail registration if seed data creation fails
+    // Notify master admins about new registration (in background)
+    notifyAdminsOfNewRegistration(user).catch(error => {
+      console.error('Error notifying admins:', error);
     });
 
     res.status(201).json({
-      message: 'User registered successfully',
-      token,
+      message: 'Registration successful! Please check your email to verify your account. Your account will be activated after admin approval.',
       user: {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+        emailVerified: user.emailVerified,
+        accountStatus: user.accountStatus
+      },
+      // Include verification URL in development for testing
+      ...(process.env.NODE_ENV === 'development' && { verificationUrl })
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * Helper function to notify master admins of new registration
+ */
+async function notifyAdminsOfNewRegistration(newUser) {
+  try {
+    const masterAdmins = await User.find({ role: 'master_admin', isActive: true });
+    
+    // Send notification to each master admin
+    for (const admin of masterAdmins) {
+      // You can implement notification system here (email, in-app notification, etc.)
+      console.log(`📧 New user registration pending approval: ${newUser.email} - Notify admin: ${admin.email}`);
+    }
+  } catch (error) {
+    console.error('Error notifying admins:', error);
+  }
+}
 
 /**
  * @route   POST /api/auth/login
@@ -81,6 +122,26 @@ export const login = async (req, res) => {
     // Check if user is active
     if (!user.isActive) {
       return res.status(401).json({ message: 'Account is deactivated' });
+    }
+
+    // Check if email is verified
+    if (!user.emailVerified) {
+      return res.status(401).json({ 
+        message: 'Please verify your email address before logging in. Check your inbox for the verification link.' 
+      });
+    }
+
+    // Check if account is approved
+    if (user.accountStatus === 'pending') {
+      return res.status(401).json({ 
+        message: 'Your account is pending approval. Please wait for an administrator to approve your account.' 
+      });
+    }
+
+    if (user.accountStatus === 'rejected') {
+      return res.status(401).json({ 
+        message: 'Your account registration has been rejected. Please contact support for more information.' 
+      });
     }
 
     // Verify password
@@ -358,6 +419,96 @@ export const resetPassword = async (req, res) => {
     await user.save();
 
     res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   GET /api/auth/verify-email/:token
+ * @desc    Verify email address with token
+ * @access  Public
+ */
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Hash the token to compare with stored token
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with valid verification token
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification token' });
+    }
+
+    // Verify email
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpire = undefined;
+    await user.save();
+
+    res.json({ 
+      message: 'Email verified successfully! Your account is now pending admin approval. You will be notified once approved.' 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   POST /api/auth/resend-verification
+ * @desc    Resend email verification
+ * @access  Public
+ */
+export const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Don't reveal if email exists for security
+      return res.json({ 
+        message: 'If that email exists and is not verified, a verification email has been sent.' 
+      });
+    }
+
+    if (user.emailVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    // Generate new verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    await user.save();
+
+    // Generate email verification URL
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${verificationToken}`;
+    
+    // Send verification email
+    try {
+      const userName = `${user.firstName} ${user.lastName}`;
+      await sendEmailVerificationEmail({
+        to: user.email,
+        userName: userName,
+        verificationUrl: verificationUrl,
+      });
+      console.log('✅ Verification email resent to:', user.email);
+    } catch (emailError) {
+      console.error('❌ Error sending verification email:', emailError);
+    }
+
+    res.json({ 
+      message: 'If that email exists and is not verified, a verification email has been sent.',
+      ...(process.env.NODE_ENV === 'development' && { verificationUrl })
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

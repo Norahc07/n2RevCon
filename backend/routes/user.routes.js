@@ -10,10 +10,12 @@ import {
   getUserSessions,
   logoutAllDevices,
   getLoginHistory,
-  deleteUser
+  deleteUser,
+  getPendingUsers,
+  approveUser,
+  rejectUser
 } from '../controllers/user.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
-import { authorize } from '../middleware/auth.middleware.js';
+import { authenticate, requirePermission, ACTIONS } from '../middleware/auth.middleware.js';
 import { validate, sanitizeInput } from '../middleware/validation.middleware.js';
 
 const router = express.Router();
@@ -32,8 +34,11 @@ router.put(
 // All other routes require authentication
 router.use(authenticate);
 
-// Get all users (Admin only)
-router.get('/', authorize('admin'), getAllUsers);
+// Get all users - requires VIEW_REPORTS permission (or you can restrict to master_admin only)
+router.get('/', requirePermission(ACTIONS.VIEW_REPORTS), getAllUsers);
+
+// Get pending users (awaiting approval) - Master Admin only
+router.get('/pending', getPendingUsers);
 
 // Get user by ID
 router.get('/:id', getUserById);
@@ -75,8 +80,22 @@ router.delete('/:id/sessions', logoutAllDevices);
 // Get login history
 router.get('/:id/login-history', getLoginHistory);
 
-// Delete user (Admin only)
-router.delete('/:id', authorize('admin'), deleteUser);
+// Approve user - Master Admin only
+router.post('/:id/approve', approveUser);
+
+// Reject user - Master Admin only
+router.post(
+  '/:id/reject',
+  [
+    body('reason').optional().trim(),
+    validate,
+    sanitizeInput
+  ],
+  rejectUser
+);
+
+// Delete user - requires CLOSE_LOCK_PROJECT permission (master_admin/system_admin can delete)
+router.delete('/:id', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), deleteUser);
 
 export default router;
 

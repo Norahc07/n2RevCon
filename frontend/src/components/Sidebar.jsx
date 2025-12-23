@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
+import { getRoleDisplayName } from '../config/permissions';
 import {
   HomeIcon,
   FolderIcon,
@@ -25,6 +27,7 @@ import {
 
 const Sidebar = ({ isOpen, onClose, onToggle }) => {
   const { user } = useAuth();
+  const permissions = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
   const [projectsOpen, setProjectsOpen] = useState(false);
@@ -54,13 +57,17 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
     }
   }, [isProjectsActive, isSettingsActive, isOpen, location.pathname]);
 
-  // Projects subcategories with icons
+  // Projects subcategories with icons - filtered by permissions
   const projectsSubcategories = [
-    { path: '/projects', label: 'Description', icon: DocumentTextIcon },
-    { path: '/projects/revenue-costs', label: 'Revenue vs. Expenses', icon: ChartBarIcon },
-    { path: '/projects/billing-collections', label: 'Billings & Collections', icon: BanknotesIcon },
-    { path: '/projects/deleted', label: 'Recently Deleted', icon: TrashIcon },
-  ];
+    { path: '/projects', label: 'Description', icon: DocumentTextIcon, requiredPermission: 'viewReports' },
+    { path: '/projects/revenue-costs', label: 'Revenue vs. Expenses', icon: ChartBarIcon, requiredPermission: 'viewReports' },
+    { path: '/projects/billing-collections', label: 'Billings & Collections', icon: BanknotesIcon, requiredPermission: 'viewReports' },
+    { path: '/projects/deleted', label: 'Recently Deleted', icon: TrashIcon, requiredPermission: 'closeLockProject' },
+  ].filter(sub => {
+    if (sub.requiredPermission === 'viewReports') return permissions.canViewReports;
+    if (sub.requiredPermission === 'closeLockProject') return permissions.canCloseLockProject;
+    return true;
+  });
 
   // Settings subcategories with nested structure
   const settingsSubcategories = [
@@ -322,7 +329,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                 <div className="p-4 border-t-2 border-gray-200">
                   <div className="text-sm text-gray-600">
                     <p className="font-medium">{user?.firstName} {user?.lastName}</p>
-                    <p className="text-xs text-gray-500">Administrator</p>
+                    <p className="text-xs text-gray-500">{getRoleDisplayName(user?.role)}</p>
                   </div>
                 </div>
               )}
@@ -507,7 +514,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
           <div className="p-4 border-t-2 border-gray-200">
             <div className="text-sm text-gray-600">
               <p className="font-medium">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs text-gray-500">Administrator</p>
+              <p className="text-xs text-gray-500">{getRoleDisplayName(user?.role)}</p>
             </div>
           </div>
         </div>

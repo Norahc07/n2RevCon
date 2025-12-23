@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.model.js';
+import { hasPermission, ACTIONS } from '../config/permissions.js';
 
 /**
  * JWT Authentication Middleware
@@ -55,4 +56,53 @@ export const authorize = (...roles) => {
     next();
   };
 };
+
+/**
+ * Permission-based authorization middleware
+ * Checks if user has permission for a specific action
+ * @param {string} action - Required action (e.g., ACTIONS.REVENUE)
+ * @returns {Function} - Express middleware function
+ */
+export const requirePermission = (action) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!hasPermission(req.user.role, action)) {
+      return res.status(403).json({ 
+        message: 'Access denied. You do not have permission to perform this action.' 
+      });
+    }
+
+    next();
+  };
+};
+
+/**
+ * Permission-based authorization middleware for multiple actions (OR logic)
+ * User needs at least one of the specified permissions
+ * @param {string[]} actions - Array of actions (user needs at least one)
+ * @returns {Function} - Express middleware function
+ */
+export const requireAnyPermission = (...actions) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const hasAny = actions.some(action => hasPermission(req.user.role, action));
+    
+    if (!hasAny) {
+      return res.status(403).json({ 
+        message: 'Access denied. You do not have permission to perform this action.' 
+      });
+    }
+
+    next();
+  };
+};
+
+// Export ACTIONS for use in routes
+export { ACTIONS };
 

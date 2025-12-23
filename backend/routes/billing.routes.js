@@ -7,8 +7,7 @@ import {
   updateBilling,
   deleteBilling
 } from '../controllers/billing.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
-import { authorize } from '../middleware/auth.middleware.js';
+import { authenticate, requirePermission, ACTIONS } from '../middleware/auth.middleware.js';
 import { validate, sanitizeInput } from '../middleware/validation.middleware.js';
 
 const router = express.Router();
@@ -16,15 +15,16 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Get all billing
-router.get('/', getAllBilling);
+// Get all billing - requires VIEW_REPORTS permission
+router.get('/', requirePermission(ACTIONS.VIEW_REPORTS), getAllBilling);
 
-// Get billing by ID
-router.get('/:id', getBillingById);
+// Get billing by ID - requires VIEW_REPORTS permission
+router.get('/:id', requirePermission(ACTIONS.VIEW_REPORTS), getBillingById);
 
-// Create billing
+// Create billing - requires BILLING permission
 router.post(
   '/',
+  requirePermission(ACTIONS.BILLING),
   [
     body('projectId').notEmpty().withMessage('Project ID is required'),
     body('invoiceNumber').trim().notEmpty().withMessage('Invoice number is required'),
@@ -38,9 +38,10 @@ router.post(
   createBilling
 );
 
-// Update billing
+// Update billing - requires BILLING permission
 router.put(
   '/:id',
+  requirePermission(ACTIONS.BILLING),
   [
     body('billingDate').optional().isISO8601(),
     body('dueDate').optional().isISO8601(),
@@ -52,8 +53,8 @@ router.put(
   updateBilling
 );
 
-// Delete billing (Admin only)
-router.delete('/:id', authorize('admin'), deleteBilling);
+// Delete billing - requires BILLING permission
+router.delete('/:id', requirePermission(ACTIONS.BILLING), deleteBilling);
 
 export default router;
 

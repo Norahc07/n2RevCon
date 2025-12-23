@@ -348,8 +348,529 @@ export const sendPasswordResetEmail = async ({ to, userName, resetUrl }) => {
   }
 };
 
+/**
+ * Generate HTML email template for email verification
+ */
+const generateEmailVerificationTemplate = (userName, verificationUrl) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const logoUrl = `${frontendUrl}/n2RevConLogo.png`;
+  
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Email - n2 RevCon</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .email-header {
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .logo {
+      max-width: 120px;
+      height: auto;
+      margin-bottom: 15px;
+      background-color: white;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .system-name {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: bold;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    .email-body {
+      padding: 40px 30px;
+    }
+    .greeting {
+      font-size: 18px;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    .message {
+      font-size: 16px;
+      color: #4b5563;
+      margin-bottom: 30px;
+      line-height: 1.8;
+    }
+    .button-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .verify-button {
+      display: inline-block;
+      padding: 14px 32px;
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3);
+    }
+    .info-box {
+      background-color: #EFF6FF;
+      border-left: 4px solid #3B82F6;
+      padding: 15px;
+      margin: 25px 0;
+      border-radius: 4px;
+    }
+    .info-text {
+      color: #1E40AF;
+      font-size: 14px;
+      margin: 0;
+    }
+    .email-footer {
+      background-color: #f9fafb;
+      padding: 25px 30px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+    .footer-text {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <img src="${logoUrl}" alt="n2 RevCon Logo" class="logo" />
+      <h1 class="system-name">n2 RevCon</h1>
+    </div>
+    
+    <div class="email-body">
+      <p class="greeting">Hello ${userName},</p>
+      
+      <p class="message">
+        Thank you for registering with n2 RevCon! To complete your registration, 
+        please verify your email address by clicking the button below:
+      </p>
+      
+      <div class="button-container">
+        <a href="${verificationUrl}" class="verify-button">
+          Verify Email Address
+        </a>
+      </div>
+      
+      <div class="info-box">
+        <p class="info-text">
+          <strong>📋 Next Steps:</strong><br>
+          1. Verify your email address (click button above)<br>
+          2. Wait for administrator approval<br>
+          3. You'll receive an email once your account is approved
+        </p>
+      </div>
+      
+      <p class="message">
+        If the button doesn't work, copy and paste this link into your browser:<br>
+        <a href="${verificationUrl}" style="color: #DC2626;">${verificationUrl}</a>
+      </p>
+      
+      <p class="message">
+        This verification link will expire in 24 hours. If you didn't create an account, 
+        please ignore this email.
+      </p>
+    </div>
+    
+    <div class="email-footer">
+      <p class="footer-text">This is an automated message from n2 RevCon System.</p>
+      <p class="footer-text">Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+};
+
+/**
+ * Generate HTML email template for account approval
+ */
+const generateAccountApprovalTemplate = (userName) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const logoUrl = `${frontendUrl}/n2RevConLogo.png`;
+  const loginUrl = `${frontendUrl}/login`;
+  
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Approved - n2 RevCon</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .email-header {
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .logo {
+      max-width: 120px;
+      height: auto;
+      margin-bottom: 15px;
+      background-color: white;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .system-name {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: bold;
+      margin: 0;
+    }
+    .email-body {
+      padding: 40px 30px;
+    }
+    .greeting {
+      font-size: 18px;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    .message {
+      font-size: 16px;
+      color: #4b5563;
+      margin-bottom: 30px;
+      line-height: 1.8;
+    }
+    .button-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .login-button {
+      display: inline-block;
+      padding: 14px 32px;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .success-box {
+      background-color: #D1FAE5;
+      border-left: 4px solid #10B981;
+      padding: 15px;
+      margin: 25px 0;
+      border-radius: 4px;
+    }
+    .success-text {
+      color: #065F46;
+      font-size: 14px;
+      margin: 0;
+    }
+    .email-footer {
+      background-color: #f9fafb;
+      padding: 25px 30px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+    .footer-text {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <img src="${logoUrl}" alt="n2 RevCon Logo" class="logo" />
+      <h1 class="system-name">n2 RevCon</h1>
+    </div>
+    
+    <div class="email-body">
+      <p class="greeting">Hello ${userName},</p>
+      
+      <div class="success-box">
+        <p class="success-text">
+          <strong>✅ Great News!</strong><br>
+          Your account has been approved by an administrator. You can now log in to n2 RevCon!
+        </p>
+      </div>
+      
+      <div class="button-container">
+        <a href="${loginUrl}" class="login-button">
+          Log In to n2 RevCon
+        </a>
+      </div>
+      
+      <p class="message">
+        If you have any questions, please don't hesitate to contact support.
+      </p>
+    </div>
+    
+    <div class="email-footer">
+      <p class="footer-text">This is an automated message from n2 RevCon System.</p>
+      <p class="footer-text">Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+};
+
+/**
+ * Generate HTML email template for account rejection
+ */
+const generateAccountRejectionTemplate = (userName, reason) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const logoUrl = `${frontendUrl}/n2RevConLogo.png`;
+  
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Registration Update - n2 RevCon</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .email-header {
+      background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .logo {
+      max-width: 120px;
+      height: auto;
+      margin-bottom: 15px;
+      background-color: white;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .system-name {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: bold;
+      margin: 0;
+    }
+    .email-body {
+      padding: 40px 30px;
+    }
+    .greeting {
+      font-size: 18px;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    .message {
+      font-size: 16px;
+      color: #4b5563;
+      margin-bottom: 30px;
+      line-height: 1.8;
+    }
+    .rejection-box {
+      background-color: #FEE2E2;
+      border-left: 4px solid #EF4444;
+      padding: 15px;
+      margin: 25px 0;
+      border-radius: 4px;
+    }
+    .rejection-text {
+      color: #991B1B;
+      font-size: 14px;
+      margin: 0;
+    }
+    .email-footer {
+      background-color: #f9fafb;
+      padding: 25px 30px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+    .footer-text {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <img src="${logoUrl}" alt="n2 RevCon Logo" class="logo" />
+      <h1 class="system-name">n2 RevCon</h1>
+    </div>
+    
+    <div class="email-body">
+      <p class="greeting">Hello ${userName},</p>
+      
+      <div class="rejection-box">
+        <p class="rejection-text">
+          <strong>Account Registration Update</strong><br>
+          We regret to inform you that your account registration has been reviewed and not approved at this time.
+        </p>
+      </div>
+      
+      ${reason ? `
+      <p class="message">
+        <strong>Reason:</strong> ${reason}
+      </p>
+      ` : ''}
+      
+      <p class="message">
+        If you believe this is an error or have questions, please contact our support team for assistance.
+      </p>
+    </div>
+    
+    <div class="email-footer">
+      <p class="footer-text">This is an automated message from n2 RevCon System.</p>
+      <p class="footer-text">Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+};
+
+/**
+ * Send email verification email
+ */
+export const sendEmailVerificationEmail = async ({ to, userName, verificationUrl }) => {
+  try {
+    const mailOptions = {
+      from: `"n2 RevCon System" <${process.env.EMAIL_FROM || 'ntworevcon@gmail.com'}>`,
+      to: to,
+      subject: 'Verify Your Email - n2 RevCon',
+      html: generateEmailVerificationTemplate(userName, verificationUrl),
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📧 Email verification sent!');
+      if (typeof nodemailer.getTestMessageUrl === 'function') {
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        if (previewUrl) {
+          console.log('📬 Preview URL:', previewUrl);
+        }
+      }
+    }
+    
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send account approval email
+ */
+export const sendAccountApprovalEmail = async ({ to, userName }) => {
+  try {
+    const mailOptions = {
+      from: `"n2 RevCon System" <${process.env.EMAIL_FROM || 'ntworevcon@gmail.com'}>`,
+      to: to,
+      subject: 'Account Approved - n2 RevCon',
+      html: generateAccountApprovalTemplate(userName),
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📧 Account approval email sent!');
+      if (typeof nodemailer.getTestMessageUrl === 'function') {
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        if (previewUrl) {
+          console.log('📬 Preview URL:', previewUrl);
+        }
+      }
+    }
+    
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending approval email:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send account rejection email
+ */
+export const sendAccountRejectionEmail = async ({ to, userName, reason }) => {
+  try {
+    const mailOptions = {
+      from: `"n2 RevCon System" <${process.env.EMAIL_FROM || 'ntworevcon@gmail.com'}>`,
+      to: to,
+      subject: 'Account Registration Update - n2 RevCon',
+      html: generateAccountRejectionTemplate(userName, reason),
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📧 Account rejection email sent!');
+      if (typeof nodemailer.getTestMessageUrl === 'function') {
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        if (previewUrl) {
+          console.log('📬 Preview URL:', previewUrl);
+        }
+      }
+    }
+    
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending rejection email:', error);
+    throw error;
+  }
+};
+
 export default {
   sendPasswordChangeEmail,
   sendPasswordResetEmail,
+  sendEmailVerificationEmail,
+  sendAccountApprovalEmail,
+  sendAccountRejectionEmail,
 };
 

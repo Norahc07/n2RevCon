@@ -188,3 +188,92 @@ export const permanentDeleteProject = async (req, res) => {
   }
 };
 
+/**
+ * @route   POST /api/projects/:id/close
+ * @desc    Close a project (set status to 'closed')
+ * @access  Private (Requires CLOSE_LOCK_PROJECT permission)
+ */
+export const closeProject = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 
+        status: 'closed',
+        actualEndDate: new Date(),
+        updatedBy: req.user.id
+      },
+      { new: true, runValidators: true }
+    ).populate('createdBy', 'firstName lastName email')
+     .populate('updatedBy', 'firstName lastName email')
+     .populate('lockedBy', 'firstName lastName email');
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.json({ message: 'Project closed successfully', project });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   POST /api/projects/:id/lock
+ * @desc    Lock a project (prevent modifications)
+ * @access  Private (Requires CLOSE_LOCK_PROJECT permission)
+ */
+export const lockProject = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 
+        isLocked: true,
+        lockedAt: new Date(),
+        lockedBy: req.user.id,
+        updatedBy: req.user.id
+      },
+      { new: true, runValidators: true }
+    ).populate('createdBy', 'firstName lastName email')
+     .populate('updatedBy', 'firstName lastName email')
+     .populate('lockedBy', 'firstName lastName email');
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.json({ message: 'Project locked successfully', project });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @route   POST /api/projects/:id/unlock
+ * @desc    Unlock a project (allow modifications)
+ * @access  Private (Requires CLOSE_LOCK_PROJECT permission)
+ */
+export const unlockProject = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 
+        isLocked: false,
+        lockedAt: null,
+        lockedBy: null,
+        updatedBy: req.user.id
+      },
+      { new: true, runValidators: true }
+    ).populate('createdBy', 'firstName lastName email')
+     .populate('updatedBy', 'firstName lastName email')
+     .populate('lockedBy', 'firstName lastName email');
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.json({ message: 'Project unlocked successfully', project });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
