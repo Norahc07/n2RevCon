@@ -37,10 +37,10 @@ const createTransporter = () => {
         user: smtpUser,
         pass: smtpPass,
       },
-      // Increase timeouts for Brevo
-      connectionTimeout: isBrevo ? 30000 : 10000, // 30 seconds for Brevo
-      greetingTimeout: isBrevo ? 30000 : 10000,
-      socketTimeout: isBrevo ? 30000 : 10000,
+      // Increase timeouts for Brevo and Render
+      connectionTimeout: isBrevo ? 60000 : 10000, // 60 seconds for Brevo on Render
+      greetingTimeout: isBrevo ? 60000 : 10000,
+      socketTimeout: isBrevo ? 60000 : 10000,
       // Enable debug for troubleshooting
       debug: process.env.NODE_ENV === 'development',
       logger: process.env.NODE_ENV === 'development',
@@ -49,14 +49,30 @@ const createTransporter = () => {
         // Do not fail on invalid certificates (useful for some providers)
         rejectUnauthorized: false,
         // For Brevo, allow older TLS versions if needed
-        minVersion: 'TLSv1.2'
-      }
+        minVersion: 'TLSv1.2',
+        // Additional TLS options for better connection
+        ciphers: 'SSLv3'
+      },
+      // Pool connections for better reliability
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 3
     };
     
     // For Brevo on port 465, ensure secure connection
     if (isBrevo && smtpPort === 465) {
       transporterConfig.secure = true;
       transporterConfig.requireTLS = false;
+      transporterConfig.tls = {
+        ...transporterConfig.tls,
+        rejectUnauthorized: false
+      };
+    }
+    
+    // For Brevo on port 587, use STARTTLS
+    if (isBrevo && smtpPort === 587) {
+      transporterConfig.secure = false;
+      transporterConfig.requireTLS = true;
     }
     
     const transporter = nodemailer.createTransport(transporterConfig);

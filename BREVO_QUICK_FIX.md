@@ -51,16 +51,25 @@ FRONTEND_URL=https://n2-rev-con.vercel.app/
    📬 Brevo SMTP connection verified successfully
    ```
 
-## If Port 587 Still Doesn't Work
+## If Port 465 Times Out (Connection Timeout)
 
-Try port 465 with SSL:
+This usually means Render is blocking the connection. Try these:
+
+### Option 1: Try Port 587 Again
+Sometimes port 587 works better on Render:
 
 ```env
 SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=465
-SMTP_SECURE=true
+SMTP_PORT=587
+SMTP_SECURE=false
 SMTP_USER=9ea7c1001@smtp-brevo.com
 SMTP_PASS=your-generated-smtp-password
 EMAIL_FROM=ntworevcon@gmail.com
 ```
+
+### Option 2: Contact Render Support
+Ask if they block outbound SMTP connections on ports 465/587.
+
+### Option 3: Use Brevo API Instead
+If SMTP continues to timeout, consider using Brevo's API (requires code changes but more reliable).
 
