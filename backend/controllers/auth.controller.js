@@ -512,7 +512,9 @@ export const verifyEmail = async (req, res) => {
     console.log('   New emailVerified status:', user.emailVerified);
     console.log('   Account status:', user.accountStatus);
 
-    res.json({ 
+    // Return success response with clear message
+    res.status(200).json({ 
+      success: true,
       message: 'Email verified successfully! Your account is now pending admin approval. You will be notified once approved.',
       emailVerified: true,
       accountStatus: user.accountStatus

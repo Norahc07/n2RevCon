@@ -11,24 +11,64 @@ const VerifyEmail = () => {
 
   useEffect(() => {
     const verifyEmail = async () => {
+      if (!token) {
+        setStatus('error');
+        setMessage('No verification token provided.');
+        toast.error('Invalid verification link');
+        return;
+      }
+
+      console.log('🔍 Verifying email with token:', token.substring(0, 20) + '...');
+      
       try {
         const response = await authAPI.verifyEmail(token);
-        setStatus('success');
-        setMessage(response.data?.message || 'Email verified successfully! Your account is now pending admin approval.');
-        toast.success('Email verified successfully!');
+        console.log('✅ Verification response:', response);
+        
+        if (response && response.data) {
+          setStatus('success');
+          setMessage(response.data.message || 'Email verified successfully! Your account is now pending admin approval.');
+          toast.success('Email verified successfully!', {
+            duration: 5000,
+            icon: '✅',
+          });
+        } else {
+          throw new Error('Invalid response from server');
+        }
       } catch (error) {
+        console.error('❌ Verification error:', error);
+        console.error('Error response:', error.response);
+        console.error('Error message:', error.message);
+        
         setStatus('error');
-        setMessage(error.response?.data?.message || 'Invalid or expired verification token.');
-        toast.error('Email verification failed');
+        
+        // Better error messages
+        let errorMessage = 'Failed to verify email. Please try again.';
+        
+        if (error.response) {
+          // Server responded with error
+          errorMessage = error.response.data?.message || errorMessage;
+          
+          if (error.response.status === 400) {
+            errorMessage = error.response.data?.message || 'Invalid or expired verification token.';
+          } else if (error.response.status === 500) {
+            errorMessage = 'Server error. Please try again later or contact support.';
+          }
+        } else if (error.request) {
+          // Request was made but no response
+          errorMessage = 'Unable to connect to server. Please check your internet connection.';
+        } else {
+          // Something else happened
+          errorMessage = error.message || errorMessage;
+        }
+        
+        setMessage(errorMessage);
+        toast.error(errorMessage, {
+          duration: 6000,
+        });
       }
     };
 
-    if (token) {
-      verifyEmail();
-    } else {
-      setStatus('error');
-      setMessage('No verification token provided.');
-    }
+    verifyEmail();
   }, [token]);
 
   return (
