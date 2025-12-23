@@ -3,6 +3,7 @@ import { projectAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/currency';
+import { usePermissions } from '../hooks/usePermissions';
 import {
   TrashIcon,
   ArrowPathIcon,
@@ -18,6 +19,7 @@ const RecentlyDeleted = () => {
   const [restoring, setRestoring] = useState(null);
   const [permanentlyDeleting, setPermanentlyDeleting] = useState(null);
   const navigate = useNavigate();
+  const { canDeleteProject } = usePermissions();
 
   useEffect(() => {
     fetchDeletedProjects();

@@ -15,26 +15,28 @@ export const usePermissions = () => {
         canAccessRevenue: false,
         canAccessExpenses: false,
         canAccessBilling: false,
-        canAccessCollection: false,
-        canApprove: false,
-        canCloseLockProject: false,
-        canViewReports: false,
-        role: null,
-        rolePermissions: {},
-      };
-    }
+      canAccessCollection: false,
+      canApprove: false,
+      canCloseLockProject: false,
+      canDeleteProject: false,
+      canViewReports: false,
+      role: null,
+      rolePermissions: {},
+    };
+  }
 
-    const rolePermissions = getRolePermissions(user.role);
+  const rolePermissions = getRolePermissions(user.role);
 
-    return {
-      // Individual permission checks
-      canAccessRevenue: hasPermission(user.role, ACTIONS.REVENUE),
-      canAccessExpenses: hasPermission(user.role, ACTIONS.EXPENSES),
-      canAccessBilling: hasPermission(user.role, ACTIONS.BILLING),
-      canAccessCollection: hasPermission(user.role, ACTIONS.COLLECTION),
-      canApprove: hasPermission(user.role, ACTIONS.APPROVE),
-      canCloseLockProject: hasPermission(user.role, ACTIONS.CLOSE_LOCK_PROJECT),
-      canViewReports: hasPermission(user.role, ACTIONS.VIEW_REPORTS),
+  return {
+    // Individual permission checks
+    canAccessRevenue: hasPermission(user.role, ACTIONS.REVENUE),
+    canAccessExpenses: hasPermission(user.role, ACTIONS.EXPENSES),
+    canAccessBilling: hasPermission(user.role, ACTIONS.BILLING),
+    canAccessCollection: hasPermission(user.role, ACTIONS.COLLECTION),
+    canApprove: hasPermission(user.role, ACTIONS.APPROVE),
+    canCloseLockProject: hasPermission(user.role, ACTIONS.CLOSE_LOCK_PROJECT),
+    canDeleteProject: hasPermission(user.role, ACTIONS.DELETE_PROJECT),
+    canViewReports: hasPermission(user.role, ACTIONS.VIEW_REPORTS),
       
       // Role info
       role: user.role,

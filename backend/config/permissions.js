@@ -22,6 +22,7 @@ export const ACTIONS = {
   COLLECTION: 'collection',
   APPROVE: 'approve',
   CLOSE_LOCK_PROJECT: 'closeLockProject',
+  DELETE_PROJECT: 'deleteProject',
   VIEW_REPORTS: 'viewReports',
 };
 
@@ -46,6 +47,7 @@ export const ROLE_PERMISSIONS = {
     [ACTIONS.COLLECTION]: true,
     [ACTIONS.APPROVE]: true,
     [ACTIONS.CLOSE_LOCK_PROJECT]: true,
+    [ACTIONS.DELETE_PROJECT]: true,
     [ACTIONS.VIEW_REPORTS]: true,
   },
   [ROLES.SYSTEM_ADMIN]: {
@@ -55,6 +57,7 @@ export const ROLE_PERMISSIONS = {
     [ACTIONS.COLLECTION]: false,
     [ACTIONS.APPROVE]: true,
     [ACTIONS.CLOSE_LOCK_PROJECT]: true,
+    [ACTIONS.DELETE_PROJECT]: false,
     [ACTIONS.VIEW_REPORTS]: true,
   },
   [ROLES.REVENUE_OFFICER]: {
@@ -64,6 +67,7 @@ export const ROLE_PERMISSIONS = {
     [ACTIONS.COLLECTION]: false,
     [ACTIONS.APPROVE]: false,
     [ACTIONS.CLOSE_LOCK_PROJECT]: false,
+    [ACTIONS.DELETE_PROJECT]: false,
     [ACTIONS.VIEW_REPORTS]: true,
   },
   [ROLES.DISBURSING_OFFICER]: {
@@ -73,6 +77,7 @@ export const ROLE_PERMISSIONS = {
     [ACTIONS.COLLECTION]: false,
     [ACTIONS.APPROVE]: false,
     [ACTIONS.CLOSE_LOCK_PROJECT]: false,
+    [ACTIONS.DELETE_PROJECT]: false,
     [ACTIONS.VIEW_REPORTS]: true,
   },
   [ROLES.BILLING_OFFICER]: {
@@ -82,6 +87,7 @@ export const ROLE_PERMISSIONS = {
     [ACTIONS.COLLECTION]: false,
     [ACTIONS.APPROVE]: false,
     [ACTIONS.CLOSE_LOCK_PROJECT]: false,
+    [ACTIONS.DELETE_PROJECT]: false,
     [ACTIONS.VIEW_REPORTS]: true,
   },
   [ROLES.COLLECTING_OFFICER]: {
@@ -91,6 +97,7 @@ export const ROLE_PERMISSIONS = {
     [ACTIONS.COLLECTION]: true,
     [ACTIONS.APPROVE]: false,
     [ACTIONS.CLOSE_LOCK_PROJECT]: false,
+    [ACTIONS.DELETE_PROJECT]: false,
     [ACTIONS.VIEW_REPORTS]: true,
   },
   [ROLES.VIEWER]: {
@@ -100,6 +107,7 @@ export const ROLE_PERMISSIONS = {
     [ACTIONS.COLLECTION]: false,
     [ACTIONS.APPROVE]: false,
     [ACTIONS.CLOSE_LOCK_PROJECT]: false,
+    [ACTIONS.DELETE_PROJECT]: false,
     [ACTIONS.VIEW_REPORTS]: true,
   },
 };

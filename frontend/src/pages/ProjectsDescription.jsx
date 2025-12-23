@@ -26,7 +26,7 @@ import { exportAPI } from '../services/api';
 import { TableSkeleton, FilterSkeleton } from '../components/skeletons';
 
 const ProjectsDescription = () => {
-  const { canViewReports, canCloseLockProject } = usePermissions();
+  const { canViewReports, canCloseLockProject, canDeleteProject } = usePermissions();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState('');
@@ -385,7 +385,7 @@ const ProjectsDescription = () => {
                       Edit
                     </button>
                   )}
-                  {canCloseLockProject && (
+                  {canDeleteProject && (
                     <button
                       onClick={(e) => handleDelete(project._id, project.projectName, e)}
                       className="flex-1 flex items-center justify-center gap-1 p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 text-xs font-medium"
@@ -575,7 +575,7 @@ const ProjectsDescription = () => {
                               <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                           )}
-                          {canCloseLockProject && (
+                          {canDeleteProject && (
                             <button
                               onClick={(e) => handleDelete(project._id, project.projectName, e)}
                               className="p-1.5 sm:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"

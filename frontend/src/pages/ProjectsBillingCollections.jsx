@@ -25,10 +25,12 @@ import {
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { usePermissions } from '../hooks/usePermissions';
 import { TableSkeleton, FilterSkeleton, CardSkeleton } from '../components/skeletons';
 
 const ProjectsBillingCollections = () => {
   const navigate = useNavigate();
+  const { canDeleteProject } = usePermissions();
   const [projects, setProjects] = useState([]);
   const [allBillings, setAllBillings] = useState([]);
   const [allCollections, setAllCollections] = useState([]);
@@ -1106,13 +1108,15 @@ const ProjectsBillingCollections = () => {
                         >
                           <PencilIcon className="w-5 h-5" />
                         </button>
-                        <button
-                          onClick={(e) => handleDelete(item.project._id, item.projectName, e)}
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title="Delete"
-                        >
-                          <TrashIcon className="w-5 h-5" />
-                        </button>
+                        {canDeleteProject && (
+                          <button
+                            onClick={(e) => handleDelete(item.project._id, item.projectName, e)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            title="Delete"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

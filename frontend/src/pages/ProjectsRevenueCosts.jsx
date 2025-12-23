@@ -29,7 +29,7 @@ import { TableSkeleton, FilterSkeleton, CardSkeleton } from '../components/skele
 
 const ProjectsRevenueCosts = () => {
   const navigate = useNavigate();
-  const { canAccessRevenue, canAccessExpenses, canViewReports } = usePermissions();
+  const { canAccessRevenue, canAccessExpenses, canViewReports, canDeleteProject } = usePermissions();
   const [projects, setProjects] = useState([]);
   const [allRevenues, setAllRevenues] = useState([]);
   const [allExpenses, setAllExpenses] = useState([]);
@@ -888,8 +888,8 @@ const ProjectsRevenueCosts = () => {
                             <PencilIcon className="w-5 h-5" />
                           </button>
                         )}
-                        {/* Delete button - requires close/lock project permission */}
-                        {canCloseLockProject && (
+                        {/* Delete button - requires DELETE_PROJECT permission (Master Admin only) */}
+                        {canDeleteProject && (
                           <button
                             onClick={(e) => handleDelete(item.project._id, item.projectName, e)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"

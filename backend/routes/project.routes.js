@@ -73,12 +73,11 @@ router.post('/:id/lock', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), lockProj
 // Unlock project - requires CLOSE_LOCK_PROJECT permission
 router.post('/:id/unlock', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), unlockProject);
 
-// Delete project (soft delete) - requires CLOSE_LOCK_PROJECT permission
-// Note: Based on user's comment, delete might be used instead of approve
-router.delete('/:id', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), deleteProject);
+// Delete project (soft delete) - requires DELETE_PROJECT permission (Master Admin only)
+router.delete('/:id', requirePermission(ACTIONS.DELETE_PROJECT), deleteProject);
 
-// Permanently delete project - requires CLOSE_LOCK_PROJECT permission
-router.delete('/:id/permanent', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), permanentDeleteProject);
+// Permanently delete project - requires DELETE_PROJECT permission (Master Admin only)
+router.delete('/:id/permanent', requirePermission(ACTIONS.DELETE_PROJECT), permanentDeleteProject);
 
 export default router;
 

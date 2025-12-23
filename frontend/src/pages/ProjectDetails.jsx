@@ -3,12 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { projectAPI, revenueAPI, expenseAPI, billingAPI, collectionAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/currency';
+import { usePermissions } from '../hooks/usePermissions';
 import { PencilIcon, TrashIcon, XMarkIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { TableSkeleton, CardSkeleton, SkeletonBox } from '../components/skeletons';
 
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { canDeleteProject } = usePermissions();
   const [project, setProject] = useState(null);
   const [activeTab, setActiveTab] = useState('description');
   const [revenues, setRevenues] = useState([]);
@@ -589,24 +591,26 @@ const ProjectDetails = () => {
             <PencilIcon className="w-5 h-5" />
             Edit Project
           </button>
-          <button
-            onClick={async () => {
-              const confirmMessage = `Are you sure you want to delete "${project.projectName}"?\n\nThis project will be moved to "Recently Deleted" and can be restored within 30 days. After 30 days, it will be permanently deleted.`;
-              if (window.confirm(confirmMessage)) {
-                try {
-                  await projectAPI.delete(id);
-                  toast.success('Project moved to Recently Deleted. It will be permanently deleted after 30 days.');
-                  navigate('/projects');
-                } catch (error) {
-                  toast.error('Failed to delete project');
+          {canDeleteProject && (
+            <button
+              onClick={async () => {
+                const confirmMessage = `Are you sure you want to delete "${project.projectName}"?\n\nThis project will be moved to "Recently Deleted" and can be restored within 30 days. After 30 days, it will be permanently deleted.`;
+                if (window.confirm(confirmMessage)) {
+                  try {
+                    await projectAPI.delete(id);
+                    toast.success('Project moved to Recently Deleted. It will be permanently deleted after 30 days.');
+                    navigate('/projects');
+                  } catch (error) {
+                    toast.error('Failed to delete project');
+                  }
                 }
-              }
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            <TrashIcon className="w-5 h-5" />
-            Delete Project
-          </button>
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <TrashIcon className="w-5 h-5" />
+              Delete Project
+            </button>
+          )}
         </div>
       </div>
 
