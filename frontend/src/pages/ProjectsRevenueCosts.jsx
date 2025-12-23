@@ -882,7 +882,7 @@ const ProjectsRevenueCosts = () => {
                         {(canAccessRevenue || canAccessExpenses) && (
                           <button
                             onClick={(e) => handleEditProject(item.project, e)}
-                            className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
                             title="Edit"
                           >
                             <PencilIcon className="w-5 h-5" />
@@ -1036,7 +1036,7 @@ const ProjectsRevenueCosts = () => {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleEditRevenue(rev)}
-                                className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                                className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
                                 title="Edit"
                               >
                                 <PencilIcon className="w-4 h-4" />
@@ -1086,7 +1086,7 @@ const ProjectsRevenueCosts = () => {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleEditExpense(exp)}
-                                className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                                className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
                                 title="Edit"
                               >
                                 <PencilIcon className="w-4 h-4" />

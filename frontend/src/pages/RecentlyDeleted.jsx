@@ -203,7 +203,7 @@ const RecentlyDeleted = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => navigate(`/projects/${project._id}`)}
-                            className="flex items-center gap-1 text-primary hover:text-red-700 font-medium transition-colors duration-200"
+                            className="flex items-center gap-1 text-black hover:text-gray-700 font-medium transition-colors duration-200"
                             title="View"
                           >
                             <EyeIcon className="w-4 h-4" />

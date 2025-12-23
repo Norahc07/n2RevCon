@@ -368,7 +368,7 @@ const ProjectsDescription = () => {
                       e.stopPropagation();
                       navigate(`/projects/${project._id}`);
                     }}
-                    className="flex-1 flex items-center justify-center gap-1 p-2 text-primary hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 text-xs font-medium"
+                    className="flex-1 flex items-center justify-center gap-1 p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200 text-xs font-medium"
                   >
                     <EyeIcon className="w-4 h-4" />
                     View
@@ -379,7 +379,7 @@ const ProjectsDescription = () => {
                         e.stopPropagation();
                         navigate(`/projects/${project._id}/edit`);
                       }}
-                      className="flex-1 flex items-center justify-center gap-1 p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 text-xs font-medium"
+                      className="flex-1 flex items-center justify-center gap-1 p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200 text-xs font-medium"
                     >
                       <PencilIcon className="w-4 h-4" />
                       Edit
@@ -558,7 +558,7 @@ const ProjectsDescription = () => {
                               e.stopPropagation();
                               navigate(`/projects/${project._id}`);
                             }}
-                            className="p-1.5 sm:p-2 text-primary hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            className="p-1.5 sm:p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
                             title="View"
                           >
                             <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -569,7 +569,7 @@ const ProjectsDescription = () => {
                                 e.stopPropagation();
                                 navigate(`/projects/${project._id}/edit`);
                               }}
-                              className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                              className="p-1.5 sm:p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
                               title="Edit"
                             >
                               <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5" />

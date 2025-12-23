@@ -584,7 +584,7 @@ const ProjectDetails = () => {
               // Navigate to AddProject with edit mode
               navigate(`/projects/${id}/edit`);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition-colors border border-gray-300"
           >
             <PencilIcon className="w-5 h-5" />
             Edit Project
@@ -748,7 +748,7 @@ const ProjectDetails = () => {
                             <div className="flex gap-3">
                               <button
                                 onClick={() => setEditingRevenue({ ...rev })}
-                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                                 title="Edit"
                               >
                                 <PencilIcon className="w-5 h-5" />
@@ -810,7 +810,7 @@ const ProjectDetails = () => {
                             <div className="flex gap-3">
                               <button
                                 onClick={() => setEditingExpense({ ...exp })}
-                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                                 title="Edit"
                               >
                                 <PencilIcon className="w-5 h-5" />
@@ -899,7 +899,7 @@ const ProjectDetails = () => {
                   tax: (bill.tax || 0).toString(),
                   totalAmount: (bill.totalAmount || 0).toString(),
                 })}
-                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                 title="Edit"
               >
                 <PencilIcon className="w-5 h-5" />
@@ -972,7 +972,7 @@ const ProjectDetails = () => {
                             <div className="flex gap-3">
                               <button
                                 onClick={() => setEditingCollection({ ...col })}
-                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                                 title="Edit"
                               >
                                 <PencilIcon className="w-5 h-5" />
