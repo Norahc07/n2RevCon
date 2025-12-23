@@ -58,26 +58,45 @@ const createTransporter = () => {
   
   return {
     sendMail: async (options) => {
-      // Extract password change URL from HTML
-      const urlMatch = options.html.match(/href="([^"]+)"/);
-      const passwordChangeUrl = urlMatch ? urlMatch[1] : null;
+      // Extract URLs from HTML (password change, verification, etc.)
+      const urlMatches = options.html.match(/href="([^"]+)"/g);
+      const urls = urlMatches ? urlMatches.map(match => match.replace(/href="|"/g, '')) : [];
+      const verificationUrl = urls.find(url => url.includes('/verify-email/'));
+      const resetUrl = urls.find(url => url.includes('/reset-password/'));
+      const changePasswordUrl = urls.find(url => url.includes('/change-password/'));
+      const loginUrl = urls.find(url => url.includes('/login'));
       
       console.log('\n📧 ===== EMAIL WOULD BE SENT (CONSOLE MODE) =====');
       console.log('From:', options.from);
       console.log('To:', options.to);
       console.log('Subject:', options.subject);
-      if (passwordChangeUrl) {
-        console.log('\n🔗 PASSWORD CHANGE URL (Copy this to test):');
-        console.log('   ' + passwordChangeUrl);
+      
+      if (verificationUrl) {
+        console.log('\n🔗 EMAIL VERIFICATION URL (Copy this to test):');
+        console.log('   ' + verificationUrl);
+        console.log('\n   ⚠️  This URL will expire in 24 hours');
+      } else if (resetUrl) {
+        console.log('\n🔗 PASSWORD RESET URL (Copy this to test):');
+        console.log('   ' + resetUrl);
         console.log('\n   ⚠️  This URL will expire in 1 hour');
+      } else if (changePasswordUrl) {
+        console.log('\n🔗 PASSWORD CHANGE URL (Copy this to test):');
+        console.log('   ' + changePasswordUrl);
+        console.log('\n   ⚠️  This URL will expire in 1 hour');
+      } else if (urls.length > 0) {
+        console.log('\n🔗 URLS FOUND IN EMAIL:');
+        urls.forEach(url => console.log('   ' + url));
       } else {
-        console.log('Change Password URL: URL not found in HTML');
+        console.log('\n⚠️  No URLs found in email HTML');
       }
       console.log('===============================================\n');
+      
       return { 
         messageId: 'console-logged', 
         accepted: [options.to],
-        passwordChangeUrl: passwordChangeUrl 
+        passwordChangeUrl: changePasswordUrl || resetUrl,
+        verificationUrl: verificationUrl,
+        resetUrl: resetUrl
       };
     },
   };
@@ -787,19 +806,43 @@ export const sendEmailVerificationEmail = async ({ to, userName, verificationUrl
 
     const info = await transporter.sendMail(mailOptions);
     
+    // In development, log the verification URL (especially for console mode)
+    let previewUrl = null;
+    let extractedVerificationUrl = null;
+    
     if (process.env.NODE_ENV === 'development') {
       console.log('📧 Email verification sent!');
+      
+      // If using Ethereal, get preview URL
       if (typeof nodemailer.getTestMessageUrl === 'function') {
-        const previewUrl = nodemailer.getTestMessageUrl(info);
+        previewUrl = nodemailer.getTestMessageUrl(info);
         if (previewUrl) {
-          console.log('📬 Preview URL:', previewUrl);
+          console.log('📬 Preview URL (Ethereal Email):', previewUrl);
+          console.log('   Open this URL in your browser to view the email');
         }
+      }
+      
+      // If using console mode, extract URL from result
+      if (info.verificationUrl) {
+        extractedVerificationUrl = info.verificationUrl;
+        console.log('🔗 Verification URL (Console Mode):', extractedVerificationUrl);
       }
     }
     
-    return { success: true, messageId: info.messageId };
+    return { 
+      success: true, 
+      messageId: info.messageId,
+      previewUrl,
+      verificationUrl: extractedVerificationUrl || verificationUrl
+    };
   } catch (error) {
     console.error('Error sending verification email:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+    });
     throw error;
   }
 };

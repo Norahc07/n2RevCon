@@ -51,14 +51,25 @@ export const register = async (req, res) => {
     // Send email verification email
     try {
       const userName = `${user.firstName} ${user.lastName}`;
-      await sendEmailVerificationEmail({
+      const emailResult = await sendEmailVerificationEmail({
         to: user.email,
         userName: userName,
         verificationUrl: verificationUrl,
       });
       console.log('✅ Email verification sent to:', user.email);
+      
+      // In development, use extracted URL if available (console mode)
+      if (process.env.NODE_ENV === 'development' && emailResult.verificationUrl) {
+        verificationUrl = emailResult.verificationUrl;
+      }
     } catch (emailError) {
       console.error('❌ Error sending verification email:', emailError);
+      console.error('Error details:', {
+        message: emailError.message,
+        code: emailError.code,
+        command: emailError.command,
+        response: emailError.response,
+      });
       // Don't fail registration if email fails, but log it
     }
 
@@ -495,20 +506,54 @@ export const resendVerificationEmail = async (req, res) => {
     // Send verification email
     try {
       const userName = `${user.firstName} ${user.lastName}`;
-      await sendEmailVerificationEmail({
+      const emailResult = await sendEmailVerificationEmail({
         to: user.email,
         userName: userName,
         verificationUrl: verificationUrl,
       });
       console.log('✅ Verification email resent to:', user.email);
+      
+      // In development, use extracted URL if available (console mode)
+      if (process.env.NODE_ENV === 'development' && emailResult.verificationUrl) {
+        verificationUrl = emailResult.verificationUrl;
+      }
+      
+      const response = { 
+        message: 'If that email exists and is not verified, a verification email has been sent.',
+      };
+      
+      // In development, always include the URL for testing
+      if (process.env.NODE_ENV === 'development') {
+        response.verificationUrl = verificationUrl;
+        response.emailSent = emailResult.success;
+        if (emailResult.previewUrl) {
+          response.previewUrl = emailResult.previewUrl;
+        }
+      }
+      
+      res.json(response);
     } catch (emailError) {
       console.error('❌ Error sending verification email:', emailError);
+      console.error('Error details:', {
+        message: emailError.message,
+        code: emailError.code,
+        command: emailError.command,
+        response: emailError.response,
+      });
+      
+      // In development, still return the URL even if email fails
+      const response = { 
+        message: 'If that email exists and is not verified, a verification email has been sent.',
+      };
+      
+      if (process.env.NODE_ENV === 'development') {
+        response.verificationUrl = verificationUrl;
+        response.emailError = emailError.message;
+        response.note = 'Email sending failed. Check backend console for details. Use the verificationUrl above to test.';
+      }
+      
+      res.json(response);
     }
-
-    res.json({ 
-      message: 'If that email exists and is not verified, a verification email has been sent.',
-      ...(process.env.NODE_ENV === 'development' && { verificationUrl })
-    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
