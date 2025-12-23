@@ -224,19 +224,21 @@ const RecentlyDeleted = () => {
                             )}
                             <span className="hidden lg:inline">Restore</span>
                           </button>
-                          <button
-                            onClick={() => handlePermanentDelete(project._id, project.projectName)}
-                            disabled={permanentlyDeleting === project._id}
-                            className="flex items-center gap-1 text-red-600 hover:text-red-700 font-medium transition-colors duration-200 disabled:opacity-50"
-                            title="Permanently Delete"
-                          >
-                            {permanentlyDeleting === project._id ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-red-600"></div>
-                            ) : (
-                              <TrashIcon className="w-4 h-4" />
-                            )}
-                            <span className="hidden lg:inline">Delete</span>
-                          </button>
+                          {canDeleteProject && (
+                            <button
+                              onClick={() => handlePermanentlyDelete(project._id, project.projectName)}
+                              disabled={permanentlyDeleting === project._id}
+                              className="flex items-center gap-1 text-red-600 hover:text-red-700 font-medium transition-colors duration-200 disabled:opacity-50"
+                              title="Permanently Delete"
+                            >
+                              {permanentlyDeleting === project._id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-red-600"></div>
+                              ) : (
+                                <TrashIcon className="w-4 h-4" />
+                              )}
+                              <span className="hidden lg:inline">Delete</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
