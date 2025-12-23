@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [formData, setFormData] = useState({ 
@@ -11,6 +13,8 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [showResendButton, setShowResendButton] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -101,6 +105,33 @@ const Login = () => {
     }
   }, []);
 
+  // Handle resend verification email
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      toast.error('Please enter your email address first');
+      return;
+    }
+
+    const emailError = validateEmail(formData.email);
+    if (emailError) {
+      setErrors(prev => ({ ...prev, email: emailError }));
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setResendingVerification(true);
+    try {
+      await authAPI.resendVerification(formData.email);
+      toast.success('Verification email sent! Please check your inbox (and spam folder).');
+      setShowResendButton(false);
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to resend verification email. Please try again.';
+      toast.error(message);
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -131,10 +162,15 @@ const Login = () => {
       let displayMessage = errorMessage;
       if (errorMessage.includes('verify your email')) {
         displayMessage = `Please verify your email address first. Check your inbox for the verification link.`;
+        setShowResendButton(true); // Show resend button for verification errors
       } else if (errorMessage.includes('pending approval')) {
         displayMessage = `Your account is pending administrator approval. You'll receive an email notification once your account has been approved.`;
+        setShowResendButton(false);
       } else if (errorMessage.includes('rejected')) {
         displayMessage = `Your account registration has been rejected. Please contact support for more information.`;
+        setShowResendButton(false);
+      } else {
+        setShowResendButton(false);
       }
       
       setErrors(prev => ({ 
@@ -196,8 +232,38 @@ const Login = () => {
               <p className="text-gray-600 mb-4 xs:mb-6 md:mb-8 text-xs xs:text-sm md:text-base text-center xs:text-left">Welcome back! Please sign in to your account.</p>
               
               {errors.submit && (
-                <div className="mb-3 xs:mb-4 p-2.5 xs:p-3 bg-red-50 border-2 border-red-200 rounded-lg">
-                  <p className="text-xs xs:text-sm text-red-600 text-center">{errors.submit}</p>
+                <div className="mb-3 xs:mb-4 p-3 xs:p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                  <p className="text-xs xs:text-sm text-red-600 text-center mb-2">{errors.submit}</p>
+                  {showResendButton && formData.email && (
+                    <div className="mt-3 pt-3 border-t border-red-200">
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={resendingVerification}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-xs xs:text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {resendingVerification ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Resend Verification Email
+                          </>
+                        )}
+                      </button>
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Didn't receive it? Check your spam folder or click above to resend.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
