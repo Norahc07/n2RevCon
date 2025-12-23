@@ -302,7 +302,8 @@ if (transporter && transporter.sendMail && transporter.sendMail.toString().inclu
  */
 const generatePasswordResetEmailTemplate = (userName, resetUrl) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const logoUrl = `${frontendUrl}/N2RevConLogo.png`;
+  const cleanFrontendUrl = frontendUrl.replace(/\/$/, '');
+  const logoUrl = `${cleanFrontendUrl}/N2RevConLogo.png`;
   
   return `
 <!DOCTYPE html>
@@ -486,7 +487,26 @@ const generatePasswordResetEmailTemplate = (userName, resetUrl) => {
   <div class="email-wrapper">
     <div class="email-header">
       <div class="logo-container">
-        <img src="${logoUrl}" alt="n2 RevCon Logo" class="logo" />
+        <!--[if mso]>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="160">
+          <tr>
+            <td style="text-align: center; padding: 16px; background: white; border-radius: 12px;">
+              <span style="color: #DC2626; font-size: 24px; font-weight: 700;">n2 RevCon</span>
+            </td>
+          </tr>
+        </table>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <img 
+          src="${logoUrl}" 
+          alt="n2 RevCon Logo" 
+          class="logo"
+          width="160"
+          height="auto"
+          style="display: block; max-width: 160px; height: auto; border: none; outline: none;"
+          title="n2 RevCon"
+        />
+        <!--<![endif]-->
       </div>
       <h1 class="system-name">n2 RevCon</h1>
     </div>
@@ -542,7 +562,8 @@ const generatePasswordResetEmailTemplate = (userName, resetUrl) => {
  */
 const generatePasswordChangeEmailTemplate = (userName, changePasswordUrl) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const logoUrl = `${frontendUrl}/N2RevConLogo.png`;
+  const cleanFrontendUrl = frontendUrl.replace(/\/$/, '');
+  const logoUrl = `${cleanFrontendUrl}/N2RevConLogo.png`;
   
   return `
 <!DOCTYPE html>
@@ -726,7 +747,26 @@ const generatePasswordChangeEmailTemplate = (userName, changePasswordUrl) => {
   <div class="email-wrapper">
     <div class="email-header">
       <div class="logo-container">
-        <img src="${logoUrl}" alt="n2 RevCon Logo" class="logo" />
+        <!--[if mso]>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="160">
+          <tr>
+            <td style="text-align: center; padding: 16px; background: white; border-radius: 12px;">
+              <span style="color: #DC2626; font-size: 24px; font-weight: 700;">n2 RevCon</span>
+            </td>
+          </tr>
+        </table>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <img 
+          src="${logoUrl}" 
+          alt="n2 RevCon Logo" 
+          class="logo"
+          width="160"
+          height="auto"
+          style="display: block; max-width: 160px; height: auto; border: none; outline: none;"
+          title="n2 RevCon"
+        />
+        <!--<![endif]-->
       </div>
       <h1 class="system-name">n2 RevCon</h1>
     </div>
@@ -909,8 +949,10 @@ export const sendPasswordResetEmail = async ({ to, userName, resetUrl }) => {
  */
 const generateEmailVerificationTemplate = (userName, verificationUrl) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  // Fix logo path - use correct filename with capital N
-  const logoUrl = `${frontendUrl}/N2RevConLogo.png`;
+  // Fix logo path - use correct filename with capital N and remove trailing slash
+  const cleanFrontendUrl = frontendUrl.replace(/\/$/, '');
+  // Ensure the logo URL is absolute and publicly accessible
+  const logoUrl = `${cleanFrontendUrl}/N2RevConLogo.png`;
   
   return `
 <!DOCTYPE html>
@@ -930,107 +972,143 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
       color: #1f2937;
-      background-color: #f3f4f6;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
       margin: 0;
-      padding: 20px;
+      padding: 40px 20px;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
     .email-wrapper {
-      max-width: 600px;
+      max-width: 640px;
       margin: 0 auto;
       background-color: #ffffff;
-      border-radius: 12px;
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
     }
     .email-header {
-      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
-      padding: 40px 30px;
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%);
+      padding: 48px 32px 40px;
       text-align: center;
       position: relative;
+    }
+    .header-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0.1;
+      background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0);
+      background-size: 24px 24px;
     }
     .logo-container {
       display: inline-block;
       background-color: #ffffff;
-      padding: 12px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      padding: 16px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1;
     }
     .logo {
-      max-width: 140px;
+      max-width: 160px;
       height: auto;
       display: block;
+      border: none;
+      outline: none;
+    }
+    /* Fallback for when image doesn't load */
+    .logo-container:has(img[src=""])::before,
+    .logo-container img[src=""] {
+      content: "n2 RevCon";
+      display: block;
+      color: #DC2626;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      padding: 20px;
     }
     .system-name {
       color: #ffffff;
-      font-size: 32px;
+      font-size: 36px;
       font-weight: 700;
       margin: 0;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.8px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1;
     }
     .email-body {
-      padding: 48px 40px;
+      padding: 56px 48px;
     }
     .greeting {
-      font-size: 20px;
+      font-size: 24px;
       color: #111827;
-      margin-bottom: 24px;
-      font-weight: 600;
+      margin-bottom: 16px;
+      font-weight: 700;
+      line-height: 1.3;
     }
     .message {
-      font-size: 16px;
+      font-size: 17px;
       color: #4b5563;
-      margin-bottom: 32px;
-      line-height: 1.75;
+      margin-bottom: 40px;
+      line-height: 1.7;
     }
     .button-container {
       text-align: center;
-      margin: 40px 0;
+      margin: 48px 0;
     }
     .verify-button {
       display: inline-block;
-      padding: 16px 40px;
+      padding: 18px 48px;
       background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
       color: #ffffff !important;
       text-decoration: none;
-      border-radius: 8px;
+      border-radius: 12px;
       font-weight: 600;
-      font-size: 16px;
-      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
-      transition: transform 0.2s, box-shadow 0.2s;
+      font-size: 17px;
+      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35), 0 2px 8px rgba(220, 38, 38, 0.2);
+      transition: all 0.3s ease;
+      letter-spacing: 0.3px;
     }
     .verify-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(220, 38, 38, 0.45), 0 4px 12px rgba(220, 38, 38, 0.25);
+      background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
     }
     .info-box {
-      background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-      border-left: 4px solid #3B82F6;
-      padding: 20px;
-      margin: 32px 0;
-      border-radius: 8px;
+      background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+      border: 2px solid #BAE6FD;
+      border-radius: 12px;
+      padding: 28px;
+      margin: 40px 0;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
     }
     .info-title {
       color: #1E40AF;
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+    }
+    .info-title-icon {
+      font-size: 22px;
     }
     .info-list {
-      color: #1E40AF;
-      font-size: 14px;
+      color: #1E3A8A;
+      font-size: 15px;
       margin: 0;
       padding-left: 0;
       list-style: none;
+      line-height: 1.8;
     }
     .info-list li {
-      margin-bottom: 8px;
-      padding-left: 24px;
+      margin-bottom: 12px;
+      padding-left: 32px;
       position: relative;
     }
     .info-list li:before {
@@ -1039,80 +1117,140 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
       left: 0;
       color: #3B82F6;
       font-weight: bold;
+      font-size: 18px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #DBEAFE;
+      border-radius: 50%;
     }
     .info-list li:last-child {
       margin-bottom: 0;
     }
     .link-section {
-      background-color: #f9fafb;
-      padding: 20px;
-      border-radius: 8px;
-      margin: 32px 0;
-      border: 1px solid #e5e7eb;
+      background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+      padding: 24px;
+      border-radius: 12px;
+      margin: 40px 0;
+      border: 1px solid #E5E7EB;
     }
     .link-label {
       font-size: 14px;
       color: #6b7280;
-      margin-bottom: 8px;
-      font-weight: 500;
+      margin-bottom: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     .link-url {
       font-size: 13px;
       color: #DC2626;
       word-break: break-all;
       text-decoration: none;
+      font-family: 'Courier New', monospace;
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      display: block;
+      border: 1px solid #E5E7EB;
     }
     .link-url:hover {
-      text-decoration: underline;
+      color: #B91C1C;
+      background: #FEF2F2;
     }
     .expiry-notice {
       font-size: 14px;
       color: #6b7280;
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 2px solid #E5E7EB;
+      text-align: center;
       font-style: italic;
-      margin-top: 24px;
-      padding-top: 24px;
-      border-top: 1px solid #e5e7eb;
+    }
+    .expiry-notice-icon {
+      display: inline-block;
+      margin-right: 6px;
     }
     .email-footer {
-      background-color: #f9fafb;
-      padding: 32px 40px;
+      background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+      padding: 32px 48px;
       text-align: center;
-      border-top: 1px solid #e5e7eb;
+      border-top: 2px solid #E5E7EB;
     }
     .footer-text {
       font-size: 13px;
       color: #6b7280;
-      margin: 4px 0;
+      margin: 6px 0;
       line-height: 1.6;
+    }
+    .footer-brand {
+      font-weight: 600;
+      color: #DC2626;
     }
     @media only screen and (max-width: 600px) {
       body {
-        padding: 10px;
+        padding: 20px 12px;
       }
       .email-body {
-        padding: 32px 24px;
+        padding: 40px 28px;
       }
       .email-header {
-        padding: 30px 20px;
+        padding: 36px 24px 32px;
       }
       .system-name {
-        font-size: 26px;
+        font-size: 28px;
+      }
+      .greeting {
+        font-size: 22px;
+      }
+      .message {
+        font-size: 16px;
       }
       .verify-button {
-        padding: 14px 32px;
-        font-size: 15px;
+        padding: 16px 36px;
+        font-size: 16px;
+        width: 100%;
+        max-width: 280px;
+      }
+      .info-box {
+        padding: 24px 20px;
+      }
+      .link-section {
+        padding: 20px;
       }
       .email-footer {
-        padding: 24px 20px;
+        padding: 28px 24px;
       }
     }
   </style>
 </head>
-<body>
+  <body>
   <div class="email-wrapper">
     <div class="email-header">
+      <div class="header-pattern"></div>
       <div class="logo-container">
-        <img src="${logoUrl}" alt="n2 RevCon Logo" class="logo" />
+        <!--[if mso]>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="160">
+          <tr>
+            <td style="text-align: center; padding: 16px;">
+              <span style="color: #DC2626; font-size: 24px; font-weight: 700;">n2 RevCon</span>
+            </td>
+          </tr>
+        </table>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <img 
+          src="${logoUrl}" 
+          alt="n2 RevCon Logo" 
+          class="logo"
+          width="160"
+          height="auto"
+          style="display: block; max-width: 160px; height: auto; border: none; outline: none;"
+          title="n2 RevCon"
+        />
+        <!--<![endif]-->
       </div>
       <h1 class="system-name">n2 RevCon</h1>
     </div>
@@ -1121,8 +1259,7 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
       <p class="greeting">Hello ${userName},</p>
       
       <p class="message">
-        Thank you for registering with n2 RevCon! To complete your registration, 
-        please verify your email address by clicking the button below.
+        Thank you for registering with <strong>n2 RevCon</strong>! To complete your registration and secure your account, please verify your email address by clicking the button below.
       </p>
       
       <div class="button-container">
@@ -1133,7 +1270,7 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
       
       <div class="info-box">
         <div class="info-title">
-          <span>📋</span>
+          <span class="info-title-icon">📋</span>
           <span>What Happens Next?</span>
         </div>
         <ul class="info-list">
@@ -1145,17 +1282,19 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
       </div>
       
       <div class="link-section">
-        <div class="link-label">If the button doesn't work, copy and paste this link:</div>
+        <div class="link-label">Alternative Method</div>
+        <p style="font-size: 14px; color: #6b7280; margin-bottom: 12px;">If the button doesn't work, copy and paste this link into your browser:</p>
         <a href="${verificationUrl}" class="link-url">${verificationUrl}</a>
       </div>
       
       <p class="expiry-notice">
+        <span class="expiry-notice-icon">⏰</span>
         This verification link will expire in 24 hours. If you didn't create an account, please ignore this email.
       </p>
     </div>
     
     <div class="email-footer">
-      <p class="footer-text">This is an automated message from n2 RevCon System.</p>
+      <p class="footer-text">This is an automated message from <span class="footer-brand">n2 RevCon</span> System.</p>
       <p class="footer-text">Please do not reply to this email.</p>
     </div>
   </div>
@@ -1169,8 +1308,9 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
  */
 const generateAccountApprovalTemplate = (userName) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const logoUrl = `${frontendUrl}/N2RevConLogo.png`;
-  const loginUrl = `${frontendUrl}/login`;
+  const cleanFrontendUrl = frontendUrl.replace(/\/$/, '');
+  const logoUrl = `${cleanFrontendUrl}/N2RevConLogo.png`;
+  const loginUrl = `${cleanFrontendUrl}/login`;
   
   return `
 <!DOCTYPE html>
@@ -1326,7 +1466,26 @@ const generateAccountApprovalTemplate = (userName) => {
   <div class="email-wrapper">
     <div class="email-header">
       <div class="logo-container">
-        <img src="${logoUrl}" alt="n2 RevCon Logo" class="logo" />
+        <!--[if mso]>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="160">
+          <tr>
+            <td style="text-align: center; padding: 16px; background: white; border-radius: 12px;">
+              <span style="color: #DC2626; font-size: 24px; font-weight: 700;">n2 RevCon</span>
+            </td>
+          </tr>
+        </table>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <img 
+          src="${logoUrl}" 
+          alt="n2 RevCon Logo" 
+          class="logo"
+          width="160"
+          height="auto"
+          style="display: block; max-width: 160px; height: auto; border: none; outline: none;"
+          title="n2 RevCon"
+        />
+        <!--<![endif]-->
       </div>
       <h1 class="system-name">n2 RevCon</h1>
     </div>
@@ -1370,7 +1529,8 @@ const generateAccountApprovalTemplate = (userName) => {
  */
 const generateAccountRejectionTemplate = (userName, reason) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const logoUrl = `${frontendUrl}/N2RevConLogo.png`;
+  const cleanFrontendUrl = frontendUrl.replace(/\/$/, '');
+  const logoUrl = `${cleanFrontendUrl}/N2RevConLogo.png`;
   
   return `
 <!DOCTYPE html>
@@ -1520,7 +1680,26 @@ const generateAccountRejectionTemplate = (userName, reason) => {
   <div class="email-wrapper">
     <div class="email-header">
       <div class="logo-container">
-        <img src="${logoUrl}" alt="n2 RevCon Logo" class="logo" />
+        <!--[if mso]>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="160">
+          <tr>
+            <td style="text-align: center; padding: 16px; background: white; border-radius: 12px;">
+              <span style="color: #DC2626; font-size: 24px; font-weight: 700;">n2 RevCon</span>
+            </td>
+          </tr>
+        </table>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <img 
+          src="${logoUrl}" 
+          alt="n2 RevCon Logo" 
+          class="logo"
+          width="160"
+          height="auto"
+          style="display: block; max-width: 160px; height: auto; border: none; outline: none;"
+          title="n2 RevCon"
+        />
+        <!--<![endif]-->
       </div>
       <h1 class="system-name">n2 RevCon</h1>
     </div>
