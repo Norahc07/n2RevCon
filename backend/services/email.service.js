@@ -105,6 +105,18 @@ const createTransporter = () => {
 // Initialize transporter on module load
 const transporter = createTransporter();
 
+// Log transporter status on startup
+console.log('\n📧 Email Service Status:');
+if (transporter && transporter.sendMail && transporter.sendMail.toString().includes('EMAIL WOULD BE SENT')) {
+  console.log('   ⚠️  Running in CONSOLE MODE - Emails will NOT be sent');
+  console.log('   📝 Emails will be logged to console only');
+  console.log('   🔧 To send real emails, configure SMTP in .env file\n');
+} else if (transporter && transporter.transport) {
+  console.log('   ✅ Using SMTP transport - Emails will be sent');
+} else {
+  console.log('   ⚠️  Transporter status unknown');
+}
+
 /**
  * Generate HTML email template for password change
  */
@@ -797,6 +809,16 @@ const generateAccountRejectionTemplate = (userName, reason) => {
  */
 export const sendEmailVerificationEmail = async ({ to, userName, verificationUrl }) => {
   try {
+    // Check if transporter is in console mode
+    const isConsoleMode = transporter && transporter.sendMail && 
+      transporter.sendMail.toString().includes('EMAIL WOULD BE SENT');
+    
+    if (isConsoleMode) {
+      console.log('\n⚠️  EMAIL SERVICE IS IN CONSOLE MODE');
+      console.log('   No SMTP configuration found - email will NOT be sent');
+      console.log('   Check backend console for verification URL\n');
+    }
+
     const mailOptions = {
       from: `"n2 RevCon System" <${process.env.EMAIL_FROM || 'ntworevcon@gmail.com'}>`,
       to: to,
@@ -804,14 +826,23 @@ export const sendEmailVerificationEmail = async ({ to, userName, verificationUrl
       html: generateEmailVerificationTemplate(userName, verificationUrl),
     };
 
+    console.log('📧 Attempting to send verification email to:', to);
     const info = await transporter.sendMail(mailOptions);
     
     // In development, log the verification URL (especially for console mode)
     let previewUrl = null;
     let extractedVerificationUrl = null;
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📧 Email verification sent!');
+    if (isConsoleMode) {
+      console.log('✅ Email logged to console (Console Mode)');
+      // Extract URL from console mode response
+      if (info.verificationUrl) {
+        extractedVerificationUrl = info.verificationUrl;
+        console.log('🔗 VERIFICATION URL (Copy this to verify email):');
+        console.log('   ' + extractedVerificationUrl);
+      }
+    } else if (process.env.NODE_ENV === 'development') {
+      console.log('📧 Email verification sent via SMTP!');
       
       // If using Ethereal, get preview URL
       if (typeof nodemailer.getTestMessageUrl === 'function') {
@@ -821,27 +852,25 @@ export const sendEmailVerificationEmail = async ({ to, userName, verificationUrl
           console.log('   Open this URL in your browser to view the email');
         }
       }
-      
-      // If using console mode, extract URL from result
-      if (info.verificationUrl) {
-        extractedVerificationUrl = info.verificationUrl;
-        console.log('🔗 Verification URL (Console Mode):', extractedVerificationUrl);
-      }
+    } else {
+      console.log('✅ Email verification sent successfully!');
     }
     
     return { 
       success: true, 
       messageId: info.messageId,
       previewUrl,
-      verificationUrl: extractedVerificationUrl || verificationUrl
+      verificationUrl: extractedVerificationUrl || verificationUrl,
+      isConsoleMode: isConsoleMode
     };
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    console.error('❌ Error sending verification email:', error);
     console.error('Error details:', {
       message: error.message,
       code: error.code,
       command: error.command,
       response: error.response,
+      stack: error.stack
     });
     throw error;
   }

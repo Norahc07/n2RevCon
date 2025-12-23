@@ -56,7 +56,14 @@ export const register = async (req, res) => {
         userName: userName,
         verificationUrl: verificationUrl,
       });
-      console.log('✅ Email verification sent to:', user.email);
+      
+      if (emailResult.isConsoleMode) {
+        console.log('⚠️  Email service is in CONSOLE MODE - No real email sent');
+        console.log('   To send real emails, configure SMTP in .env file');
+        console.log('   Verification URL is available in console above');
+      } else {
+        console.log('✅ Email verification sent to:', user.email);
+      }
       
       // In development, use extracted URL if available (console mode)
       if (process.env.NODE_ENV === 'development' && emailResult.verificationUrl) {
