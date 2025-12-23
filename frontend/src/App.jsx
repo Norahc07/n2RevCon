@@ -8,6 +8,8 @@ import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import SignUpSuccess from './pages/SignUpSuccess';
+import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
@@ -60,6 +62,8 @@ function App() {
         <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
         <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/dashboard" />} />
+        <Route path="/signup-success" element={!user ? <SignUpSuccess /> : <Navigate to="/dashboard" />} />
+        <Route path="/verify-email/:token" element={!user ? <VerifyEmail /> : <Navigate to="/dashboard" />} />
         <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
         <Route path="/reset-password/:token" element={!user ? <ResetPassword /> : <Navigate to="/dashboard" />} />
         

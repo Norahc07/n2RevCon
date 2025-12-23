@@ -3,6 +3,9 @@ import { projectAPI } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/currency';
+import { usePermissions } from '../hooks/usePermissions';
+import PermissionWrapper from '../components/PermissionWrapper';
+import { ACTIONS } from '../config/permissions';
 import {
   CalendarIcon,
   PlusIcon,
@@ -23,6 +26,7 @@ import { exportAPI } from '../services/api';
 import { TableSkeleton, FilterSkeleton } from '../components/skeletons';
 
 const ProjectsDescription = () => {
+  const { canViewReports, canCloseLockProject } = usePermissions();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState('');
@@ -242,12 +246,13 @@ const ProjectsDescription = () => {
 
           {/* Action Buttons Row */}
           <div className="flex items-center gap-2 w-full xs:w-auto">
-            {/* Export Button */}
-            <button
-              onClick={handleExport}
-              disabled={exporting || filteredProjects.length === 0}
-              className="flex-1 xs:flex-initial flex items-center justify-center gap-1 xs:gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-3 xs:px-4 py-2 rounded-lg font-semibold text-sm xs:text-base transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            {/* Export Button - Requires VIEW_REPORTS permission */}
+            {canViewReports && (
+              <button
+                onClick={handleExport}
+                disabled={exporting || filteredProjects.length === 0}
+                className="flex-1 xs:flex-initial flex items-center justify-center gap-1 xs:gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-3 xs:px-4 py-2 rounded-lg font-semibold text-sm xs:text-base transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
               {exporting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 xs:h-5 xs:w-5 border-t-2 border-b-2 border-white"></div>
@@ -262,15 +267,17 @@ const ProjectsDescription = () => {
               )}
             </button>
 
-            {/* Add Project Button */}
-            <Link
-              to="/projects/new"
-              className="flex-1 xs:flex-initial flex items-center justify-center gap-1 xs:gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-3 xs:px-4 py-2 rounded-lg font-semibold text-sm xs:text-base transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              <PlusIcon className="w-4 h-4 xs:w-5 xs:h-5" />
-              <span className="hidden sm:inline">Add Project</span>
-              <span className="sm:hidden">Add</span>
-            </Link>
+            {/* Add Project Button - Requires VIEW_REPORTS permission */}
+            {canViewReports && (
+              <Link
+                to="/projects/new"
+                className="flex-1 xs:flex-initial flex items-center justify-center gap-1 xs:gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-3 xs:px-4 py-2 rounded-lg font-semibold text-sm xs:text-base transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                <PlusIcon className="w-4 h-4 xs:w-5 xs:h-5" />
+                <span className="hidden sm:inline">Add Project</span>
+                <span className="sm:hidden">Add</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -285,13 +292,15 @@ const ProjectsDescription = () => {
           <p className="text-gray-400 mb-4 text-xs xs:text-sm px-4">
             {year ? 'Try selecting a different year or add a new project' : 'Create your first project to get started'}
           </p>
-          <Link
-            to="/projects/new"
-            className="inline-flex items-center gap-2 text-primary hover:underline font-semibold text-sm xs:text-base"
-          >
-            <PlusIcon className="w-4 h-4 xs:w-5 xs:h-5" />
-            Create New Project
-          </Link>
+          {canViewReports && (
+            <Link
+              to="/projects/new"
+              className="inline-flex items-center gap-2 text-primary hover:underline font-semibold text-sm xs:text-base"
+            >
+              <PlusIcon className="w-4 h-4 xs:w-5 xs:h-5" />
+              Create New Project
+            </Link>
+          )}
         </div>
       ) : (
         <>
@@ -363,23 +372,27 @@ const ProjectsDescription = () => {
                     <EyeIcon className="w-4 h-4" />
                     View
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/projects/${project._id}/edit`);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1 p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 text-xs font-medium"
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={(e) => handleDelete(project._id, project.projectName, e)}
-                    className="flex-1 flex items-center justify-center gap-1 p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 text-xs font-medium"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                    Delete
-                  </button>
+                  {canViewReports && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/projects/${project._id}/edit`);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1 p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 text-xs font-medium"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                      Edit
+                    </button>
+                  )}
+                  {canCloseLockProject && (
+                    <button
+                      onClick={(e) => handleDelete(project._id, project.projectName, e)}
+                      className="flex-1 flex items-center justify-center gap-1 p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 text-xs font-medium"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -549,23 +562,27 @@ const ProjectsDescription = () => {
                           >
                             <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/projects/${project._id}/edit`);
-                            }}
-                            className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                            title="Edit"
-                          >
-                            <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDelete(project._id, project.projectName, e)}
-                            className="p-1.5 sm:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
-                            title="Delete"
-                          >
-                            <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </button>
+                          {canViewReports && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/projects/${project._id}/edit`);
+                              }}
+                              className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                              title="Edit"
+                            >
+                              <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                          )}
+                          {canCloseLockProject && (
+                            <button
+                              onClick={(e) => handleDelete(project._id, project.projectName, e)}
+                              className="p-1.5 sm:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                              title="Delete"
+                            >
+                              <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

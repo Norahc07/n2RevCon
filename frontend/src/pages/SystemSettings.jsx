@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { usePermissions } from '../hooks/usePermissions';
+import { getRoleDisplayName, ROLES } from '../config/permissions';
 import toast from 'react-hot-toast';
 import {
   BuildingOfficeIcon,
@@ -38,6 +40,7 @@ const SystemSettings = () => {
   const activeTab = getActiveTab();
   const [company, setCompany] = useState(null);
   const [users, setUsers] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,7 +48,10 @@ const SystemSettings = () => {
 
   useEffect(() => {
     fetchCompany();
-    if (activeTab === 'users') fetchUsers();
+    if (activeTab === 'users') {
+      fetchUsers();
+      fetchPendingUsers();
+    }
     if (activeTab === 'audit') fetchAuditLogs();
   }, [activeTab]);
 
@@ -67,6 +73,18 @@ const SystemSettings = () => {
       setUsers(response.data.users || []);
     } catch (error) {
       toast.error('Failed to load users');
+    }
+  };
+
+  const fetchPendingUsers = async () => {
+    try {
+      const response = await userAPI.getPending();
+      setPendingUsers(response.data.users || []);
+    } catch (error) {
+      // Only show error if user has permission (not a 403)
+      if (error.response?.status !== 403) {
+        toast.error('Failed to load pending users');
+      }
     }
   };
 
@@ -172,7 +190,14 @@ const SystemSettings = () => {
             {/* User Management */}
             {activeTab === 'users' && (
               <div className="card space-y-6 shadow-md">
-                <UserManagementTab users={users} onRefresh={fetchUsers} />
+                <UserManagementTab 
+                  users={users} 
+                  pendingUsers={pendingUsers}
+                  onRefresh={() => {
+                    fetchUsers();
+                    fetchPendingUsers();
+                  }} 
+                />
               </div>
             )}
 
@@ -515,12 +540,17 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
 };
 
 // User Management Tab Component
-const UserManagementTab = ({ users, onRefresh }) => {
+const UserManagementTab = ({ users, pendingUsers = [], onRefresh }) => {
+  const { role: currentUserRole } = usePermissions();
+  const isMasterAdmin = currentUserRole === ROLES.MASTER_ADMIN;
   const [editingUser, setEditingUser] = useState(null);
+  const [rejectingUser, setRejectingUser] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
   const [editFormData, setEditFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    role: 'viewer',
     isActive: true,
   });
   const [loading, setLoading] = useState(false);
@@ -532,8 +562,49 @@ const UserManagementTab = ({ users, onRefresh }) => {
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       email: user.email || '',
+      role: user.role || 'viewer',
       isActive: user.isActive !== undefined ? user.isActive : true,
     });
+  };
+
+  const handleApprove = async (user) => {
+    if (!window.confirm(`Approve ${user.firstName} ${user.lastName}? They will be able to log in after approval.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const userId = user.id || user._id;
+      await userAPI.approveUser(userId);
+      toast.success('User approved successfully');
+      onRefresh();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to approve user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectingUser) return;
+    if (!rejectionReason.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const userId = rejectingUser.id || rejectingUser._id;
+      await userAPI.rejectUser(userId, rejectionReason);
+      toast.success('User rejected successfully');
+      setRejectingUser(null);
+      setRejectionReason('');
+      onRefresh();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to reject user');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -552,11 +623,18 @@ const UserManagementTab = ({ users, onRefresh }) => {
     try {
       setLoading(true);
       const userId = editingUser.id || editingUser._id;
-      await userAPI.update(userId, {
+      const updateData = {
         firstName: editFormData.firstName,
         lastName: editFormData.lastName,
         isActive: editFormData.isActive,
-      });
+      };
+      
+      // Only include role if user is master admin
+      if (isMasterAdmin && editFormData.role) {
+        updateData.role = editFormData.role;
+      }
+      
+      await userAPI.update(userId, updateData);
       toast.success('User updated successfully');
       setEditingUser(null);
       onRefresh();
@@ -620,6 +698,86 @@ const UserManagementTab = ({ users, onRefresh }) => {
         </button>
       </div>
 
+      {/* Pending Users Section - Only show if Master Admin */}
+      {isMasterAdmin && pendingUsers.length > 0 && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded">
+          <h3 className="text-lg font-semibold text-yellow-800 mb-3">
+            ⏳ Pending Approval ({pendingUsers.length})
+          </h3>
+          <div className="space-y-3">
+            {pendingUsers.map((user) => (
+              <div key={user.id || user._id} className="bg-white p-4 rounded-lg border border-yellow-200 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-gray-800">{user.firstName} {user.lastName}</p>
+                  <p className="text-sm text-gray-600">{user.email}</p>
+                  <p className="text-xs text-gray-500">Registered: {new Date(user.createdAt).toLocaleDateString()}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleApprove(user)}
+                    disabled={loading}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm font-medium"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => setRejectingUser(user)}
+                    disabled={loading}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm font-medium"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Reject User Modal */}
+      {rejectingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Reject User</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to reject <strong>{rejectingUser.firstName} {rejectingUser.lastName}</strong>?
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Reason for Rejection *
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Enter reason for rejection..."
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                rows="3"
+                required
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleReject}
+                disabled={loading || !rejectionReason.trim()}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Rejecting...' : 'Reject User'}
+              </button>
+              <button
+                onClick={() => {
+                  setRejectingUser(null);
+                  setRejectionReason('');
+                }}
+                disabled={loading}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Modal */}
       {editingUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -662,6 +820,27 @@ const UserManagementTab = ({ users, onRefresh }) => {
                 />
                 <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
               </div>
+              {isMasterAdmin && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Role *
+                  </label>
+                  <select
+                    value={editFormData.role}
+                    onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  >
+                    <option value={ROLES.MASTER_ADMIN}>Master Admin</option>
+                    <option value={ROLES.SYSTEM_ADMIN}>System Administrator</option>
+                    <option value={ROLES.REVENUE_OFFICER}>Revenue Officer</option>
+                    <option value={ROLES.DISBURSING_OFFICER}>Disbursing Officer</option>
+                    <option value={ROLES.BILLING_OFFICER}>Billing Officer</option>
+                    <option value={ROLES.COLLECTING_OFFICER}>Collecting Officer</option>
+                    <option value={ROLES.VIEWER}>Viewer</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Only Master Admin can change roles</p>
+                </div>
+              )}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
                   <label className="font-semibold text-gray-700">Account Status</label>
@@ -725,11 +904,19 @@ const UserManagementTab = ({ users, onRefresh }) => {
                   <td className="border border-gray-300 px-4 py-3">{user.email}</td>
                   <td className="border border-gray-300 px-4 py-3">
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                      {user.role}
+                      {getRoleDisplayName(user.role)}
                     </span>
                   </td>
                   <td className="border border-gray-300 px-4 py-3">
-                    {user.isActive ? (
+                    {user.accountStatus === 'pending' ? (
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">
+                        Pending
+                      </span>
+                    ) : user.accountStatus === 'rejected' ? (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-sm">
+                        Rejected
+                      </span>
+                    ) : user.isActive ? (
                       <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm flex items-center gap-1">
                         <CheckCircleIcon className="w-4 h-4" />
                         Active

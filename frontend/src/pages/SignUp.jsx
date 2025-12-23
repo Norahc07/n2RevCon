@@ -180,20 +180,34 @@ const SignUp = () => {
     }
 
     setLoading(true);
-    const result = await register({
-      firstName: formData.firstName.trim(),
-      lastName: formData.lastName.trim(),
-      email: formData.email.trim(),
-      password: formData.password,
-    });
-    setLoading(false);
-    
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
+    try {
+      const result = await register({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+      });
+      setLoading(false);
+      
+      if (result.success) {
+        // Redirect to verification success page
+        navigate('/signup-success', { 
+          state: { 
+            email: formData.email,
+            verificationUrl: result.data?.verificationUrl 
+          } 
+        });
+      } else {
+        setErrors(prev => ({ 
+          ...prev, 
+          submit: result.message || result.error || 'Registration failed. Please try again.' 
+        }));
+      }
+    } catch (error) {
+      setLoading(false);
       setErrors(prev => ({ 
         ...prev, 
-        submit: result.message || 'Registration failed. Please try again.' 
+        submit: error.response?.data?.message || 'Registration failed. Please try again.' 
       }));
     }
   };

@@ -124,9 +124,22 @@ const Login = () => {
       }
       navigate('/dashboard');
     } else {
+      // Handle different error types
+      const errorMessage = result.message || result.error || 'Invalid email or password. Please try again.';
+      
+      // Check if it's an account status error
+      let displayMessage = errorMessage;
+      if (errorMessage.includes('verify your email')) {
+        displayMessage = `${errorMessage} You can request a new verification email if needed.`;
+      } else if (errorMessage.includes('pending approval')) {
+        displayMessage = `${errorMessage} Please wait for an administrator to approve your account.`;
+      } else if (errorMessage.includes('rejected')) {
+        displayMessage = `${errorMessage} Please contact support for assistance.`;
+      }
+      
       setErrors(prev => ({ 
         ...prev, 
-        submit: result.message || 'Invalid email or password. Please try again.' 
+        submit: displayMessage
       }));
     }
   };

@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { projectAPI, revenueAPI, expenseAPI, exportAPI } from '../services/api';
 import { formatCurrency } from '../utils/currency';
+import { usePermissions } from '../hooks/usePermissions';
+import PermissionWrapper from '../components/PermissionWrapper';
+import { ACTIONS } from '../config/permissions';
 import {
   CalendarIcon,
   FunnelIcon,
@@ -26,6 +29,7 @@ import { TableSkeleton, FilterSkeleton, CardSkeleton } from '../components/skele
 
 const ProjectsRevenueCosts = () => {
   const navigate = useNavigate();
+  const { canAccessRevenue, canAccessExpenses, canViewReports } = usePermissions();
   const [projects, setProjects] = useState([]);
   const [allRevenues, setAllRevenues] = useState([]);
   const [allExpenses, setAllExpenses] = useState([]);
@@ -621,14 +625,17 @@ const ProjectsRevenueCosts = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Revenue vs. Expenses</h1>
-        <button
-          onClick={() => setShowAddTypeModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-        >
-          <PlusIcon className="w-5 h-5" />
-          <span className="hidden sm:inline">Add Revenue/Expense</span>
-          <span className="sm:hidden">Add</span>
-        </button>
+        {/* Add Button - Show if user can add revenue OR expenses */}
+        {(canAccessRevenue || canAccessExpenses) && (
+          <button
+            onClick={() => setShowAddTypeModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">Add Revenue/Expense</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        )}
       </div>
 
       {/* Filter Section */}
@@ -871,20 +878,26 @@ const ProjectsRevenueCosts = () => {
                     </td>
                     <td className="border border-gray-300 px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={(e) => handleEditProject(item.project, e)}
-                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="Edit"
-                        >
-                          <PencilIcon className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(item.project._id, item.projectName, e)}
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title="Delete"
-                        >
-                          <TrashIcon className="w-5 h-5" />
-                        </button>
+                        {/* Edit button - requires revenue or expense access */}
+                        {(canAccessRevenue || canAccessExpenses) && (
+                          <button
+                            onClick={(e) => handleEditProject(item.project, e)}
+                            className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title="Edit"
+                          >
+                            <PencilIcon className="w-5 h-5" />
+                          </button>
+                        )}
+                        {/* Delete button - requires close/lock project permission */}
+                        {canCloseLockProject && (
+                          <button
+                            onClick={(e) => handleDelete(item.project._id, item.projectName, e)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            title="Delete"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1312,30 +1325,34 @@ const ProjectsRevenueCosts = () => {
             </div>
             <p className="text-gray-600 mb-6 text-center">What would you like to add?</p>
             <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => {
-                  setShowAddTypeModal(false);
-                  setShowAddRevenueModal(true);
-                }}
-                className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-green-200 rounded-xl hover:bg-green-50 hover:border-green-400 transition-all duration-200 group"
-              >
-                <div className="p-3 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
-                  <CurrencyDollarIcon className="w-8 h-8 text-green-600" />
-                </div>
-                <span className="font-semibold text-gray-700">Add Revenue</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddTypeModal(false);
-                  setShowAddExpenseModal(true);
-                }}
-                className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-red-200 rounded-xl hover:bg-red-50 hover:border-red-400 transition-all duration-200 group"
-              >
-                <div className="p-3 bg-red-100 rounded-full group-hover:bg-red-200 transition-colors">
-                  <ArrowTrendingDownIcon className="w-8 h-8 text-red-600" />
-                </div>
-                <span className="font-semibold text-gray-700">Add Expense</span>
-              </button>
+              {canAccessRevenue && (
+                <button
+                  onClick={() => {
+                    setShowAddTypeModal(false);
+                    setShowAddRevenueModal(true);
+                  }}
+                  className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-green-200 rounded-xl hover:bg-green-50 hover:border-green-400 transition-all duration-200 group"
+                >
+                  <div className="p-3 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
+                    <CurrencyDollarIcon className="w-8 h-8 text-green-600" />
+                  </div>
+                  <span className="font-semibold text-gray-700">Add Revenue</span>
+                </button>
+              )}
+              {canAccessExpenses && (
+                <button
+                  onClick={() => {
+                    setShowAddTypeModal(false);
+                    setShowAddExpenseModal(true);
+                  }}
+                  className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-red-200 rounded-xl hover:bg-red-50 hover:border-red-400 transition-all duration-200 group"
+                >
+                  <div className="p-3 bg-red-100 rounded-full group-hover:bg-red-200 transition-colors">
+                    <ArrowTrendingDownIcon className="w-8 h-8 text-red-600" />
+                  </div>
+                  <span className="font-semibold text-gray-700">Add Expense</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

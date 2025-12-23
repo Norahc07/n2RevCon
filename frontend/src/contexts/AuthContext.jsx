@@ -53,15 +53,17 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await authAPI.register(userData);
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setUser(user);
-      toast.success('Registration successful');
-      return { success: true };
+      // Registration no longer returns token - user needs email verification and admin approval
+      toast.success('Registration successful! Please check your email to verify your account.');
+      return { 
+        success: true, 
+        data: response.data,
+        message: response.data?.message || 'Registration successful! Please check your email to verify your account.'
+      };
     } catch (error) {
       const message = error.response?.data?.message || 'Registration failed';
       toast.error(message);
-      return { success: false, error: message };
+      return { success: false, error: message, message };
     }
   };
 
@@ -105,7 +107,6 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateUser,
-        isAdmin: true, // All users are administrators
       }}
     >
       {children}

@@ -148,16 +148,21 @@ export const authAPI = {
   getMe: () => api.get('/auth/me', { useCache: false }), // Don't cache user info
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }),
+  verifyEmail: (token) => api.get(`/auth/verify-email/${token}`),
+  resendVerification: (email) => api.post('/auth/resend-verification', { email }),
 };
 
 // User API
 export const userAPI = {
   getAll: () => api.get('/users'),
+  getPending: () => api.get('/users/pending'),
   getById: (id) => api.get(`/users/${id}`),
   update: (id, data) => api.put(`/users/${id}`, data),
   updatePassword: (id, data) => api.put(`/users/${id}/password`, data),
   requestPasswordChange: () => api.post(`/users/request-password-change`),
   changePasswordWithToken: (token, data) => api.put(`/users/change-password/${token}`, data),
+  approveUser: (id) => api.post(`/users/${id}/approve`),
+  rejectUser: (id, reason) => api.post(`/users/${id}/reject`, { reason }),
   getSessions: (id) => api.get(`/users/${id}/sessions`),
   logoutAllDevices: (id) => api.delete(`/users/${id}/sessions`),
   getLoginHistory: (id) => api.get(`/users/${id}/login-history`),
