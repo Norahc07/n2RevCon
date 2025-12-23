@@ -226,7 +226,7 @@ const RecentlyDeleted = () => {
                           </button>
                           {canDeleteProject && (
                             <button
-                              onClick={() => handlePermanentlyDelete(project._id, project.projectName)}
+                              onClick={() => handlePermanentDelete(project._id, project.projectName)}
                               disabled={permanentlyDeleting === project._id}
                               className="flex items-center gap-1 text-red-600 hover:text-red-700 font-medium transition-colors duration-200 disabled:opacity-50"
                               title="Permanently Delete"
