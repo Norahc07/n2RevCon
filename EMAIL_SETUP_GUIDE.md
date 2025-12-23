@@ -1,7 +1,17 @@
 # Email Setup Guide - Why Emails Aren't Being Sent
 
 ## Problem
-If you're not receiving emails, it's likely because **SMTP is not configured**. The email service falls back to "console mode" which only logs emails to the backend console - it doesn't actually send them.
+If you're not receiving emails, it's likely because **SMTP is not configured** or **SMTP connection is failing**. The email service falls back to "console mode" which only logs emails to the backend console - it doesn't actually send them.
+
+## Recommended: Use Brevo (Sendinblue)
+
+**Brevo is the recommended solution** - it's free, reliable, and easier to set up than Gmail:
+- ✅ 300 free emails per day
+- ✅ Better deliverability
+- ✅ No app password hassles
+- ✅ Production-ready
+
+See [BREVO_SETUP_GUIDE.md](./BREVO_SETUP_GUIDE.md) for detailed setup instructions.
 
 ## How to Check
 

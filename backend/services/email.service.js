@@ -15,6 +15,16 @@ const createTransporter = () => {
     console.log('   SMTP Port:', process.env.SMTP_PORT || 587);
     console.log('   SMTP Secure:', process.env.SMTP_SECURE === 'true');
     
+    // Detect email service provider for better configuration
+    const isBrevo = smtpHost.includes('brevo.com') || smtpHost.includes('sendinblue.com');
+    const isGmail = smtpHost.includes('gmail.com');
+    
+    if (isBrevo) {
+      console.log('   📬 Using Brevo (Sendinblue) SMTP');
+    } else if (isGmail) {
+      console.log('   📬 Using Gmail SMTP');
+    }
+    
     const transporter = nodemailer.createTransport({
       host: smtpHost,
       port: parseInt(process.env.SMTP_PORT) || 587,
@@ -30,15 +40,32 @@ const createTransporter = () => {
       // Enable debug for troubleshooting
       debug: process.env.NODE_ENV === 'development',
       logger: process.env.NODE_ENV === 'development',
+      // Additional options for better compatibility
+      tls: {
+        // Do not fail on invalid certificates (useful for some providers)
+        rejectUnauthorized: false
+      }
     });
     
-    // Verify connection on startup
+    // Verify connection on startup (async, don't block)
     transporter.verify(function (error, success) {
       if (error) {
         console.error('❌ SMTP Connection Error:', error.message);
+        console.error('   Error Code:', error.code);
+        console.error('   Command:', error.command);
+        if (isBrevo) {
+          console.error('   💡 Brevo Tip: Make sure you\'re using SMTP password, not account password');
+          console.error('   💡 Verify your sender email in Brevo dashboard');
+        } else if (isGmail) {
+          console.error('   💡 Gmail Tip: Make sure you\'re using App Password, not regular password');
+          console.error('   💡 Enable 2-Factor Authentication and generate App Password');
+        }
         console.error('   Check your SMTP credentials and network connection');
       } else {
         console.log('✅ SMTP Server is ready to send emails');
+        if (isBrevo) {
+          console.log('   📬 Brevo SMTP connection verified successfully');
+        }
       }
     });
     
