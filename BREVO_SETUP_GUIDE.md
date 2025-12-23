@@ -70,9 +70,36 @@ After configuring, restart your backend and test:
 - Verify your sender email in Brevo dashboard
 - Make sure `EMAIL_FROM` matches a verified sender
 
-### "Connection timeout"
-- Try port `465` with `SMTP_SECURE=true`
-- Check if Render allows outbound SMTP connections
+### "Connection timeout" (ETIMEDOUT)
+This is a common issue with Render. Try these solutions:
+
+**Solution 1: Use Port 465 with SSL (Recommended)**
+```env
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your-brevo-email@example.com
+SMTP_PASS=your-brevo-smtp-password
+```
+
+**Solution 2: Try Alternative Brevo SMTP Server**
+Some users report success with:
+```env
+SMTP_HOST=smtp.brevo.com
+SMTP_PORT=587
+SMTP_SECURE=false
+```
+
+**Solution 3: Use Brevo API Instead of SMTP**
+If SMTP continues to fail, consider using Brevo's API (requires code changes):
+- More reliable than SMTP
+- Better for production
+- No port blocking issues
+
+**Solution 4: Check Render Network Settings**
+- Render may block outbound SMTP on port 587
+- Port 465 (SSL) usually works better
+- Contact Render support if ports are blocked
 
 ## Advantages of Brevo over Gmail
 

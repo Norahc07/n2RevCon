@@ -25,27 +25,41 @@ const createTransporter = () => {
       console.log('   📬 Using Gmail SMTP');
     }
     
-    const transporter = nodemailer.createTransport({
+    const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
+    const smtpSecure = process.env.SMTP_SECURE === 'true';
+    
+    // For Brevo, increase timeout and add retry logic
+    const transporterConfig = {
       host: smtpHost,
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+      port: smtpPort,
+      secure: smtpSecure, // true for 465, false for other ports
       auth: {
         user: smtpUser,
         pass: smtpPass,
       },
-      // Add connection timeout and retry options
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
+      // Increase timeouts for Brevo
+      connectionTimeout: isBrevo ? 30000 : 10000, // 30 seconds for Brevo
+      greetingTimeout: isBrevo ? 30000 : 10000,
+      socketTimeout: isBrevo ? 30000 : 10000,
       // Enable debug for troubleshooting
       debug: process.env.NODE_ENV === 'development',
       logger: process.env.NODE_ENV === 'development',
       // Additional options for better compatibility
       tls: {
         // Do not fail on invalid certificates (useful for some providers)
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
+        // For Brevo, allow older TLS versions if needed
+        minVersion: 'TLSv1.2'
       }
-    });
+    };
+    
+    // For Brevo on port 465, ensure secure connection
+    if (isBrevo && smtpPort === 465) {
+      transporterConfig.secure = true;
+      transporterConfig.requireTLS = false;
+    }
+    
+    const transporter = nodemailer.createTransport(transporterConfig);
     
     // Verify connection on startup (async, don't block)
     transporter.verify(function (error, success) {
