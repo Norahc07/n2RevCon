@@ -652,7 +652,11 @@ const Dashboard = () => {
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    fill: (item) => projectStatusDataset[item.dataIndex].color,
+                    fill: (item) => {
+                      const color = projectStatusDataset[item.dataIndex]?.color;
+                      // Return the color directly - MUI will apply it to the SVG fill attribute
+                      return color || '#3B82F6';
+                    },
                   },
                 }}
                 width={undefined}
