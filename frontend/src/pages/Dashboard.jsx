@@ -360,10 +360,9 @@ const Dashboard = () => {
     color: item.color,
   }));
   
-  // Create series with dataKey and Philippine Peso formatting
+  // Create series with dataKey and Philippine Peso formatting (no label to hide legend)
   const paymentStatusSeries = [{
     dataKey: 'amount',
-    label: 'Payments',
     valueFormatter: (value) => formatCurrencyForChart(value), // Already includes ₱ symbol
   }];
   
@@ -384,10 +383,9 @@ const Dashboard = () => {
     color: item.color,
   }));
   
-  // Create series with dataKey
+  // Create series with dataKey (no label to hide legend)
   const projectStatusSeries = [{
     dataKey: 'count',
-    label: 'Projects',
     valueFormatter: (value) => value.toString(),
   }];
   
@@ -652,7 +650,7 @@ const Dashboard = () => {
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    fill: (item) => projectStatusDataset[item.dataIndex]?.color || '#3B82F6',
+                    fill: (item) => projectStatusDataset[item.dataIndex].color,
                   },
                 }}
                 width={undefined}
@@ -689,7 +687,7 @@ const Dashboard = () => {
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    fill: (item) => paymentStatusDataset[item.dataIndex]?.color || '#3B82F6',
+                    fill: (item) => paymentStatusDataset[item.dataIndex].color,
                   },
                 }}
                 width={undefined}
