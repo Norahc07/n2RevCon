@@ -353,14 +353,13 @@ const Dashboard = () => {
     },
   ].filter(item => item.amount > 0);
   
-  // Create a single series with colors array for consistent bar width and alignment
-  const paymentStatusSeries = [{
-    data: paymentStatusData.map(item => item.amount),
-    valueFormatter: (value) => formatCurrencyForChart(value),
-  }];
-  
-  // Colors array matching the data order
-  const paymentStatusColors = paymentStatusData.map(item => item.color);
+  // Create separate series for each payment status to enable different colors per bar
+  // Each series has data only for its corresponding bar, others are 0
+  const paymentStatusSeries = paymentStatusData.map((item, index) => ({
+    data: paymentStatusData.map((d, i) => i === index ? d.amount : 0),
+    color: item.color,
+    valueFormatter: (value) => value > 0 ? formatCurrencyForChart(value) : '',
+  }));
   
   // Prepare data for Project Status with colors
   const projectStatusDataWithColors = [
@@ -369,14 +368,13 @@ const Dashboard = () => {
     { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' }, // Green
   ].filter(item => item.value > 0);
   
-  // Create a single series with colors array for consistent bar width and alignment
-  const projectStatusSeries = [{
-    data: projectStatusDataWithColors.map(item => item.value),
-    valueFormatter: (value) => value.toString(),
-  }];
-  
-  // Colors array matching the data order
-  const projectStatusColors = projectStatusDataWithColors.map(item => item.color);
+  // Create separate series for each status to enable different colors per bar
+  // Each series has data only for its corresponding bar, others are 0
+  const projectStatusSeries = projectStatusDataWithColors.map((item, index) => ({
+    data: projectStatusDataWithColors.map((d, i) => i === index ? d.value : 0),
+    color: item.color,
+    valueFormatter: (value) => value > 0 ? value.toString() : '',
+  }));
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -631,12 +629,12 @@ const Dashboard = () => {
                 yAxis={[{
                   valueFormatter: (value) => value.toString(),
                 }]}
-                colors={projectStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
                   },
                 }}
+                layout="vertical"
                 width={undefined}
                 height={250}
               />
@@ -665,12 +663,12 @@ const Dashboard = () => {
                 yAxis={[{
                   valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}
-                colors={paymentStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
                   },
                 }}
+                layout="vertical"
                 width={undefined}
                 height={250}
               />
