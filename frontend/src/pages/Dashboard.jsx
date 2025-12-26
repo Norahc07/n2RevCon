@@ -353,14 +353,13 @@ const Dashboard = () => {
     },
   ].filter(item => item.amount > 0);
   
-  // Create a single series for consistent bar widths
-  const paymentStatusSeries = [{
-    data: paymentStatusData.map(item => item.amount),
-    valueFormatter: (value) => formatCurrencyForChart(value),
-  }];
-  
-  // Colors array matching the data order for per-bar coloring
-  const paymentStatusColors = paymentStatusData.map(item => item.color);
+  // Create separate series for each payment status - each series has one bar, others are 0
+  // This ensures each bar has its own color and consistent width
+  const paymentStatusSeries = paymentStatusData.map((item, index) => ({
+    data: paymentStatusData.map((d, i) => i === index ? d.amount : 0),
+    color: item.color,
+    valueFormatter: (value) => value > 0 ? formatCurrencyForChart(value) : '',
+  }));
   
   // Prepare data for Project Status with colors
   const projectStatusDataWithColors = [
@@ -369,14 +368,13 @@ const Dashboard = () => {
     { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' }, // Green
   ].filter(item => item.value > 0);
   
-  // Create a single series for consistent bar widths
-  const projectStatusSeries = [{
-    data: projectStatusDataWithColors.map(item => item.value),
-    valueFormatter: (value) => value.toString(),
-  }];
-  
-  // Colors array matching the data order for per-bar coloring
-  const projectStatusColors = projectStatusDataWithColors.map(item => item.color);
+  // Create separate series for each status - each series has one bar, others are 0
+  // This ensures each bar has its own color and consistent width
+  const projectStatusSeries = projectStatusDataWithColors.map((item, index) => ({
+    data: projectStatusDataWithColors.map((d, i) => i === index ? d.value : 0),
+    color: item.color,
+    valueFormatter: (value) => value > 0 ? value.toString() : '',
+  }));
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -627,13 +625,11 @@ const Dashboard = () => {
                   scaleType: 'band',
                   data: projectStatusDataWithColors.map(item => item.status),
                   categoryGapRatio: 0.3,
-                  barGapRatio: 0.1,
                 }]}
                 series={projectStatusSeries}
                 yAxis={[{
                   valueFormatter: (value) => value.toString(),
                 }]}
-                colors={projectStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
@@ -641,6 +637,7 @@ const Dashboard = () => {
                 }}
                 width={undefined}
                 height={250}
+                layout="vertical"
               />
             </div>
           ) : (
@@ -663,13 +660,11 @@ const Dashboard = () => {
                   scaleType: 'band',
                   data: paymentStatusData.map(item => item.status),
                   categoryGapRatio: 0.3,
-                  barGapRatio: 0.1,
                 }]}
                 series={paymentStatusSeries}
                 yAxis={[{
                   valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}
-                colors={paymentStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
@@ -677,6 +672,7 @@ const Dashboard = () => {
                 }}
                 width={undefined}
                 height={250}
+                layout="vertical"
               />
             </div>
           ) : (
