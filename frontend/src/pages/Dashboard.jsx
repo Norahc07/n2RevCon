@@ -649,10 +649,10 @@ const Dashboard = () => {
                 yAxis={[{
                   valueFormatter: (value) => value.toString(),
                 }]}
-                colors={projectStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
+                    fill: (item) => projectStatusDataWithColors[item.dataIndex]?.color || '#3B82F6',
                   },
                 }}
                 width={undefined}
@@ -686,10 +686,10 @@ const Dashboard = () => {
                 yAxis={[{
                   valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}
-                colors={paymentStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
+                    fill: (item) => paymentStatusData[item.dataIndex]?.color || '#3B82F6',
                   },
                 }}
                 width={undefined}
