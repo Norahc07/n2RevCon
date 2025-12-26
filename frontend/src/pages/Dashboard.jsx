@@ -634,9 +634,10 @@ const Dashboard = () => {
                     clipPath: 'inset(0px round 4px)',
                   },
                 }}
-                layout="vertical"
                 width={undefined}
                 height={250}
+                barGap={0}
+                barCategoryGap={0.2}
               />
             </div>
           ) : (
@@ -668,9 +669,10 @@ const Dashboard = () => {
                     clipPath: 'inset(0px round 4px)',
                   },
                 }}
-                layout="vertical"
                 width={undefined}
                 height={250}
+                barGap={0}
+                barCategoryGap={0.2}
               />
             </div>
           ) : (
