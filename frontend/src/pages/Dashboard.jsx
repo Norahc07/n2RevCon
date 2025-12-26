@@ -344,12 +344,12 @@ const Dashboard = () => {
     { 
       status: 'Unpaid', 
       amount: summary.paymentStatus?.unpaid?.totalAmount || 0,
-      color: '#F59E0B' // Orange/Amber
+      color: '#EF4444' // Red
     },
     { 
       status: 'Uncollectible', 
       amount: summary.paymentStatus?.uncollectible?.totalAmount || 0,
-      color: '#EF4444' // Red
+      color: '#F59E0B' // Orange/Amber
     },
   ].filter(item => item.amount > 0);
   
