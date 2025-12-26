@@ -251,7 +251,7 @@ const LandingPage = () => {
               <div>
                 <h3 className="text-2xl font-bold text-white mb-4">N2 RevCon</h3>
                 <p className="text-white/80 text-sm">
-                  Professional construction revenue management system for modern construction firms.
+                  Professional construction revenue management system for RSBP Engineering and Services.
                 </p>
               </div>
 
