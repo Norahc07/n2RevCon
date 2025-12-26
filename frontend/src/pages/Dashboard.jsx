@@ -360,11 +360,11 @@ const Dashboard = () => {
     color: item.color,
   }));
   
-  // Create series with dataKey
+  // Create series with dataKey and Philippine Peso formatting
   const paymentStatusSeries = [{
     dataKey: 'amount',
     label: 'Payments',
-    valueFormatter: (value) => formatCurrencyForChart(value),
+    valueFormatter: (value) => formatCurrencyForChart(value), // Already includes ₱ symbol
   }];
   
   // Colors array for per-bar coloring
@@ -630,7 +630,7 @@ const Dashboard = () => {
             </div>
             <button
               onClick={() => setProjectStatusViewAll(!projectStatusViewAll)}
-              className="flex items-center gap-1 text-xs xs:text-sm text-primary hover:text-primaryLight font-medium transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-1 text-xs xs:text-sm text-red-600 hover:text-red-700 font-medium transition-colors duration-200 whitespace-nowrap"
             >
               <ArrowPathIcon className="w-3 h-3 xs:w-4 xs:h-4" />
               {projectStatusViewAll ? `View ${year === 'all' ? 'All Years' : year}` : 'View All'}
@@ -652,7 +652,7 @@ const Dashboard = () => {
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    fill: (item) => projectStatusDataWithColors[item.dataIndex]?.color || '#3B82F6',
+                    fill: (item) => projectStatusDataset[item.dataIndex]?.color || '#3B82F6',
                   },
                 }}
                 width={undefined}
@@ -684,12 +684,12 @@ const Dashboard = () => {
                 }]}
                 series={paymentStatusSeries}
                 yAxis={[{
-                  valueFormatter: (value) => formatCurrencyForChart(value),
+                  valueFormatter: (value) => formatCurrencyForChart(value), // Already includes ₱ symbol
                 }]}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    fill: (item) => paymentStatusData[item.dataIndex]?.color || '#3B82F6',
+                    fill: (item) => paymentStatusDataset[item.dataIndex]?.color || '#3B82F6',
                   },
                 }}
                 width={undefined}
