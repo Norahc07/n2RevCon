@@ -353,13 +353,14 @@ const Dashboard = () => {
     },
   ].filter(item => item.amount > 0);
   
-  // Create separate series for each payment status - each series has one bar, others are 0
-  // This ensures each bar has its own color and consistent width
-  const paymentStatusSeries = paymentStatusData.map((item, index) => ({
-    data: paymentStatusData.map((d, i) => i === index ? d.amount : 0),
-    color: item.color,
-    valueFormatter: (value) => value > 0 ? formatCurrencyForChart(value) : '',
-  }));
+  // Create a single series with per-bar colors for consistent width and proper centering
+  const paymentStatusSeries = [{
+    data: paymentStatusData.map(item => item.amount),
+    valueFormatter: (value) => formatCurrencyForChart(value),
+  }];
+  
+  // Colors array for per-bar coloring
+  const paymentStatusColors = paymentStatusData.map(item => item.color);
   
   // Prepare data for Project Status with colors
   const projectStatusDataWithColors = [
@@ -368,13 +369,14 @@ const Dashboard = () => {
     { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' }, // Green
   ].filter(item => item.value > 0);
   
-  // Create separate series for each status - each series has one bar, others are 0
-  // This ensures each bar has its own color and consistent width
-  const projectStatusSeries = projectStatusDataWithColors.map((item, index) => ({
-    data: projectStatusDataWithColors.map((d, i) => i === index ? d.value : 0),
-    color: item.color,
-    valueFormatter: (value) => value > 0 ? value.toString() : '',
-  }));
+  // Create a single series with per-bar colors for consistent width and proper centering
+  const projectStatusSeries = [{
+    data: projectStatusDataWithColors.map(item => item.value),
+    valueFormatter: (value) => value.toString(),
+  }];
+  
+  // Colors array for per-bar coloring
+  const projectStatusColors = projectStatusDataWithColors.map(item => item.color);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -624,15 +626,20 @@ const Dashboard = () => {
                 xAxis={[{
                   scaleType: 'band',
                   data: projectStatusDataWithColors.map(item => item.status),
-                  categoryGapRatio: 0.25, // Balanced spacing between bars
+                  categoryGapRatio: 0.3, // Balanced spacing for proper centering
                 }]}
                 series={projectStatusSeries}
                 yAxis={[{
                   valueFormatter: (value) => value.toString(),
                 }]}
+                colors={projectStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
+                  },
+                  tooltip: {
+                    // Filter out series with value 0 to show only one data point
+                    filter: (item) => item.value !== null && item.value !== undefined && item.value !== 0,
                   },
                 }}
                 width={undefined}
@@ -659,15 +666,20 @@ const Dashboard = () => {
                 xAxis={[{
                   scaleType: 'band',
                   data: paymentStatusData.map(item => item.status),
-                  categoryGapRatio: 0.25, // Balanced spacing between bars
+                  categoryGapRatio: 0.3, // Balanced spacing for proper centering
                 }]}
                 series={paymentStatusSeries}
                 yAxis={[{
                   valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}
+                colors={paymentStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
+                  },
+                  tooltip: {
+                    // Filter out series with value 0 to show only one data point
+                    filter: (item) => item.value !== null && item.value !== undefined && item.value !== 0,
                   },
                 }}
                 width={undefined}
