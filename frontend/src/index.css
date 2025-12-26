@@ -292,6 +292,16 @@
   text-align: right;
 }
 
+/* Force MUI Bar elements to use their assigned color */
+.MuiBarElement-root {
+  fill: currentColor !important;
+}
+
+/* Ensure bar rect elements use their fill attribute */
+.MuiBarElement-root rect {
+  fill: inherit !important;
+}
+
 /* Chart responsiveness */
 @media (max-width: 639px) {
   .chart-container {

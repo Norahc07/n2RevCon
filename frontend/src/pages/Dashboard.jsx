@@ -361,6 +361,7 @@ const Dashboard = () => {
   }));
   
   // Create series with dataKey and Philippine Peso formatting (no label to hide legend)
+  // Note: color is set per-bar via slotProps.bar.fill, but we include it here as fallback
   const paymentStatusSeries = [{
     dataKey: 'amount',
     valueFormatter: (value) => formatCurrencyForChart(value), // Already includes ₱ symbol
@@ -384,6 +385,7 @@ const Dashboard = () => {
   }));
   
   // Create series with dataKey (no label to hide legend)
+  // Note: color is set per-bar via slotProps.bar.fill, but we include it here as fallback
   const projectStatusSeries = [{
     dataKey: 'count',
     valueFormatter: (value) => value.toString(),
@@ -687,7 +689,11 @@ const Dashboard = () => {
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    fill: (item) => paymentStatusDataset[item.dataIndex].color,
+                    fill: (item) => {
+                      const color = paymentStatusDataset[item.dataIndex]?.color;
+                      return color || '#3B82F6';
+                    },
+                    style: { fill: 'currentColor' }, // Force use of fill attribute
                   },
                 }}
                 width={undefined}
