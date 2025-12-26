@@ -353,14 +353,14 @@ const Dashboard = () => {
     },
   ].filter(item => item.amount > 0);
   
-  // Create a single series with per-bar colors for consistent width and proper centering
+  // Create a single series with itemSx for per-bar colors
   const paymentStatusSeries = [{
     data: paymentStatusData.map(item => item.amount),
     valueFormatter: (value) => formatCurrencyForChart(value),
+    itemSx: (dataIndex) => ({
+      fill: paymentStatusData[dataIndex]?.color || '#3B82F6',
+    }),
   }];
-  
-  // Colors array for per-bar coloring
-  const paymentStatusColors = paymentStatusData.map(item => item.color);
   
   // Prepare data for Project Status with colors
   const projectStatusDataWithColors = [
@@ -369,14 +369,14 @@ const Dashboard = () => {
     { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' }, // Green
   ].filter(item => item.value > 0);
   
-  // Create a single series with per-bar colors for consistent width and proper centering
+  // Create a single series with itemSx for per-bar colors
   const projectStatusSeries = [{
     data: projectStatusDataWithColors.map(item => item.value),
     valueFormatter: (value) => value.toString(),
+    itemSx: (dataIndex) => ({
+      fill: projectStatusDataWithColors[dataIndex]?.color || '#3B82F6',
+    }),
   }];
-  
-  // Colors array for per-bar coloring
-  const projectStatusColors = projectStatusDataWithColors.map(item => item.color);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -632,7 +632,6 @@ const Dashboard = () => {
                 yAxis={[{
                   valueFormatter: (value) => value.toString(),
                 }]}
-                colors={projectStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
@@ -672,7 +671,6 @@ const Dashboard = () => {
                 yAxis={[{
                   valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}
-                colors={paymentStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
