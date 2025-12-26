@@ -353,14 +353,14 @@ const Dashboard = () => {
     },
   ].filter(item => item.amount > 0);
   
-  // Create a single series with itemSx for per-bar colors
-  const paymentStatusSeries = [{
-    data: paymentStatusData.map(item => item.amount),
-    valueFormatter: (value) => formatCurrencyForChart(value),
-    itemSx: (dataIndex) => ({
-      fill: paymentStatusData[dataIndex]?.color || '#3B82F6',
-    }),
-  }];
+  // Create separate series for each payment status - each series has one bar, others are 0
+  // This ensures each bar has its own color
+  const paymentStatusSeries = paymentStatusData.map((item, index) => ({
+    data: paymentStatusData.map((d, i) => i === index ? d.amount : 0),
+    color: item.color,
+    valueFormatter: (value) => value > 0 ? formatCurrencyForChart(value) : '',
+    label: item.status,
+  }));
   
   // Prepare data for Project Status with colors
   const projectStatusDataWithColors = [
@@ -369,14 +369,14 @@ const Dashboard = () => {
     { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' }, // Green
   ].filter(item => item.value > 0);
   
-  // Create a single series with itemSx for per-bar colors
-  const projectStatusSeries = [{
-    data: projectStatusDataWithColors.map(item => item.value),
-    valueFormatter: (value) => value.toString(),
-    itemSx: (dataIndex) => ({
-      fill: projectStatusDataWithColors[dataIndex]?.color || '#3B82F6',
-    }),
-  }];
+  // Create separate series for each status - each series has one bar, others are 0
+  // This ensures each bar has its own color
+  const projectStatusSeries = projectStatusDataWithColors.map((item, index) => ({
+    data: projectStatusDataWithColors.map((d, i) => i === index ? d.value : 0),
+    color: item.color,
+    valueFormatter: (value) => value > 0 ? value.toString() : '',
+    label: item.status,
+  }));
 
   return (
     <div className="space-y-4 sm:space-y-6">
