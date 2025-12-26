@@ -638,7 +638,10 @@ const Dashboard = () => {
                   },
                   tooltip: {
                     // Filter out series with value 0 to show only one data point
-                    filter: (item) => item.value !== null && item.value !== undefined && item.value !== 0,
+                    filter: (item) => {
+                      const value = item.value;
+                      return value !== null && value !== undefined && value !== 0;
+                    },
                   },
                 }}
                 width={undefined}
@@ -677,7 +680,10 @@ const Dashboard = () => {
                   },
                   tooltip: {
                     // Filter out series with value 0 to show only one data point
-                    filter: (item) => item.value !== null && item.value !== undefined && item.value !== 0,
+                    filter: (item) => {
+                      const value = item.value;
+                      return value !== null && value !== undefined && value !== 0;
+                    },
                   },
                 }}
                 width={undefined}
