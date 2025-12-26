@@ -624,7 +624,7 @@ const Dashboard = () => {
                 xAxis={[{
                   scaleType: 'band',
                   data: projectStatusDataWithColors.map(item => item.status),
-                  categoryGapRatio: 0.3,
+                  categoryGapRatio: 0.1, // Lower ratio = wider bars, better balance
                 }]}
                 series={projectStatusSeries}
                 yAxis={[{
@@ -633,6 +633,7 @@ const Dashboard = () => {
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
+                    style: { width: '100%' }, // Ensure bars fill their allocated space
                   },
                 }}
                 width={undefined}
@@ -659,7 +660,7 @@ const Dashboard = () => {
                 xAxis={[{
                   scaleType: 'band',
                   data: paymentStatusData.map(item => item.status),
-                  categoryGapRatio: 0.3,
+                  categoryGapRatio: 0.1, // Lower ratio = wider bars, better balance
                 }]}
                 series={paymentStatusSeries}
                 yAxis={[{
@@ -668,6 +669,7 @@ const Dashboard = () => {
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
+                    style: { width: '100%' }, // Ensure bars fill their allocated space
                   },
                 }}
                 width={undefined}
