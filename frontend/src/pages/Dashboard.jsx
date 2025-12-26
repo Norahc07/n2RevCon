@@ -353,14 +353,22 @@ const Dashboard = () => {
     },
   ].filter(item => item.amount > 0);
   
-  // Create separate series for each payment status - each series has one bar, others are 0
-  // This ensures each bar has its own color
-  const paymentStatusSeries = paymentStatusData.map((item, index) => ({
-    data: paymentStatusData.map((d, i) => i === index ? d.amount : 0),
+  // Prepare dataset for Payment Status chart
+  const paymentStatusDataset = paymentStatusData.map(item => ({
+    status: item.status,
+    amount: item.amount,
     color: item.color,
-    valueFormatter: (value) => value > 0 ? formatCurrencyForChart(value) : '',
-    label: item.status,
   }));
+  
+  // Create series with dataKey
+  const paymentStatusSeries = [{
+    dataKey: 'amount',
+    label: 'Payments',
+    valueFormatter: (value) => formatCurrencyForChart(value),
+  }];
+  
+  // Colors array for per-bar coloring
+  const paymentStatusColors = paymentStatusData.map(item => item.color);
   
   // Prepare data for Project Status with colors
   const projectStatusDataWithColors = [
@@ -369,14 +377,22 @@ const Dashboard = () => {
     { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' }, // Green
   ].filter(item => item.value > 0);
   
-  // Create separate series for each status - each series has one bar, others are 0
-  // This ensures each bar has its own color
-  const projectStatusSeries = projectStatusDataWithColors.map((item, index) => ({
-    data: projectStatusDataWithColors.map((d, i) => i === index ? d.value : 0),
+  // Prepare dataset for Project Status chart
+  const projectStatusDataset = projectStatusDataWithColors.map(item => ({
+    status: item.status,
+    count: item.value,
     color: item.color,
-    valueFormatter: (value) => value > 0 ? value.toString() : '',
-    label: item.status,
   }));
+  
+  // Create series with dataKey
+  const projectStatusSeries = [{
+    dataKey: 'count',
+    label: 'Projects',
+    valueFormatter: (value) => value.toString(),
+  }];
+  
+  // Colors array for per-bar coloring
+  const projectStatusColors = projectStatusDataWithColors.map(item => item.color);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -623,25 +639,20 @@ const Dashboard = () => {
           {projectStatusDataWithColors.length > 0 ? (
             <div className="w-full overflow-x-auto chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
               <BarChart
+                dataset={projectStatusDataset}
                 xAxis={[{
                   scaleType: 'band',
-                  data: projectStatusDataWithColors.map(item => item.status),
+                  dataKey: 'status',
                   categoryGapRatio: 0.3, // Balanced spacing for proper centering
                 }]}
                 series={projectStatusSeries}
                 yAxis={[{
                   valueFormatter: (value) => value.toString(),
                 }]}
+                colors={projectStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                  },
-                  tooltip: {
-                    // Filter out series with value 0 to show only one data point
-                    filter: (item) => {
-                      const value = item.value;
-                      return value !== null && value !== undefined && value !== 0;
-                    },
                   },
                 }}
                 width={undefined}
@@ -665,25 +676,20 @@ const Dashboard = () => {
           {paymentStatusData.length > 0 ? (
             <div className="w-full chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
               <BarChart
+                dataset={paymentStatusDataset}
                 xAxis={[{
                   scaleType: 'band',
-                  data: paymentStatusData.map(item => item.status),
+                  dataKey: 'status',
                   categoryGapRatio: 0.3, // Balanced spacing for proper centering
                 }]}
                 series={paymentStatusSeries}
                 yAxis={[{
                   valueFormatter: (value) => formatCurrencyForChart(value),
                 }]}
+                colors={paymentStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                  },
-                  tooltip: {
-                    // Filter out series with value 0 to show only one data point
-                    filter: (item) => {
-                      const value = item.value;
-                      return value !== null && value !== undefined && value !== 0;
-                    },
                   },
                 }}
                 width={undefined}
