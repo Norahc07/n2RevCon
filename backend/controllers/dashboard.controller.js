@@ -94,8 +94,20 @@ export const getDashboardSummary = async (req, res) => {
         $project: {
           _id: 1,
           total: 1,
-          projectName: { $ifNull: ['$project.projectName', 'Unknown Project'] },
-          projectCode: { $ifNull: ['$project.projectCode', 'N/A'] }
+          projectName: { 
+            $cond: [
+              { $eq: ['$_id', null] },
+              'General Revenue',
+              { $ifNull: ['$project.projectName', 'Unknown Project'] }
+            ]
+          },
+          projectCode: { 
+            $cond: [
+              { $eq: ['$_id', null] },
+              'GEN',
+              { $ifNull: ['$project.projectCode', 'N/A'] }
+            ]
+          }
         }
       },
       { $sort: { total: -1 } }
@@ -129,8 +141,20 @@ export const getDashboardSummary = async (req, res) => {
         $project: {
           _id: 1,
           total: 1,
-          projectName: { $ifNull: ['$project.projectName', 'Unknown Project'] },
-          projectCode: { $ifNull: ['$project.projectCode', 'N/A'] }
+          projectName: { 
+            $cond: [
+              { $eq: ['$_id', null] },
+              'General Expense',
+              { $ifNull: ['$project.projectName', 'Unknown Project'] }
+            ]
+          },
+          projectCode: { 
+            $cond: [
+              { $eq: ['$_id', null] },
+              'GEN',
+              { $ifNull: ['$project.projectCode', 'N/A'] }
+            ]
+          }
         }
       },
       { $sort: { total: -1 } }

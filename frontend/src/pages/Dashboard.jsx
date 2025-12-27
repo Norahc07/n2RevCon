@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { dashboardAPI, projectAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { PieChart } from '@mui/x-charts/PieChart';
@@ -37,6 +37,8 @@ const Dashboard = () => {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [requestingPermission, setRequestingPermission] = useState(false);
   const [focusedYearDropdown, setFocusedYearDropdown] = useState(false);
+  const projectStatusChartRef = useRef(null);
+  const paymentStatusChartRef = useRef(null);
 
   // Define functions before using them in useEffect
   const fetchProjects = useCallback(async () => {
@@ -68,6 +70,175 @@ const Dashboard = () => {
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
+
+  // Apply colors to bars after chart renders (fixes MUI override issue)
+  // Must be before any early returns to follow Rules of Hooks
+  useEffect(() => {
+    // Declare arrays before early return to ensure cleanup function has access
+    const timeouts = [];
+    const observers = [];
+
+    if (!summary) {
+      return () => {
+        timeouts.forEach(timeout => clearTimeout(timeout));
+        observers.forEach(observer => observer.disconnect());
+      };
+    }
+
+    const applyBarColors = () => {
+      // Calculate data inside effect to avoid dependency issues
+      const projectStatusData = [
+        { status: 'Pending', value: summary.projectStatus?.pending || 0, color: '#F59E0B' },
+        { status: 'Ongoing', value: summary.projectStatus?.ongoing || 0, color: '#3B82F6' },
+        { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' },
+      ].filter(item => item.value > 0);
+      
+      const projectStatusDataset = projectStatusData.map(item => ({
+        status: item.status,
+        count: item.value,
+        color: item.color,
+      }));
+
+      const paymentStatusData = [
+        { status: 'Paid', amount: summary.paymentStatus?.paid?.totalAmount || 0, color: '#10B981' },
+        { status: 'Unpaid', amount: summary.paymentStatus?.unpaid?.totalAmount || 0, color: '#EF4444' },
+        { status: 'Uncollectible', amount: summary.paymentStatus?.uncollectible?.totalAmount || 0, color: '#F59E0B' },
+      ].filter(item => item.amount > 0);
+      
+      const paymentStatusDataset = paymentStatusData.map(item => ({
+        status: item.status,
+        amount: item.amount,
+        color: item.color,
+      }));
+
+      // Apply Project Status bar colors
+      if (projectStatusChartRef.current) {
+        const chartContainer = projectStatusChartRef.current;
+        
+        // Find all bar groups - try multiple selectors
+        const barGroups = Array.from(chartContainer.querySelectorAll('g[class*="MuiBarElement"], g[class*="BarElement"]'));
+        
+        // For vertical bar charts, bars are ordered left to right
+        // Match by index since dataset order should match bar order
+        barGroups.forEach((group, index) => {
+          if (projectStatusDataset[index]?.color) {
+            const color = projectStatusDataset[index].color;
+            // Apply to all shapes in the group
+            const shapes = group.querySelectorAll('rect, path, polygon');
+            shapes.forEach(shape => {
+              // Remove any existing fill styles
+              shape.removeAttribute('fill');
+              shape.style.removeProperty('fill');
+              // Set new color
+              shape.setAttribute('fill', color);
+              shape.style.setProperty('fill', color, 'important');
+              shape.style.setProperty('stroke', 'none', 'important');
+              // Also try setting on the shape's computed style
+              if (shape.style) {
+                shape.style.cssText += `; fill: ${color} !important; stroke: none !important;`;
+              }
+            });
+            // Set on group as well
+            group.setAttribute('fill', color);
+            group.style.setProperty('fill', color, 'important');
+            // Try setting style directly on group
+            if (group.style) {
+              group.style.cssText += `; fill: ${color} !important;`;
+            }
+          }
+        });
+      }
+
+      // Apply Payment Status bar colors
+      if (paymentStatusChartRef.current) {
+        const chartContainer = paymentStatusChartRef.current;
+        
+        // Find all bar groups - try multiple selectors
+        const barGroups = Array.from(chartContainer.querySelectorAll('g[class*="MuiBarElement"], g[class*="BarElement"]'));
+        
+        // For vertical bar charts, bars are ordered left to right
+        // Match by index since dataset order should match bar order
+        barGroups.forEach((group, index) => {
+          if (paymentStatusDataset[index]?.color) {
+            const color = paymentStatusDataset[index].color;
+            // Apply to all shapes in the group
+            const shapes = group.querySelectorAll('rect, path, polygon');
+            shapes.forEach(shape => {
+              // Remove any existing fill styles
+              shape.removeAttribute('fill');
+              shape.style.removeProperty('fill');
+              // Set new color
+              shape.setAttribute('fill', color);
+              shape.style.setProperty('fill', color, 'important');
+              shape.style.setProperty('stroke', 'none', 'important');
+              // Also try setting on the shape's computed style
+              if (shape.style) {
+                shape.style.cssText += `; fill: ${color} !important; stroke: none !important;`;
+              }
+            });
+            // Set on group as well
+            group.setAttribute('fill', color);
+            group.style.setProperty('fill', color, 'important');
+            // Try setting style directly on group
+            if (group.style) {
+              group.style.cssText += `; fill: ${color} !important;`;
+            }
+          }
+        });
+      }
+    };
+
+    // Apply immediately and after delays to catch MUI's style application
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      applyBarColors();
+      timeouts.push(setTimeout(applyBarColors, 50));
+      timeouts.push(setTimeout(applyBarColors, 100));
+      timeouts.push(setTimeout(applyBarColors, 200));
+      timeouts.push(setTimeout(applyBarColors, 300));
+      timeouts.push(setTimeout(applyBarColors, 500));
+      timeouts.push(setTimeout(applyBarColors, 1000));
+      timeouts.push(setTimeout(applyBarColors, 2000));
+    });
+    
+    // Also apply with regular timeouts as fallback
+    timeouts.push(setTimeout(applyBarColors, 100));
+    timeouts.push(setTimeout(applyBarColors, 300));
+    timeouts.push(setTimeout(applyBarColors, 500));
+    timeouts.push(setTimeout(applyBarColors, 1000));
+
+    // Use MutationObserver to watch for style changes
+    if (projectStatusChartRef.current) {
+      const observer = new MutationObserver(() => {
+        applyBarColors();
+      });
+      observer.observe(projectStatusChartRef.current, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'fill'],
+      });
+      observers.push(observer);
+    }
+
+    if (paymentStatusChartRef.current) {
+      const observer = new MutationObserver(() => {
+        applyBarColors();
+      });
+      observer.observe(paymentStatusChartRef.current, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'fill'],
+      });
+      observers.push(observer);
+    }
+
+    return () => {
+      timeouts.forEach(timeout => clearTimeout(timeout));
+      observers.forEach(observer => observer.disconnect());
+    };
+  }, [summary]);
 
   // Check and show notification permission prompt
   useEffect(() => {
@@ -360,11 +531,10 @@ const Dashboard = () => {
     color: item.color,
   }));
   
-  // Create series with dataKey and Philippine Peso formatting (no label to hide legend)
-  // Note: color is set per-bar via slotProps.bar.fill, but we include it here as fallback
+  // Create single series with dataKey
   const paymentStatusSeries = [{
     dataKey: 'amount',
-    valueFormatter: (value) => formatCurrencyForChart(value), // Already includes ₱ symbol
+    valueFormatter: (value) => formatCurrencyForChart(value || 0),
   }];
   
   // Colors array for per-bar coloring
@@ -384,11 +554,10 @@ const Dashboard = () => {
     color: item.color,
   }));
   
-  // Create series with dataKey (no label to hide legend)
-  // Note: color is set per-bar via slotProps.bar.fill, but we include it here as fallback
+  // Create single series with dataKey
   const projectStatusSeries = [{
     dataKey: 'count',
-    valueFormatter: (value) => value.toString(),
+    valueFormatter: (value) => value?.toString() || '0',
   }];
   
   // Colors array for per-bar coloring
@@ -637,37 +806,43 @@ const Dashboard = () => {
             </button>
           </div>
           {projectStatusDataWithColors.length > 0 ? (
-            <div className="w-full overflow-x-auto chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
+            <div className="w-full flex flex-col items-center">
+              <div ref={projectStatusChartRef} className="w-full overflow-x-auto chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
               <BarChart
                 dataset={projectStatusDataset}
                 xAxis={[{
                   scaleType: 'band',
                   dataKey: 'status',
-                  categoryGapRatio: 0.3, // Balanced spacing for proper centering
+                    categoryGapRatio: 0.3,
                 }]}
                 series={projectStatusSeries}
                 yAxis={[{
-                  valueFormatter: (value) => value.toString(),
+                    valueFormatter: (value) => value?.toString() || '0',
                 }]}
+                  colors={projectStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    fill: (item) => {
-                      const color = projectStatusDataset[item.dataIndex]?.color;
-                      // Return the color directly - MUI will apply it to the SVG fill attribute
-                      return color || '#3B82F6';
                     },
-                  },
+                    legend: { hidden: true }
                 }}
-                width={undefined}
                 height={250}
                 layout="vertical"
               />
             </div>
-          ) : (
-            <div className="flex items-center justify-center h-[200px] xs:h-[250px] sm:h-[300px] text-gray-500 text-sm">
-              No data available
+              
+              {/* Custom Legend for Project Status */}
+              <div className="flex flex-wrap justify-center gap-4 mt-2">
+                {projectStatusDataWithColors.map((item) => (
+                  <div key={item.status} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }}></div>
+                    <span className="text-xs font-medium text-gray-600">{item.status}</span>
+                  </div>
+                ))}
+              </div>
             </div>
+          ) : (
+            <div className="flex items-center justify-center h-[250px] text-gray-500 text-sm">No data available</div>
           )}
         </div>
 
@@ -678,37 +853,43 @@ const Dashboard = () => {
             <h2 className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold text-center sm:text-left">Payment Status ({year === 'all' ? 'All Years' : year})</h2>
           </div>
           {paymentStatusData.length > 0 ? (
-            <div className="w-full chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
+            <div className="w-full flex flex-col items-center">
+              <div ref={paymentStatusChartRef} className="w-full chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
               <BarChart
                 dataset={paymentStatusDataset}
                 xAxis={[{
                   scaleType: 'band',
                   dataKey: 'status',
-                  categoryGapRatio: 0.3, // Balanced spacing for proper centering
+                    categoryGapRatio: 0.3,
                 }]}
                 series={paymentStatusSeries}
                 yAxis={[{
-                  valueFormatter: (value) => formatCurrencyForChart(value), // Already includes ₱ symbol
+                    valueFormatter: (value) => formatCurrencyForChart(value || 0)
                 }]}
+                  colors={paymentStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    fill: (item) => {
-                      const color = paymentStatusDataset[item.dataIndex]?.color;
-                      return color || '#3B82F6';
                     },
-                    style: { fill: 'currentColor' }, // Force use of fill attribute
-                  },
+                    legend: { hidden: true }
                 }}
-                width={undefined}
                 height={250}
                 layout="vertical"
               />
             </div>
-          ) : (
-            <div className="flex items-center justify-center h-[200px] xs:h-[250px] sm:h-[300px] text-gray-500 text-sm">
-              No data available
+              
+              {/* Custom Legend for Payment Status */}
+              <div className="flex flex-wrap justify-center gap-4 mt-2">
+                {paymentStatusData.map((item) => (
+                  <div key={item.status} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }}></div>
+                    <span className="text-xs font-medium text-gray-600">{item.status}</span>
+                  </div>
+                ))}
+              </div>
             </div>
+          ) : (
+            <div className="flex items-center justify-center h-[250px] text-gray-500 text-sm">No data available</div>
           )}
         </div>
       </div>

@@ -1,9 +1,13 @@
+/* stylelint-disable-next-line at-rule-no-unknown */
 @tailwind base;
+/* stylelint-disable-next-line at-rule-no-unknown */
 @tailwind components;
+/* stylelint-disable-next-line at-rule-no-unknown */
 @tailwind utilities;
 
 @layer base {
   body {
+    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply bg-white text-accent;
     background-color: #FFFFFF !important;
   }
@@ -19,18 +23,22 @@
 
 @layer components {
   .btn-primary {
+    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl;
   }
   
   .btn-secondary {
+    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply bg-white border-2 border-accent text-accent hover:bg-accent hover:text-white font-medium py-2 px-4 rounded-lg transition-all duration-200;
   }
   
   .input-field {
+    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary transition-colors duration-200;
   }
   
   .card {
+    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply bg-white rounded-lg shadow-md p-6;
   }
 }
@@ -156,6 +164,7 @@
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3; /* Standard property for compatibility */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -292,14 +301,31 @@
   text-align: right;
 }
 
-/* Force MUI Bar elements to use their assigned color */
+/* Ensure MUI charts use the fill attribute provided by React */
 .MuiBarElement-root {
-  fill: currentColor !important;
+  stroke-width: 0;
 }
 
-/* Ensure bar rect elements use their fill attribute */
+/* Ensure bar rect elements use their fill attribute - don't override, let React set it */
 .MuiBarElement-root rect {
-  fill: inherit !important;
+  stroke-width: 0;
+}
+
+/* Remove any currentColor inheritance that might cause black bars */
+.MuiBarElement-root * {
+  fill: inherit;
+}
+
+/* More specific targeting for bar elements - allow fill to be set via attribute or style */
+[class*="MuiBarElement"] rect,
+[class*="MuiBarElement"] path {
+  stroke-width: 0;
+}
+
+/* Prevent any CSS from forcing black color on bars - let JavaScript set it */
+svg [class*="MuiBarElement"] rect,
+svg [class*="MuiBarElement"] path {
+  /* Don't force fill here - let the useEffect handle it */
 }
 
 /* Chart responsiveness */

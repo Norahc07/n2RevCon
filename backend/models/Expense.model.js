@@ -4,7 +4,8 @@ const expenseSchema = new mongoose.Schema({
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
-    required: [true, 'Project ID is required']
+    required: false, // Optional - allows general expenses not tied to a project
+    default: null
   },
   expenseCode: {
     type: String,

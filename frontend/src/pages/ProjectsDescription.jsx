@@ -12,7 +12,6 @@ import {
   EyeIcon,
   BuildingOfficeIcon,
   MapPinIcon,
-  CurrencyDollarIcon,
   ArrowDownTrayIcon,
   PencilIcon,
   TrashIcon,
@@ -348,7 +347,10 @@ const ProjectsDescription = () => {
                   <div className="data-row">
                     <span className="data-label">Transaction Price</span>
                     <span className="data-value text-xs text-green-600">
-                      {formatCurrency(project.budget || 0)}
+                      ₱{(project.budget || 0).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </span>
                   </div>
                   <div className="data-row">
@@ -528,10 +530,10 @@ const ProjectsDescription = () => {
                         </span>
                       </td>
                       <td className="p-3 sm:p-4 hidden lg:table-cell">
-                        <div className="flex items-center gap-1 text-gray-700">
-                          <CurrencyDollarIcon className="w-4 h-4 text-green-600" />
-                          <span className="font-medium text-sm">{formatCurrency(project.budget || 0)}</span>
-                        </div>
+                        <span className="font-medium text-sm text-gray-700">₱{(project.budget || 0).toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}</span>
                       </td>
                       <td className="p-3 sm:p-4 hidden lg:table-cell">
                         <span className="text-gray-600 text-xs sm:text-sm">

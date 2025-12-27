@@ -59,19 +59,30 @@ export const getExpenseById = async (req, res) => {
  */
 export const createExpense = async (req, res) => {
   try {
-    // Verify project exists
-    const project = await Project.findById(req.body.projectId);
-    if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
+    // Normalize projectId: convert empty string to null for general expenses
+    const projectId = req.body.projectId && req.body.projectId.trim() !== '' 
+      ? req.body.projectId 
+      : null;
+
+    // Verify project exists only if projectId is provided
+    if (projectId) {
+      const project = await Project.findById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
     }
 
     const expenseData = {
       ...req.body,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      // Set projectId to null if not provided (general expense)
+      projectId: projectId
     };
 
     const expense = await Expense.create(expenseData);
-    await expense.populate('projectId', 'projectCode projectName');
+    if (expense.projectId) {
+      await expense.populate('projectId', 'projectCode projectName');
+    }
 
     res.status(201).json({ message: 'Expense record created successfully', expense });
   } catch (error) {
@@ -86,11 +97,30 @@ export const createExpense = async (req, res) => {
  */
 export const updateExpense = async (req, res) => {
   try {
+    // Normalize projectId: convert empty string to null for general expenses
+    if (req.body.projectId !== undefined) {
+      req.body.projectId = req.body.projectId && req.body.projectId.trim() !== '' 
+        ? req.body.projectId 
+        : null;
+    }
+
+    // Verify project exists only if projectId is provided and not null
+    if (req.body.projectId) {
+      const project = await Project.findById(req.body.projectId);
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+    }
+
     const expense = await Expense.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
-    ).populate('projectId', 'projectCode projectName');
+    );
+    
+    if (expense.projectId) {
+      await expense.populate('projectId', 'projectCode projectName');
+    }
 
     if (!expense) {
       return res.status(404).json({ message: 'Expense record not found' });

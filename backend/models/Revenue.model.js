@@ -4,7 +4,8 @@ const revenueSchema = new mongoose.Schema({
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
-    required: [true, 'Project ID is required']
+    required: false, // Optional - allows general revenues not tied to a project
+    default: null
   },
   revenueCode: {
     type: String,

@@ -691,6 +691,15 @@ export const exportProject = async (req, res) => {
       } else if (status === 'overdue') {
         statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }; // Light red
         statusCell.font = { color: { argb: 'FFDC2626' }, bold: true }; // Dark red
+      } else if (status === 'partial') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Light blue
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true }; // Dark blue
+      } else if (status === 'unpaid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light yellow/orange
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true }; // Dark orange
+      } else if (status === 'uncollectible') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }; // Light red
+        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true }; // Dark red
       } else if (status === 'cancelled' || status === 'canceled') {
         statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }; // Light gray
         statusCell.font = { color: { argb: 'FF6B7280' }, bold: true }; // Dark gray
@@ -1241,6 +1250,15 @@ export const exportBillingCollections = async (req, res) => {
         statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light yellow/orange
         statusCell.font = { color: { argb: 'FFD97706' }, bold: true }; // Dark orange
       } else if (status === 'overdue') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }; // Light red
+        statusCell.font = { color: { argb: 'FFDC2626' }, bold: true }; // Dark red
+      } else if (status === 'partial') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Light blue
+        statusCell.font = { color: { argb: 'FF2563EB' }, bold: true }; // Dark blue
+      } else if (status === 'unpaid') {
+        statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light yellow/orange
+        statusCell.font = { color: { argb: 'FFD97706' }, bold: true }; // Dark orange
+      } else if (status === 'uncollectible') {
         statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }; // Light red
         statusCell.font = { color: { argb: 'FFDC2626' }, bold: true }; // Dark red
       } else if (status === 'cancelled' || status === 'canceled') {

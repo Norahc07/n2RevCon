@@ -26,7 +26,17 @@ router.post(
   '/',
   requirePermission(ACTIONS.EXPENSES),
   [
-    body('projectId').notEmpty().withMessage('Project ID is required'),
+    body('projectId')
+      .optional({ values: 'falsy' })
+      .custom((value) => {
+        // Allow null, undefined, or empty string for general expenses
+        if (!value || value === '' || value === null) {
+          return true;
+        }
+        // If provided, must be a valid MongoDB ID
+        return /^[0-9a-fA-F]{24}$/.test(value);
+      })
+      .withMessage('Project ID must be a valid MongoDB ID'),
     body('expenseCode').trim().notEmpty().withMessage('Expense code is required'),
     body('description').trim().notEmpty().withMessage('Description is required'),
     body('amount').isFloat({ min: 0 }).withMessage('Valid amount is required'),
@@ -42,6 +52,17 @@ router.put(
   '/:id',
   requirePermission(ACTIONS.EXPENSES),
   [
+    body('projectId')
+      .optional({ values: 'falsy' })
+      .custom((value) => {
+        // Allow null, undefined, or empty string for general expenses
+        if (!value || value === '' || value === null) {
+          return true;
+        }
+        // If provided, must be a valid MongoDB ID
+        return /^[0-9a-fA-F]{24}$/.test(value);
+      })
+      .withMessage('Project ID must be a valid MongoDB ID'),
     body('amount').optional().isFloat({ min: 0 }),
     body('date').optional().isISO8601(),
     validate,

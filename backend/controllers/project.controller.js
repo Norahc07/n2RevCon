@@ -112,7 +112,7 @@ export const updateProject = async (req, res) => {
 /**
  * @route   DELETE /api/projects/:id
  * @desc    Soft delete project (moves to recently deleted)
- * @access  Private (Admin only)
+ * @access  Private (Master Admin only)
  */
 export const deleteProject = async (req, res) => {
   try {
@@ -174,7 +174,7 @@ export const restoreProject = async (req, res) => {
 /**
  * @route   DELETE /api/projects/:id/permanent
  * @desc    Permanently delete a project
- * @access  Private (Admin only)
+ * @access  Private (Master Admin only)
  */
 export const permanentDeleteProject = async (req, res) => {
   try {

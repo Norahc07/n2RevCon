@@ -22,6 +22,7 @@ import {
   PlusIcon,
   CurrencyDollarIcon,
   ArrowTrendingDownIcon,
+  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -51,10 +52,32 @@ const ProjectsRevenueCosts = () => {
 
   // Table states
   const [searchQuery, setSearchQuery] = useState('');
+  const [generalSearchQuery, setGeneralSearchQuery] = useState(''); // Search for general expenses/revenues
   const [sortBy, setSortBy] = useState(''); // 'revenue', 'expenses', 'net'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [viewMode, setViewMode] = useState('projects'); // 'projects' or 'general'
+  
+  // Projects tab filter visibility
+  const [showProjectsFilters, setShowProjectsFilters] = useState(false);
+  
+  // General tab filter states
+  const [generalFilters, setGeneralFilters] = useState({
+    type: 'all', // 'all', 'revenue', 'expense'
+    revenueCategory: '',
+    expenseCategory: '',
+    revenueStatus: '',
+    expenseStatus: '',
+    dateFrom: '',
+    dateTo: '',
+  });
+  const [showGeneralFilters, setShowGeneralFilters] = useState(false);
+  
+  // General tab table view states
+  const [showAllRevenues, setShowAllRevenues] = useState(false);
+  const [showAllExpenses, setShowAllExpenses] = useState(false);
+  const GENERAL_TABLE_LIMIT = 10;
 
   // Edit modal states
   const [editingProject, setEditingProject] = useState(null);
@@ -396,6 +419,41 @@ const ProjectsRevenueCosts = () => {
     }
   };
 
+  const handleExportGeneralView = async () => {
+    try {
+      setExporting(true);
+      const params = {
+        generalOnly: true, // Flag to indicate we want general expenses/revenues only
+      };
+      
+      // Add date range if specified
+      if (generalFilters.dateFrom) {
+        params.startDate = new Date(generalFilters.dateFrom).toISOString();
+      }
+      if (generalFilters.dateTo) {
+        const endDate = new Date(generalFilters.dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        params.endDate = endDate.toISOString();
+      }
+      
+      // For now, we'll export all general expenses/revenues
+      // The backend can filter based on the generalOnly flag
+      const response = await exportAPI.exportRevenueCosts(params);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `General_Expenses_Revenue_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Export started');
+    } catch (error) {
+      toast.error('Failed to export data');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Handle edit project - open modal with revenue/expense records
   const handleEditProject = (project, e) => {
     e.stopPropagation();
@@ -420,6 +478,98 @@ const ProjectsRevenueCosts = () => {
     });
   }, [allExpenses, editingProject]);
 
+  // General expenses (expenses without a project) - filtered by search and filters
+  const generalExpenses = useMemo(() => {
+    let filtered = allExpenses.filter((e) => {
+      const projectId = e.projectId?._id || e.projectId;
+      return !projectId || projectId === null;
+    });
+    
+    // Apply search filter
+    if (generalSearchQuery) {
+      const query = generalSearchQuery.toLowerCase();
+      filtered = filtered.filter((e) => {
+        return (
+          e.expenseCode?.toLowerCase().includes(query) ||
+          e.description?.toLowerCase().includes(query)
+        );
+      });
+    }
+    
+    // Apply category filter
+    if (generalFilters.expenseCategory) {
+      filtered = filtered.filter((e) => e.category === generalFilters.expenseCategory);
+    }
+    
+    // Apply status filter
+    if (generalFilters.expenseStatus) {
+      filtered = filtered.filter((e) => e.status === generalFilters.expenseStatus);
+    }
+    
+    // Apply date range filter
+    if (generalFilters.dateFrom) {
+      filtered = filtered.filter((e) => {
+        const expenseDate = new Date(e.date);
+        return expenseDate >= new Date(generalFilters.dateFrom);
+      });
+    }
+    if (generalFilters.dateTo) {
+      filtered = filtered.filter((e) => {
+        const expenseDate = new Date(e.date);
+        expenseDate.setHours(23, 59, 59, 999); // Include the entire end date
+        return expenseDate <= new Date(generalFilters.dateTo);
+      });
+    }
+    
+    return filtered;
+  }, [allExpenses, generalSearchQuery, generalFilters]);
+
+  // General revenues (revenues without a project) - filtered by search and filters
+  const generalRevenues = useMemo(() => {
+    let filtered = allRevenues.filter((r) => {
+      const projectId = r.projectId?._id || r.projectId;
+      return !projectId || projectId === null;
+    });
+    
+    // Apply search filter
+    if (generalSearchQuery) {
+      const query = generalSearchQuery.toLowerCase();
+      filtered = filtered.filter((r) => {
+        return (
+          r.revenueCode?.toLowerCase().includes(query) ||
+          r.description?.toLowerCase().includes(query)
+        );
+      });
+    }
+    
+    // Apply category filter
+    if (generalFilters.revenueCategory) {
+      filtered = filtered.filter((r) => r.category === generalFilters.revenueCategory);
+    }
+    
+    // Apply status filter
+    if (generalFilters.revenueStatus) {
+      filtered = filtered.filter((r) => r.status === generalFilters.revenueStatus);
+    }
+    
+    // Apply date range filter
+    if (generalFilters.dateFrom) {
+      filtered = filtered.filter((r) => {
+        const revenueDate = new Date(r.date);
+        return revenueDate >= new Date(generalFilters.dateFrom);
+      });
+    }
+    if (generalFilters.dateTo) {
+      filtered = filtered.filter((r) => {
+        const revenueDate = new Date(r.date);
+        revenueDate.setHours(23, 59, 59, 999); // Include the entire end date
+        return revenueDate <= new Date(generalFilters.dateTo);
+      });
+    }
+    
+    return filtered;
+  }, [allRevenues, generalSearchQuery, generalFilters]);
+
   // Handle edit revenue
   const handleEditRevenue = (revenue) => {
     setEditingRevenue({
@@ -441,6 +591,7 @@ const ProjectsRevenueCosts = () => {
     e.preventDefault();
     try {
       await revenueAPI.update(editingRevenue._id, {
+        projectId: editingRevenue.projectId || null, // Allow null for general revenues
         revenueCode: editingRevenue.revenueCode,
         description: editingRevenue.description,
         amount: parseFloat(editingRevenue.amount),
@@ -462,6 +613,7 @@ const ProjectsRevenueCosts = () => {
     e.preventDefault();
     try {
       await expenseAPI.update(editingExpense._id, {
+        projectId: editingExpense.projectId || null, // Allow null for general expenses
         expenseCode: editingExpense.expenseCode,
         description: editingExpense.description,
         amount: parseFloat(editingExpense.amount),
@@ -508,16 +660,38 @@ const ProjectsRevenueCosts = () => {
     }
   };
 
+  // Handle add general expense to project
+  const handleAddExpenseToProject = async (expenseId, projectId) => {
+    try {
+      await expenseAPI.update(expenseId, {
+        projectId: projectId,
+      });
+      toast.success('Expense added to project successfully');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to add expense to project');
+    }
+  };
+
+  // Handle add general revenue to project
+  const handleAddRevenueToProject = async (revenueId, projectId) => {
+    try {
+      await revenueAPI.update(revenueId, {
+        projectId: projectId,
+      });
+      toast.success('Revenue added to project successfully');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to add revenue to project');
+    }
+  };
+
   // Handle add revenue
   const handleAddRevenue = async (e) => {
     e.preventDefault();
-    if (!newRevenue.projectId) {
-      toast.error('Please select a project');
-      return;
-    }
     try {
       await revenueAPI.create({
-        projectId: newRevenue.projectId,
+        projectId: newRevenue.projectId || null, // Allow null for general revenues
         revenueCode: newRevenue.revenueCode,
         description: newRevenue.description,
         amount: parseFloat(newRevenue.amount),
@@ -547,13 +721,9 @@ const ProjectsRevenueCosts = () => {
   // Handle add expense
   const handleAddExpense = async (e) => {
     e.preventDefault();
-    if (!newExpense.projectId) {
-      toast.error('Please select a project');
-      return;
-    }
     try {
       await expenseAPI.create({
-        projectId: newExpense.projectId,
+        projectId: newExpense.projectId || null, // Allow null for general expenses
         expenseCode: newExpense.expenseCode,
         description: newExpense.description,
         amount: parseFloat(newExpense.amount),
@@ -638,136 +808,6 @@ const ProjectsRevenueCosts = () => {
         )}
       </div>
 
-      {/* Filter Section */}
-      <div className="card p-4 shadow-md">
-        <div className="flex items-center gap-2 mb-3">
-          <FunnelIcon className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Year
-            </label>
-            <div className="relative">
-              <select
-                value={filterYear}
-                onChange={(e) => setFilterYear(e.target.value)}
-                onFocus={() => setFocusedDropdown('year')}
-                onBlur={() => setFocusedDropdown(null)}
-                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
-              >
-                <option value="">All Years</option>
-                {availableYears.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-              {focusedDropdown === 'year' ? (
-                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              ) : (
-                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              )}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Month
-            </label>
-            <div className="relative">
-              <select
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-                onFocus={() => setFocusedDropdown('month')}
-                onBlur={() => setFocusedDropdown(null)}
-                disabled={!filterYear}
-                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
-              >
-                <option value="">All Months</option>
-                <option value="1">January</option>
-                <option value="2">February</option>
-                <option value="3">March</option>
-                <option value="4">April</option>
-                <option value="5">May</option>
-                <option value="6">June</option>
-                <option value="7">July</option>
-                <option value="8">August</option>
-                <option value="9">September</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
-              </select>
-              {focusedDropdown === 'month' ? (
-                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              ) : (
-                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              )}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
-            <div className="relative">
-              <select
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                onFocus={() => setFocusedDropdown('project')}
-                onBlur={() => setFocusedDropdown(null)}
-                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
-              >
-                <option value="all">All Projects</option>
-                {projects.map((project) => (
-                  <option key={project._id} value={project._id}>
-                    {project.projectName} ({project.projectCode})
-                  </option>
-                ))}
-              </select>
-              {focusedDropdown === 'project' ? (
-                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              ) : (
-                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              )}
-            </div>
-          </div>
-          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
-            <button
-              onClick={handleApplyFilters}
-              className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
-            >
-              Apply Filter
-            </button>
-          </div>
-          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
-            <button
-              onClick={handleExportCurrentView}
-              disabled={exporting || tableData.length === 0}
-              className="w-full items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex h-[38px]"
-            >
-              {exporting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                  <span className="hidden sm:inline">Exporting...</span>
-                </>
-              ) : (
-                <>
-                  <DocumentArrowDownIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export to Excel</span>
-                  <span className="sm:hidden">Export</span>
-                </>
-              )}
-            </button>
-            <button
-              onClick={handleResetFilters}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors h-[38px]"
-              title="Reset Filters"
-            >
-              <ArrowPathIcon className="w-4 h-4" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card shadow-md">
@@ -786,23 +826,410 @@ const ProjectsRevenueCosts = () => {
         </div>
       </div>
 
-      {/* Project Financial Table */}
+      {/* Project Financial Table / General Expenses & Revenue View */}
       <div className="card shadow-md">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Project Revenue & Expenses Breakdown</h2>
+          <h2 className="text-xl font-semibold text-gray-800">
+            {viewMode === 'projects' ? 'Project Revenue & Expenses Breakdown' : 'General Expenses/Revenue (Not Tied to Projects)'}
+          </h2>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-2 border border-gray-300 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('projects')}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  viewMode === 'projects'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Projects
+              </button>
+              <button
+                onClick={() => setViewMode('general')}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  viewMode === 'general'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                General
+              </button>
+            </div>
           <div className="relative">
             <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by Project ID or Client..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={viewMode === 'projects' ? "Search by Project ID or Client..." : "Search by Code or Description..."}
+                value={viewMode === 'projects' ? searchQuery : generalSearchQuery}
+                onChange={(e) => viewMode === 'projects' ? setSearchQuery(e.target.value) : setGeneralSearchQuery(e.target.value)}
               className="pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 w-full sm:w-64"
             />
+            </div>
           </div>
         </div>
 
+        {/* Projects Tab Filters */}
+        {viewMode === 'projects' && (
+          <div className="mb-4 border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FunnelIcon className="w-5 h-5 text-gray-600" />
+                <h3 className="text-sm font-semibold text-gray-800">Filters</h3>
+                <button
+                  onClick={() => setShowProjectsFilters(!showProjectsFilters)}
+                  className="text-xs text-gray-600 hover:text-gray-800"
+                >
+                  {showProjectsFilters ? 'Hide' : 'Show'} Filters
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportCurrentView}
+                  disabled={exporting || tableData.length === 0}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-[38px]"
+                >
+                  {exporting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                      <span className="hidden sm:inline">Exporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <DocumentArrowDownIcon className="w-4 h-4" />
+                      <span className="hidden sm:inline">Export to Excel</span>
+                      <span className="sm:hidden">Export</span>
+                    </>
+                  )}
+                </button>
+                {(appliedFilters.year || appliedFilters.month || appliedFilters.project !== 'all') && (
+                  <button
+                    onClick={handleResetFilters}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors h-[38px]"
+                    title="Reset Filters"
+                  >
+                    <ArrowPathIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </button>
+                )}
+              </div>
+            </div>
+            {showProjectsFilters && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Year
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={filterYear}
+                      onChange={(e) => setFilterYear(e.target.value)}
+                      onFocus={() => setFocusedDropdown('year')}
+                      onBlur={() => setFocusedDropdown(null)}
+                      className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                    >
+                      <option value="">All Years</option>
+                      {availableYears.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                    {focusedDropdown === 'year' ? (
+                      <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                    ) : (
+                      <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Month
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={filterMonth}
+                      onChange={(e) => setFilterMonth(e.target.value)}
+                      onFocus={() => setFocusedDropdown('month')}
+                      onBlur={() => setFocusedDropdown(null)}
+                      disabled={!filterYear}
+                      className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
+                    >
+                      <option value="">All Months</option>
+                      <option value="1">January</option>
+                      <option value="2">February</option>
+                      <option value="3">March</option>
+                      <option value="4">April</option>
+                      <option value="5">May</option>
+                      <option value="6">June</option>
+                      <option value="7">July</option>
+                      <option value="8">August</option>
+                      <option value="9">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                    {focusedDropdown === 'month' ? (
+                      <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                    ) : (
+                      <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
+                  <div className="relative">
+                    <select
+                      value={selectedProject}
+                      onChange={(e) => setSelectedProject(e.target.value)}
+                      onFocus={() => setFocusedDropdown('project')}
+                      onBlur={() => setFocusedDropdown(null)}
+                      className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                    >
+                      <option value="all">All Projects</option>
+                      {projects.map((project) => (
+                        <option key={project._id} value={project._id}>
+                          {project.projectName} ({project.projectCode})
+                        </option>
+                      ))}
+                    </select>
+                    {focusedDropdown === 'project' ? (
+                      <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                    ) : (
+                      <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={handleApplyFilters}
+                    className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
+                  >
+                    Apply Filter
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* General Tab Filters */}
+        {viewMode === 'general' && (
+          <div className="mb-4 border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FunnelIcon className="w-5 h-5 text-gray-600" />
+                <h3 className="text-sm font-semibold text-gray-800">Filters</h3>
+                <button
+                  onClick={() => setShowGeneralFilters(!showGeneralFilters)}
+                  className="text-xs text-gray-600 hover:text-gray-800"
+                >
+                  {showGeneralFilters ? 'Hide' : 'Show'} Filters
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportGeneralView}
+                  disabled={exporting || (generalRevenues.length === 0 && generalExpenses.length === 0)}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-[38px]"
+                >
+                  {exporting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                      <span className="hidden sm:inline">Exporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <DocumentArrowDownIcon className="w-4 h-4" />
+                      <span className="hidden sm:inline">Export to Excel</span>
+                      <span className="sm:hidden">Export</span>
+                    </>
+                  )}
+                </button>
+                {(generalFilters.type !== 'all' || 
+                  generalFilters.revenueCategory || 
+                  generalFilters.expenseCategory || 
+                  generalFilters.revenueStatus || 
+                  generalFilters.expenseStatus || 
+                  generalFilters.dateFrom || 
+                  generalFilters.dateTo) && (
+                  <button
+                    onClick={() => {
+                      setGeneralFilters({
+                        type: 'all',
+                        revenueCategory: '',
+                        expenseCategory: '',
+                        revenueStatus: '',
+                        expenseStatus: '',
+                        dateFrom: '',
+                        dateTo: '',
+                      });
+                    }}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors h-[38px]"
+                    title="Reset Filters"
+                  >
+                    <ArrowPathIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </button>
+                )}
+              </div>
+            </div>
+            {showGeneralFilters && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Type</label>
+                  <div className="relative">
+                    <select
+                      value={generalFilters.type}
+                      onChange={(e) => setGeneralFilters({ ...generalFilters, type: e.target.value })}
+                      onFocus={() => setFocusedDropdown('generalType')}
+                      onBlur={() => setFocusedDropdown(null)}
+                      className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                    >
+                      <option value="all">All (Revenue & Expense)</option>
+                      <option value="revenue">Revenue Only</option>
+                      <option value="expense">Expense Only</option>
+                    </select>
+                    {focusedDropdown === 'generalType' ? (
+                      <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                    ) : (
+                      <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                    )}
+                  </div>
+                </div>
+                {generalFilters.type !== 'expense' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Revenue Category</label>
+                    <div className="relative">
+                      <select
+                        value={generalFilters.revenueCategory}
+                        onChange={(e) => setGeneralFilters({ ...generalFilters, revenueCategory: e.target.value })}
+                        onFocus={() => setFocusedDropdown('generalRevenueCategory')}
+                        onBlur={() => setFocusedDropdown(null)}
+                        className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                      >
+                        <option value="">All Categories</option>
+                        <option value="service">Service</option>
+                        <option value="product">Product</option>
+                        <option value="consultation">Consultation</option>
+                        <option value="other">Other</option>
+                      </select>
+                      {focusedDropdown === 'generalRevenueCategory' ? (
+                        <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      ) : (
+                        <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      )}
+                    </div>
+                  </div>
+                )}
+                {generalFilters.type !== 'revenue' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Expense Category</label>
+                    <div className="relative">
+                      <select
+                        value={generalFilters.expenseCategory}
+                        onChange={(e) => setGeneralFilters({ ...generalFilters, expenseCategory: e.target.value })}
+                        onFocus={() => setFocusedDropdown('generalExpenseCategory')}
+                        onBlur={() => setFocusedDropdown(null)}
+                        className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                      >
+                        <option value="">All Categories</option>
+                        <option value="labor">Labor</option>
+                        <option value="materials">Materials</option>
+                        <option value="equipment">Equipment</option>
+                        <option value="travel">Travel</option>
+                        <option value="overhead">Overhead</option>
+                        <option value="other">Other</option>
+                      </select>
+                      {focusedDropdown === 'generalExpenseCategory' ? (
+                        <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      ) : (
+                        <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      )}
+                    </div>
+                  </div>
+                )}
+                {generalFilters.type !== 'expense' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Revenue Status</label>
+                    <div className="relative">
+                      <select
+                        value={generalFilters.revenueStatus}
+                        onChange={(e) => setGeneralFilters({ ...generalFilters, revenueStatus: e.target.value })}
+                        onFocus={() => setFocusedDropdown('generalRevenueStatus')}
+                        onBlur={() => setFocusedDropdown(null)}
+                        className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                      >
+                        <option value="">All Statuses</option>
+                        <option value="recorded">Recorded</option>
+                        <option value="confirmed">Confirmed</option>
+                      </select>
+                      {focusedDropdown === 'generalRevenueStatus' ? (
+                        <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      ) : (
+                        <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      )}
+                    </div>
+                  </div>
+                )}
+                {generalFilters.type !== 'revenue' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Expense Status</label>
+                    <div className="relative">
+                      <select
+                        value={generalFilters.expenseStatus}
+                        onChange={(e) => setGeneralFilters({ ...generalFilters, expenseStatus: e.target.value })}
+                        onFocus={() => setFocusedDropdown('generalExpenseStatus')}
+                        onBlur={() => setFocusedDropdown(null)}
+                        className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                      >
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="paid">Paid</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                      {focusedDropdown === 'generalExpenseStatus' ? (
+                        <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      ) : (
+                        <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Date From</label>
+                  <input
+                    type="date"
+                    value={generalFilters.dateFrom}
+                    onChange={(e) => setGeneralFilters({ ...generalFilters, dateFrom: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Date To</label>
+                  <input
+                    type="date"
+                    value={generalFilters.dateTo}
+                    onChange={(e) => setGeneralFilters({ ...generalFilters, dateTo: e.target.value })}
+                    min={generalFilters.dateFrom || undefined}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => toast.success('Filters applied')}
+                    className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
+                  >
+                    Apply Filter
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="overflow-x-auto">
+          {viewMode === 'projects' ? (
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100">
@@ -905,9 +1332,145 @@ const ProjectsRevenueCosts = () => {
               )}
             </tbody>
           </table>
+          ) : (
+            <div className="space-y-6">
+              {/* General Revenues Section - Show if type is 'all' or 'revenue' */}
+              {(generalFilters.type === 'all' || generalFilters.type === 'revenue') && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-green-600">General Revenues (Not Tied to Projects)</h3>
+                    {generalRevenues.length > GENERAL_TABLE_LIMIT && (
+                      <button
+                        onClick={() => setShowAllRevenues(!showAllRevenues)}
+                        className="text-sm text-red-600 hover:text-red-700 font-medium px-3 py-1 border border-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                      >
+                        {showAllRevenues ? 'Show Less' : `View All (${generalRevenues.length})`}
+                      </button>
+                    )}
+                  </div>
+                  {generalRevenues.length === 0 ? (
+                    <p className="text-gray-500 text-sm py-4">No general revenue records found</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border border-gray-300">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Code</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Description</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Amount</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Date</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Category</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Status</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(showAllRevenues ? generalRevenues : generalRevenues.slice(0, GENERAL_TABLE_LIMIT)).map((rev) => (
+                            <tr key={rev._id} className="hover:bg-gray-50">
+                              <td className="border border-gray-300 px-3 py-2 text-sm">{rev.revenueCode}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm">{rev.description}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-green-600">{formatCurrency(rev.amount)}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(rev.date).toLocaleDateString()}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm capitalize">{rev.category || 'N/A'}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm capitalize">{rev.status || 'N/A'}</td>
+                              <td className="border border-gray-300 px-3 py-2">
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleEditRevenue(rev)}
+                                    className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
+                                    title="Edit"
+                                  >
+                                    <PencilIcon className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeleteRevenue(rev._id, e)}
+                                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                    title="Delete"
+                                  >
+                                    <TrashIcon className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* General Expenses Section - Show if type is 'all' or 'expense' */}
+              {(generalFilters.type === 'all' || generalFilters.type === 'expense') && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-red-600">General Expenses (Not Tied to Projects)</h3>
+                    {generalExpenses.length > GENERAL_TABLE_LIMIT && (
+                      <button
+                        onClick={() => setShowAllExpenses(!showAllExpenses)}
+                        className="text-sm text-red-600 hover:text-red-700 font-medium px-3 py-1 border border-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                      >
+                        {showAllExpenses ? 'Show Less' : `View All (${generalExpenses.length})`}
+                      </button>
+                    )}
+                  </div>
+                  {generalExpenses.length === 0 ? (
+                    <p className="text-gray-500 text-sm py-4">No general expense records found</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border border-gray-300">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Code</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Description</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Amount</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Date</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Category</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Status</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(showAllExpenses ? generalExpenses : generalExpenses.slice(0, GENERAL_TABLE_LIMIT)).map((exp) => (
+                            <tr key={exp._id} className="hover:bg-gray-50">
+                              <td className="border border-gray-300 px-3 py-2 text-sm">{exp.expenseCode}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm">{exp.description}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-red-600">{formatCurrency(exp.amount)}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(exp.date).toLocaleDateString()}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm capitalize">{exp.category || 'N/A'}</td>
+                              <td className="border border-gray-300 px-3 py-2 text-sm capitalize">{exp.status || 'N/A'}</td>
+                              <td className="border border-gray-300 px-3 py-2">
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleEditExpense(exp)}
+                                    className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
+                                    title="Edit"
+                                  >
+                                    <PencilIcon className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeleteExpense(exp._id, e)}
+                                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                    title="Delete"
+                                  >
+                                    <TrashIcon className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Table Footer with Summary and Pagination */}
+        {viewMode === 'projects' && (
         <div className="bg-gray-50 border-t-2 border-gray-200 px-3 sm:px-4 py-2 sm:py-3 space-y-3">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs sm:text-sm text-gray-600">
             <div className="flex flex-col sm:flex-row items-center gap-2">
@@ -990,12 +1553,13 @@ const ProjectsRevenueCosts = () => {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Edit Project Modal - Shows Revenue & Expense Records */}
       {showEditModal && editingProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Records - {editingProject.projectName}</h2>
               <button onClick={() => {
@@ -1058,6 +1622,54 @@ const ProjectsRevenueCosts = () => {
               )}
             </div>
 
+            {/* General Revenues Section - Show all general revenues (not tied to any project) */}
+            {generalRevenues.length > 0 && (
+              <div className="mt-6 pt-6 border-t-2 border-gray-300">
+                <h3 className="text-lg font-semibold mb-3 text-orange-600">General Revenues (Not Tied to Projects)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border border-gray-300">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Code</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Description</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Amount</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Date</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {generalRevenues.map((rev) => (
+                        <tr key={rev._id} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{rev.revenueCode}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{rev.description}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-green-600">{formatCurrency(rev.amount)}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(rev.date).toLocaleDateString()}</td>
+                          <td className="border border-gray-300 px-3 py-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleAddRevenueToProject(rev._id, editingProject._id)}
+                                className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                                title="Add to Project"
+                              >
+                                <PlusIcon className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteRevenue(rev._id, e)}
+                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {/* Expense Records Section */}
             <div>
               <h3 className="text-lg font-semibold mb-3 text-red-600">Expense Records</h3>
@@ -1107,14 +1719,62 @@ const ProjectsRevenueCosts = () => {
                 </div>
               )}
             </div>
+
+            {/* General Expenses Section - Show all general expenses (not tied to any project) */}
+            {generalExpenses.length > 0 && (
+              <div className="mt-6 pt-6 border-t-2 border-gray-300">
+                <h3 className="text-lg font-semibold mb-3 text-orange-600">General Expenses (Not Tied to Projects)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border border-gray-300">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Code</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Description</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Amount</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Date</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {generalExpenses.map((exp) => (
+                        <tr key={exp._id} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{exp.expenseCode}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{exp.description}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm font-semibold text-red-600">{formatCurrency(exp.amount)}</td>
+                          <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(exp.date).toLocaleDateString()}</td>
+                          <td className="border border-gray-300 px-3 py-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleAddExpenseToProject(exp._id, editingProject._id)}
+                                className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                                title="Add to Project"
+                              >
+                                <PlusIcon className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteExpense(exp._id, e)}
+                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                title="Delete"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Edit Revenue Modal - Same structure as Add Revenue Modal */}
       {editingRevenue && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Revenue Record</h2>
               <button onClick={() => setEditingRevenue(null)} className="text-gray-500 hover:text-gray-700">
@@ -1122,6 +1782,22 @@ const ProjectsRevenueCosts = () => {
               </button>
             </div>
             <form onSubmit={handleUpdateRevenue} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Project</label>
+                <select
+                  value={editingRevenue.projectId || ''}
+                  onChange={(e) => setEditingRevenue({ ...editingRevenue, projectId: e.target.value || '' })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
+                >
+                  <option value="">General Revenue (No Project)</option>
+                  {projects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.projectName} ({project.projectCode})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Leave as "General Revenue" for revenues not tied to a specific project</p>
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Revenue Code *</label>
                 <input
@@ -1212,8 +1888,8 @@ const ProjectsRevenueCosts = () => {
 
       {/* Edit Expense Modal - Same structure as Add Expense Modal */}
       {editingExpense && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Expense Record</h2>
               <button onClick={() => setEditingExpense(null)} className="text-gray-500 hover:text-gray-700">
@@ -1221,6 +1897,22 @@ const ProjectsRevenueCosts = () => {
               </button>
             </div>
             <form onSubmit={handleUpdateExpense} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Project</label>
+                <select
+                  value={editingExpense.projectId || ''}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, projectId: e.target.value || '' })}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                >
+                  <option value="">General Expense (No Project)</option>
+                  {projects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.projectName} ({project.projectCode})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Leave as "General Expense" for expenses not tied to a specific project</p>
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Expense Code *</label>
                 <input
@@ -1315,8 +2007,8 @@ const ProjectsRevenueCosts = () => {
 
       {/* Add Type Selection Modal */}
       {showAddTypeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md m-4">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-800">Add New Record</h2>
               <button onClick={() => setShowAddTypeModal(false)} className="text-gray-500 hover:text-gray-700">
@@ -1360,8 +2052,8 @@ const ProjectsRevenueCosts = () => {
 
       {/* Add Revenue Modal */}
       {showAddRevenueModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-green-600">Add Revenue Record</h2>
               <button onClick={() => setShowAddRevenueModal(false)} className="text-gray-500 hover:text-gray-700">
@@ -1370,20 +2062,20 @@ const ProjectsRevenueCosts = () => {
             </div>
             <form onSubmit={handleAddRevenue} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Project *</label>
+                <label className="block text-sm font-medium mb-1">Project</label>
                 <select
                   value={newRevenue.projectId}
-                  onChange={(e) => setNewRevenue({ ...newRevenue, projectId: e.target.value })}
+                  onChange={(e) => setNewRevenue({ ...newRevenue, projectId: e.target.value || '' })}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600"
-                  required
                 >
-                  <option value="">Select a project</option>
+                  <option value="">General Revenue (No Project)</option>
                   {projects.map((project) => (
                     <option key={project._id} value={project._id}>
                       {project.projectName} ({project.projectCode})
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">Leave as "General Revenue" for revenues not tied to a specific project</p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Revenue Code *</label>
@@ -1479,8 +2171,8 @@ const ProjectsRevenueCosts = () => {
 
       {/* Add Expense Modal */}
       {showAddExpenseModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-red-600">Add Expense Record</h2>
               <button onClick={() => setShowAddExpenseModal(false)} className="text-gray-500 hover:text-gray-700">
@@ -1489,20 +2181,20 @@ const ProjectsRevenueCosts = () => {
             </div>
             <form onSubmit={handleAddExpense} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Project *</label>
+                <label className="block text-sm font-medium mb-1">Project</label>
                 <select
                   value={newExpense.projectId}
-                  onChange={(e) => setNewExpense({ ...newExpense, projectId: e.target.value })}
+                  onChange={(e) => setNewExpense({ ...newExpense, projectId: e.target.value || '' })}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-                  required
                 >
-                  <option value="">Select a project</option>
+                  <option value="">General Expense (No Project)</option>
                   {projects.map((project) => (
                     <option key={project._id} value={project._id}>
                       {project.projectName} ({project.projectCode})
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">Leave as "General Expense" for expenses not tied to a specific project</p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Expense Code *</label>
