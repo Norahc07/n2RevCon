@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import { userAPI } from '../services/api';
+import { getRoleDisplayName, ROLES } from '../config/permissions';
+import { usePermissions } from '../hooks/usePermissions';
 import toast from 'react-hot-toast';
 import {
   UserIcon,
@@ -20,6 +22,12 @@ import {
 const AccountSettings = () => {
   const { user, updateUser } = useAuth();
   const location = useLocation();
+  const { role } = usePermissions();
+  
+  // Check if user is Master Admin or System Admin
+  const isMasterAdmin = role === ROLES.MASTER_ADMIN;
+  const isSystemAdmin = role === ROLES.SYSTEM_ADMIN;
+  const canChangePasswordDirectly = isMasterAdmin || isSystemAdmin;
   
   // Get active tab from route
   const getActiveTab = () => {
@@ -48,6 +56,19 @@ const AccountSettings = () => {
 
   // Password change request
   const [passwordRequestLoading, setPasswordRequestLoading] = useState(false);
+  
+  // Direct password change form (for Master Admin and System Admin)
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
 
 
 
@@ -150,6 +171,53 @@ const AccountSettings = () => {
       toast.error(error.response?.data?.message || 'Failed to send verification email');
     } finally {
       setPasswordRequestLoading(false);
+    }
+  };
+
+  const handleDirectPasswordChange = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast.error('Please fill in all password fields');
+      return;
+    }
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error('New password and confirm password do not match');
+      return;
+    }
+    
+    if (passwordForm.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long');
+      return;
+    }
+    
+    try {
+      setPasswordChangeLoading(true);
+      const userId = user?.id || user?._id;
+      if (!userId) {
+        toast.error('User ID not found');
+        return;
+      }
+      
+      await userAPI.updatePassword(userId, {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      
+      toast.success('Password changed successfully');
+      
+      // Reset form
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to change password');
+    } finally {
+      setPasswordChangeLoading(false);
     }
   };
 
@@ -357,26 +425,132 @@ const AccountSettings = () => {
                 </div>
               </div>
 
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                <p className="text-sm text-blue-800">
-                  <strong>Secure Password Change:</strong> For your security, password changes require email verification. 
-                  Click the button below to receive a verification link in your email.
-                </p>
-              </div>
+              {/* Direct Password Change Form - Master Admin and System Admin */}
+              {canChangePasswordDirectly ? (
+                <form onSubmit={handleDirectPasswordChange} className="space-y-6">
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <p className="text-sm text-blue-800">
+                      <strong>Direct Password Change:</strong> As an administrator, you can change your password directly without email verification.
+                    </p>
+                  </div>
 
-              <div>
-                <button
-                  onClick={handleRequestPasswordChange}
-                  disabled={passwordRequestLoading}
-                  className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
-                >
-                  <LockClosedIcon className="w-5 h-5" />
-                  {passwordRequestLoading ? 'Sending...' : 'Request Password Change'}
-                </button>
-                <p className="text-xs text-gray-500 mt-2">
-                  A verification link will be sent to {user?.email}
-                </p>
-              </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Current Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword.current ? 'text' : 'password'}
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                        className="w-full px-4 py-3 pr-10 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
+                        placeholder="Enter your current password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword({ ...showPassword, current: !showPassword.current })}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword.current ? (
+                          <EyeSlashIcon className="w-5 h-5" />
+                        ) : (
+                          <EyeIcon className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      New Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword.new ? 'text' : 'password'}
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        className="w-full px-4 py-3 pr-10 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
+                        placeholder="Enter your new password (min. 8 characters)"
+                        required
+                        minLength={8}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword({ ...showPassword, new: !showPassword.new })}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword.new ? (
+                          <EyeSlashIcon className="w-5 h-5" />
+                        ) : (
+                          <EyeIcon className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Password must be at least 8 characters long</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Confirm New Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword.confirm ? 'text' : 'password'}
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                        className="w-full px-4 py-3 pr-10 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors duration-200"
+                        placeholder="Confirm your new password"
+                        required
+                        minLength={8}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword({ ...showPassword, confirm: !showPassword.confirm })}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword.confirm ? (
+                          <EyeSlashIcon className="w-5 h-5" />
+                        ) : (
+                          <EyeIcon className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={passwordChangeLoading}
+                    className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+                  >
+                    {passwordChangeLoading ? 'Changing Password...' : 'Change Password'}
+                  </button>
+                </form>
+              ) : (
+                /* Email Verification Flow - Other Roles */
+                <>
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <p className="text-sm text-blue-800">
+                      <strong>Secure Password Change:</strong> For your security, password changes require email verification. 
+                      Click the button below to receive a verification link in your email.
+                    </p>
+                  </div>
+
+                  <div>
+                    <button
+                      onClick={handleRequestPasswordChange}
+                      disabled={passwordRequestLoading}
+                      className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+                    >
+                      <LockClosedIcon className="w-5 h-5" />
+                      {passwordRequestLoading ? 'Sending...' : 'Request Password Change'}
+                    </button>
+                    <p className="text-xs text-gray-500 mt-2">
+                      A verification link will be sent to {user?.email}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -494,16 +668,49 @@ const AccountSettings = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-200 shadow-sm">
                   <p className="text-sm font-semibold text-blue-600 uppercase mb-2">Role</p>
-                  <p className="text-xl font-bold text-gray-900">Administrator</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {user?.role ? getRoleDisplayName(user.role) : 'N/A'}
+                  </p>
                 </div>
 
                 <div className="p-5 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border-2 border-green-200 shadow-sm">
                   <p className="text-sm font-semibold text-green-600 uppercase mb-2">Account Status</p>
                   <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-full ${user?.isActive ? 'bg-green-500' : 'bg-red-500'} shadow-sm`}></div>
-                    <p className="text-xl font-bold text-gray-900">
-                      {user?.isActive ? 'Active' : 'Deactivated'}
-                    </p>
+                    {(() => {
+                      // Determine status based on accountStatus and isActive
+                      let status = 'Unknown';
+                      let statusColor = 'bg-gray-500';
+                      
+                      if (user?.accountStatus) {
+                        if (user.accountStatus === 'approved' && user?.isActive) {
+                          status = 'Active';
+                          statusColor = 'bg-green-500';
+                        } else if (user.accountStatus === 'approved' && !user?.isActive) {
+                          status = 'Deactivated';
+                          statusColor = 'bg-red-500';
+                        } else if (user.accountStatus === 'pending') {
+                          status = 'Pending Approval';
+                          statusColor = 'bg-yellow-500';
+                        } else if (user.accountStatus === 'rejected') {
+                          status = 'Rejected';
+                          statusColor = 'bg-red-500';
+                        } else {
+                          status = user.accountStatus.charAt(0).toUpperCase() + user.accountStatus.slice(1);
+                          statusColor = user.accountStatus === 'approved' ? 'bg-green-500' : 'bg-gray-500';
+                        }
+                      } else if (user?.isActive !== undefined) {
+                        // Fallback to isActive if accountStatus is not available
+                        status = user.isActive ? 'Active' : 'Deactivated';
+                        statusColor = user.isActive ? 'bg-green-500' : 'bg-red-500';
+                      }
+                      
+                      return (
+                        <>
+                          <div className={`w-4 h-4 rounded-full ${statusColor} shadow-sm`}></div>
+                          <p className="text-xl font-bold text-gray-900">{status}</p>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 

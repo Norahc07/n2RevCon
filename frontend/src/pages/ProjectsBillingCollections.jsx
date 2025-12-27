@@ -26,11 +26,34 @@ import {
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { usePermissions } from '../hooks/usePermissions';
+import { ROLES } from '../config/permissions';
 import { TableSkeleton, FilterSkeleton, CardSkeleton } from '../components/skeletons';
 
 const ProjectsBillingCollections = () => {
   const navigate = useNavigate();
-  const { canDeleteProject } = usePermissions();
+  const { canDeleteProject, canAccessBilling, canAccessCollection, canViewReports, role } = usePermissions();
+  // Only Master Admin and System Admin can edit projects
+  const canCreateEditProject = role === 'master_admin' || role === 'system_admin';
+  
+  // Redirect if user doesn't have VIEW_REPORTS permission
+  useEffect(() => {
+    if (canViewReports === false) {
+      navigate('/dashboard');
+      toast.error('You do not have permission to view this page');
+    }
+  }, [canViewReports, navigate]);
+  
+  // Show loading or access denied if user doesn't have VIEW_REPORTS
+  if (canViewReports === false) {
+    return (
+      <div className="space-y-6">
+        <div className="card p-6 shadow-md text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You do not have permission to view this page.</p>
+        </div>
+      </div>
+    );
+  }
   const [projects, setProjects] = useState([]);
   const [allBillings, setAllBillings] = useState([]);
   const [allCollections, setAllCollections] = useState([]);
@@ -49,6 +72,9 @@ const ProjectsBillingCollections = () => {
   
   // Dropdown focus states
   const [focusedDropdown, setFocusedDropdown] = useState(null);
+  
+  // Filter visibility state
+  const [showFilters, setShowFilters] = useState(false);
 
   // Table states
   const [searchQuery, setSearchQuery] = useState('');
@@ -789,140 +815,38 @@ const ProjectsBillingCollections = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Billings & Collections</h1>
-        <button
-          onClick={() => setShowAddTypeModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-        >
-          <PlusIcon className="w-5 h-5" />
-          <span className="hidden sm:inline">Add Billing/Collection</span>
-          <span className="sm:hidden">Add</span>
-        </button>
-      </div>
-
-      {/* Filter Section */}
-      <div className="card p-4 shadow-md">
-        <div className="flex items-center gap-2 mb-3">
-          <FunnelIcon className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Year</label>
-            <div className="relative">
-              <select
-                value={filterYear}
-                onChange={(e) => setFilterYear(e.target.value)}
-                onFocus={() => setFocusedDropdown('year')}
-                onBlur={() => setFocusedDropdown(null)}
-                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
-              >
-                <option value="">All Years</option>
-                {availableYears.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-              {focusedDropdown === 'year' ? (
-                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              ) : (
-                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              )}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Month</label>
-            <div className="relative">
-              <select
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-                onFocus={() => setFocusedDropdown('month')}
-                onBlur={() => setFocusedDropdown(null)}
-                disabled={!filterYear}
-                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
-              >
-                <option value="">All Months</option>
-                <option value="1">January</option>
-                <option value="2">February</option>
-                <option value="3">March</option>
-                <option value="4">April</option>
-                <option value="5">May</option>
-                <option value="6">June</option>
-                <option value="7">July</option>
-                <option value="8">August</option>
-                <option value="9">September</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
-              </select>
-              {focusedDropdown === 'month' ? (
-                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              ) : (
-                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              )}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
-            <div className="relative">
-              <select
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                onFocus={() => setFocusedDropdown('project')}
-                onBlur={() => setFocusedDropdown(null)}
-                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
-              >
-                <option value="all">All Projects</option>
-                {projects.map((project) => (
-                  <option key={project._id} value={project._id}>
-                    {project.projectName} ({project.projectCode})
-                  </option>
-                ))}
-              </select>
-              {focusedDropdown === 'project' ? (
-                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              ) : (
-                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-              )}
-            </div>
-          </div>
-          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
-            <button
-              onClick={handleApplyFilters}
-              className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
-            >
-              Apply Filter
-            </button>
-          </div>
-          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
-            <button
-              onClick={handleExportCurrentFilter}
-              disabled={exporting || tableData.length === 0}
-              className="w-full items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex h-[38px]"
-            >
-              {exporting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                  <span className="hidden sm:inline">Exporting...</span>
-                </>
-              ) : (
-                <>
-                  <DocumentArrowDownIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export to Excel</span>
-                  <span className="sm:hidden">Export</span>
-                </>
-              )}
-            </button>
-            <button
-              onClick={handleResetFilters}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors h-[38px]"
-              title="Reset Filters"
-            >
-              <ArrowPathIcon className="w-4 h-4" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-          </div>
-        </div>
+        {/* Add Button - Role-specific behavior */}
+        {role === ROLES.BILLING_OFFICER && canAccessBilling && (
+          <button
+            onClick={() => setShowAddBillingModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">Add Billing</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        )}
+        {role === ROLES.COLLECTING_OFFICER && canAccessCollection && (
+          <button
+            onClick={() => setShowAddCollectionModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">Add Collection</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        )}
+        {/* Master Admin and users with both permissions see type selection modal */}
+        {(role === ROLES.MASTER_ADMIN || (canAccessBilling && canAccessCollection)) && (
+          <button
+            onClick={() => setShowAddTypeModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">Add Billing/Collection</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        )}
       </div>
 
       {/* KPI Cards */}
@@ -985,27 +909,183 @@ const ProjectsBillingCollections = () => {
                 className="pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 w-full sm:w-64"
               />
             </div>
-            <select
-              value={billingStatusFilter}
-              onChange={(e) => setBillingStatusFilter(e.target.value)}
-              className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-            >
-              <option value="all">All Billing Status</option>
-              <option value="billed">Billed</option>
-              <option value="unbilled">Unbilled</option>
-              <option value="draft">Draft</option>
-            </select>
-            <select
-              value={paymentStatusFilter}
-              onChange={(e) => setPaymentStatusFilter(e.target.value)}
-              className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-            >
-              <option value="all">All Payment Status</option>
-              <option value="paid">Paid</option>
-              <option value="unpaid">Unpaid</option>
-              <option value="partial">Partial</option>
-            </select>
+            <div className="relative">
+              <select
+                value={billingStatusFilter}
+                onChange={(e) => setBillingStatusFilter(e.target.value)}
+                onFocus={() => setFocusedDropdown('billingStatus')}
+                onBlur={() => setFocusedDropdown(null)}
+                className="px-4 pr-8 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 appearance-none cursor-pointer bg-white"
+              >
+                <option value="all">All Billing Status</option>
+                <option value="billed">Billed</option>
+                <option value="unbilled">Unbilled</option>
+                <option value="draft">Draft</option>
+              </select>
+              {focusedDropdown === 'billingStatus' ? (
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
+            </div>
+            <div className="relative">
+              <select
+                value={paymentStatusFilter}
+                onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                onFocus={() => setFocusedDropdown('paymentStatus')}
+                onBlur={() => setFocusedDropdown(null)}
+                className="px-4 pr-8 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 appearance-none cursor-pointer bg-white"
+              >
+                <option value="all">All Payment Status</option>
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+                <option value="partial">Partial</option>
+              </select>
+              {focusedDropdown === 'paymentStatus' ? (
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
+            </div>
           </div>
+        </div>
+
+        {/* Filters Section - Collapsible */}
+        <div className="mb-4 border-t border-gray-200 pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FunnelIcon className="w-5 h-5 text-gray-600" />
+              <h3 className="text-sm font-semibold text-gray-800">Filters</h3>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="text-xs text-gray-600 hover:text-gray-800"
+              >
+                {showFilters ? 'Hide' : 'Show'} Filters
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportCurrentFilter}
+                disabled={exporting || tableData.length === 0}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-[38px]"
+              >
+                {exporting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    <span className="hidden sm:inline">Exporting...</span>
+                  </>
+                ) : (
+                  <>
+                    <DocumentArrowDownIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Export to Excel</span>
+                    <span className="sm:hidden">Export</span>
+                  </>
+                )}
+              </button>
+              {(appliedFilters.year || appliedFilters.month || appliedFilters.project !== 'all') && (
+                <button
+                  onClick={handleResetFilters}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors h-[38px]"
+                  title="Reset Filters"
+                >
+                  <ArrowPathIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Reset</span>
+                </button>
+              )}
+            </div>
+          </div>
+          {showFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Year</label>
+                <div className="relative">
+                  <select
+                    value={filterYear}
+                    onChange={(e) => setFilterYear(e.target.value)}
+                    onFocus={() => setFocusedDropdown('year')}
+                    onBlur={() => setFocusedDropdown(null)}
+                    className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                  >
+                    <option value="">All Years</option>
+                    {availableYears.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                  {focusedDropdown === 'year' ? (
+                    <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                  ) : (
+                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Month</label>
+                <div className="relative">
+                  <select
+                    value={filterMonth}
+                    onChange={(e) => setFilterMonth(e.target.value)}
+                    onFocus={() => setFocusedDropdown('month')}
+                    onBlur={() => setFocusedDropdown(null)}
+                    disabled={!filterYear}
+                    className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
+                  >
+                    <option value="">All Months</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                  {focusedDropdown === 'month' ? (
+                    <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                  ) : (
+                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
+                <div className="relative">
+                  <select
+                    value={selectedProject}
+                    onChange={(e) => setSelectedProject(e.target.value)}
+                    onFocus={() => setFocusedDropdown('project')}
+                    onBlur={() => setFocusedDropdown(null)}
+                    className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+                  >
+                    <option value="all">All Projects</option>
+                    {projects.map((project) => (
+                      <option key={project._id} value={project._id}>
+                        {project.projectName} ({project.projectCode})
+                      </option>
+                    ))}
+                  </select>
+                  {focusedDropdown === 'project' ? (
+                    <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                  ) : (
+                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                  )}
+                </div>
+              </div>
+              <div className="flex items-end">
+                <button
+                  onClick={handleApplyFilters}
+                  className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
+                >
+                  Apply Filter
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -1146,6 +1226,8 @@ const ProjectsBillingCollections = () => {
                     <td className="border border-gray-300 px-4 py-3">{item.year}</td>
                     <td className="border border-gray-300 px-4 py-3">
                       <div className="flex items-center gap-3">
+                        {/* Edit button - Only Master Admin and System Admin can edit projects */}
+                        {canCreateEditProject && (
                         <button
                           onClick={(e) => handleEditProject(item.project, e)}
                           className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
@@ -1153,6 +1235,8 @@ const ProjectsBillingCollections = () => {
                         >
                           <PencilIcon className="w-5 h-5" />
                         </button>
+                        )}
+                        {/* Delete button - requires DELETE_PROJECT permission (Master Admin only) */}
                         {canDeleteProject && (
                           <button
                             onClick={(e) => handleDelete(item.project._id, item.projectName, e)}
@@ -1258,8 +1342,8 @@ const ProjectsBillingCollections = () => {
 
       {/* Edit Project Modal - Shows Billing & Collection Records */}
       {showEditModal && editingProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Records - {editingProject.projectName}</h2>
               <button onClick={() => {
@@ -1313,6 +1397,8 @@ const ProjectsBillingCollections = () => {
                           </td>
                           <td className="border border-gray-300 px-3 py-2">
                             <div className="flex gap-2">
+                              {canAccessBilling && (
+                                <>
                               <button
                                 onClick={() => handleEditBilling(bill)}
                                 className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
@@ -1327,6 +1413,8 @@ const ProjectsBillingCollections = () => {
                               >
                                 <TrashIcon className="w-4 h-4" />
                               </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1374,6 +1462,8 @@ const ProjectsBillingCollections = () => {
                           </td>
                           <td className="border border-gray-300 px-3 py-2">
                             <div className="flex gap-2">
+                              {canAccessCollection && (
+                                <>
                               <button
                                 onClick={() => handleEditCollection(col)}
                                 className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
@@ -1388,6 +1478,8 @@ const ProjectsBillingCollections = () => {
                               >
                                 <TrashIcon className="w-4 h-4" />
                               </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1403,8 +1495,8 @@ const ProjectsBillingCollections = () => {
 
       {/* Edit Billing Modal - Same structure as Add Billing Modal */}
       {editingBilling && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Billing Record</h2>
               <button onClick={() => setEditingBilling(null)} className="text-gray-500 hover:text-gray-700">
@@ -1525,8 +1617,8 @@ const ProjectsBillingCollections = () => {
 
       {/* Edit Collection Modal - Same structure as Add Collection Modal */}
       {editingCollection && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Collection Record</h2>
               <button onClick={() => setEditingCollection(null)} className="text-gray-500 hover:text-gray-700">
@@ -1646,8 +1738,8 @@ const ProjectsBillingCollections = () => {
 
       {/* Add Type Selection Modal */}
       {showAddTypeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md m-4">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-800">Add New Record</h2>
               <button onClick={() => setShowAddTypeModal(false)} className="text-gray-500 hover:text-gray-700">
@@ -1655,7 +1747,8 @@ const ProjectsBillingCollections = () => {
               </button>
             </div>
             <p className="text-gray-600 mb-6 text-center">What would you like to add?</p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${canAccessBilling && canAccessCollection ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {canAccessBilling && (
               <button
                 onClick={() => {
                   setShowAddTypeModal(false);
@@ -1668,6 +1761,8 @@ const ProjectsBillingCollections = () => {
                 </div>
                 <span className="font-semibold text-gray-700">Add Billing</span>
               </button>
+              )}
+              {canAccessCollection && (
               <button
                 onClick={() => {
                   setShowAddTypeModal(false);
@@ -1680,6 +1775,7 @@ const ProjectsBillingCollections = () => {
                 </div>
                 <span className="font-semibold text-gray-700">Add Collection</span>
               </button>
+              )}
             </div>
           </div>
         </div>
@@ -1687,8 +1783,8 @@ const ProjectsBillingCollections = () => {
 
       {/* Add Billing Modal */}
       {showAddBillingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-blue-600">Add Billing Record</h2>
               <button onClick={() => setShowAddBillingModal(false)} className="text-gray-500 hover:text-gray-700">
@@ -1829,8 +1925,8 @@ const ProjectsBillingCollections = () => {
 
       {/* Add Collection Modal */}
       {showAddCollectionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-green-600">Add Collection Record</h2>
               <button onClick={() => {

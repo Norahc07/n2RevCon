@@ -3,7 +3,7 @@ import { projectAPI, revenueAPI, expenseAPI, exportAPI } from '../services/api';
 import { formatCurrency } from '../utils/currency';
 import { usePermissions } from '../hooks/usePermissions';
 import PermissionWrapper from '../components/PermissionWrapper';
-import { ACTIONS } from '../config/permissions';
+import { ACTIONS, ROLES } from '../config/permissions';
 import {
   CalendarIcon,
   FunnelIcon,
@@ -30,7 +30,9 @@ import { TableSkeleton, FilterSkeleton, CardSkeleton } from '../components/skele
 
 const ProjectsRevenueCosts = () => {
   const navigate = useNavigate();
-  const { canAccessRevenue, canAccessExpenses, canViewReports, canDeleteProject } = usePermissions();
+  const { canAccessRevenue, canAccessExpenses, canViewReports, canDeleteProject, role } = usePermissions();
+  // Only Master Admin and System Admin can edit projects
+  const canCreateEditProject = role === 'master_admin' || role === 'system_admin';
   const [projects, setProjects] = useState([]);
   const [allRevenues, setAllRevenues] = useState([]);
   const [allExpenses, setAllExpenses] = useState([]);
@@ -795,8 +797,29 @@ const ProjectsRevenueCosts = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Revenue vs. Expenses</h1>
-        {/* Add Button - Show if user can add revenue OR expenses */}
-        {(canAccessRevenue || canAccessExpenses) && (
+        {/* Add Button - Role-specific behavior */}
+        {role === ROLES.REVENUE_OFFICER && canAccessRevenue && (
+          <button
+            onClick={() => setShowAddRevenueModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">Add Revenue</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        )}
+        {role === ROLES.DISBURSING_OFFICER && canAccessExpenses && (
+          <button
+            onClick={() => setShowAddExpenseModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">Add Expense</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        )}
+        {/* Master Admin and users with both permissions see type selection modal */}
+        {(role === ROLES.MASTER_ADMIN || (canAccessRevenue && canAccessExpenses)) && (
           <button
             onClick={() => setShowAddTypeModal(true)}
             className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -873,7 +896,7 @@ const ProjectsRevenueCosts = () => {
           <div className="mb-4 border-t border-gray-200 pt-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <FunnelIcon className="w-5 h-5 text-gray-600" />
+          <FunnelIcon className="w-5 h-5 text-gray-600" />
                 <h3 className="text-sm font-semibold text-gray-800">Filters</h3>
                 <button
                   onClick={() => setShowProjectsFilters(!showProjectsFilters)}
@@ -881,7 +904,7 @@ const ProjectsRevenueCosts = () => {
                 >
                   {showProjectsFilters ? 'Hide' : 'Show'} Filters
                 </button>
-              </div>
+        </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleExportCurrentView}
@@ -915,98 +938,98 @@ const ProjectsRevenueCosts = () => {
             </div>
             {showProjectsFilters && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Year
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={filterYear}
-                      onChange={(e) => setFilterYear(e.target.value)}
-                      onFocus={() => setFocusedDropdown('year')}
-                      onBlur={() => setFocusedDropdown(null)}
-                      className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
-                    >
-                      <option value="">All Years</option>
-                      {availableYears.map((year) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </select>
-                    {focusedDropdown === 'year' ? (
-                      <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                    ) : (
-                      <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Month
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={filterMonth}
-                      onChange={(e) => setFilterMonth(e.target.value)}
-                      onFocus={() => setFocusedDropdown('month')}
-                      onBlur={() => setFocusedDropdown(null)}
-                      disabled={!filterYear}
-                      className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
-                    >
-                      <option value="">All Months</option>
-                      <option value="1">January</option>
-                      <option value="2">February</option>
-                      <option value="3">March</option>
-                      <option value="4">April</option>
-                      <option value="5">May</option>
-                      <option value="6">June</option>
-                      <option value="7">July</option>
-                      <option value="8">August</option>
-                      <option value="9">September</option>
-                      <option value="10">October</option>
-                      <option value="11">November</option>
-                      <option value="12">December</option>
-                    </select>
-                    {focusedDropdown === 'month' ? (
-                      <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                    ) : (
-                      <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
-                  <div className="relative">
-                    <select
-                      value={selectedProject}
-                      onChange={(e) => setSelectedProject(e.target.value)}
-                      onFocus={() => setFocusedDropdown('project')}
-                      onBlur={() => setFocusedDropdown(null)}
-                      className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
-                    >
-                      <option value="all">All Projects</option>
-                      {projects.map((project) => (
-                        <option key={project._id} value={project._id}>
-                          {project.projectName} ({project.projectCode})
-                        </option>
-                      ))}
-                    </select>
-                    {focusedDropdown === 'project' ? (
-                      <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                    ) : (
-                      <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                    )}
-                  </div>
-                </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+              Year
+            </label>
+            <div className="relative">
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                onFocus={() => setFocusedDropdown('year')}
+                onBlur={() => setFocusedDropdown(null)}
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+              >
+                <option value="">All Years</option>
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+              {focusedDropdown === 'year' ? (
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+              Month
+            </label>
+            <div className="relative">
+              <select
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                onFocus={() => setFocusedDropdown('month')}
+                onBlur={() => setFocusedDropdown(null)}
+                disabled={!filterYear}
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
+              >
+                <option value="">All Months</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              {focusedDropdown === 'month' ? (
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
+            <div className="relative">
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                onFocus={() => setFocusedDropdown('project')}
+                onBlur={() => setFocusedDropdown(null)}
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+              >
+                <option value="all">All Projects</option>
+                {projects.map((project) => (
+                  <option key={project._id} value={project._id}>
+                    {project.projectName} ({project.projectCode})
+                  </option>
+                ))}
+              </select>
+              {focusedDropdown === 'project' ? (
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
+            </div>
+          </div>
                 <div className="flex items-end">
-                  <button
-                    onClick={handleApplyFilters}
-                    className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
-                  >
-                    Apply Filter
-                  </button>
-                </div>
+            <button
+              onClick={handleApplyFilters}
+              className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
+            >
+              Apply Filter
+            </button>
+          </div>
               </div>
             )}
           </div>
@@ -1019,7 +1042,7 @@ const ProjectsRevenueCosts = () => {
               <div className="flex items-center gap-2">
                 <FunnelIcon className="w-5 h-5 text-gray-600" />
                 <h3 className="text-sm font-semibold text-gray-800">Filters</h3>
-                <button
+            <button
                   onClick={() => setShowGeneralFilters(!showGeneralFilters)}
                   className="text-xs text-gray-600 hover:text-gray-800"
                 >
@@ -1031,20 +1054,20 @@ const ProjectsRevenueCosts = () => {
                   onClick={handleExportGeneralView}
                   disabled={exporting || (generalRevenues.length === 0 && generalExpenses.length === 0)}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-[38px]"
-                >
-                  {exporting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                      <span className="hidden sm:inline">Exporting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <DocumentArrowDownIcon className="w-4 h-4" />
-                      <span className="hidden sm:inline">Export to Excel</span>
-                      <span className="sm:hidden">Export</span>
-                    </>
-                  )}
-                </button>
+            >
+              {exporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  <span className="hidden sm:inline">Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <DocumentArrowDownIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export to Excel</span>
+                  <span className="sm:hidden">Export</span>
+                </>
+              )}
+            </button>
                 {(generalFilters.type !== 'all' || 
                   generalFilters.revenueCategory || 
                   generalFilters.expenseCategory || 
@@ -1052,7 +1075,7 @@ const ProjectsRevenueCosts = () => {
                   generalFilters.expenseStatus || 
                   generalFilters.dateFrom || 
                   generalFilters.dateTo) && (
-                  <button
+            <button
                     onClick={() => {
                       setGeneralFilters({
                         type: 'all',
@@ -1064,15 +1087,15 @@ const ProjectsRevenueCosts = () => {
                         dateTo: '',
                       });
                     }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors h-[38px]"
-                    title="Reset Filters"
-                  >
-                    <ArrowPathIcon className="w-4 h-4" />
-                    <span className="hidden sm:inline">Reset</span>
-                  </button>
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors h-[38px]"
+              title="Reset Filters"
+            >
+              <ArrowPathIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
                 )}
-              </div>
-            </div>
+          </div>
+        </div>
             {showGeneralFilters && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-3 bg-gray-50 rounded-lg">
                 <div>
@@ -1094,8 +1117,8 @@ const ProjectsRevenueCosts = () => {
                     ) : (
                       <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
                     )}
-                  </div>
-                </div>
+      </div>
+        </div>
                 {generalFilters.type !== 'expense' && (
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1.5">Revenue Category</label>
@@ -1118,8 +1141,8 @@ const ProjectsRevenueCosts = () => {
                       ) : (
                         <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
                       )}
-                    </div>
-                  </div>
+        </div>
+        </div>
                 )}
                 {generalFilters.type !== 'revenue' && (
                   <div>
@@ -1145,13 +1168,13 @@ const ProjectsRevenueCosts = () => {
                       ) : (
                         <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
                       )}
-                    </div>
+      </div>
                   </div>
                 )}
                 {generalFilters.type !== 'expense' && (
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1.5">Revenue Status</label>
-                    <div className="relative">
+          <div className="relative">
                       <select
                         value={generalFilters.revenueStatus}
                         onChange={(e) => setGeneralFilters({ ...generalFilters, revenueStatus: e.target.value })}
@@ -1198,13 +1221,13 @@ const ProjectsRevenueCosts = () => {
                 )}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5">Date From</label>
-                  <input
+            <input
                     type="date"
                     value={generalFilters.dateFrom}
                     onChange={(e) => setGeneralFilters({ ...generalFilters, dateFrom: e.target.value })}
                     className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-                  />
-                </div>
+            />
+          </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5">Date To</label>
                   <input
@@ -1214,7 +1237,7 @@ const ProjectsRevenueCosts = () => {
                     min={generalFilters.dateFrom || undefined}
                     className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
                   />
-                </div>
+        </div>
                 <div className="flex items-end">
                   <button
                     onClick={() => toast.success('Filters applied')}
@@ -1305,8 +1328,8 @@ const ProjectsRevenueCosts = () => {
                     </td>
                     <td className="border border-gray-300 px-4 py-3">
                       <div className="flex items-center gap-3">
-                        {/* Edit button - requires revenue or expense access */}
-                        {(canAccessRevenue || canAccessExpenses) && (
+                        {/* Edit button - Only Master Admin and System Admin can edit projects */}
+                        {canCreateEditProject && (
                           <button
                             onClick={(e) => handleEditProject(item.project, e)}
                             className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
@@ -1375,20 +1398,24 @@ const ProjectsRevenueCosts = () => {
                               <td className="border border-gray-300 px-3 py-2 text-sm capitalize">{rev.status || 'N/A'}</td>
                               <td className="border border-gray-300 px-3 py-2">
                                 <div className="flex gap-2">
-                                  <button
-                                    onClick={() => handleEditRevenue(rev)}
-                                    className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
-                                    title="Edit"
-                                  >
-                                    <PencilIcon className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => handleDeleteRevenue(rev._id, e)}
-                                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                                    title="Delete"
-                                  >
-                                    <TrashIcon className="w-4 h-4" />
-                                  </button>
+                                  {canAccessRevenue && (
+                                    <>
+                                      <button
+                                        onClick={() => handleEditRevenue(rev)}
+                                        className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
+                                        title="Edit"
+                                      >
+                                        <PencilIcon className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={(e) => handleDeleteRevenue(rev._id, e)}
+                                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                        title="Delete"
+                                      >
+                                        <TrashIcon className="w-4 h-4" />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -1441,20 +1468,24 @@ const ProjectsRevenueCosts = () => {
                               <td className="border border-gray-300 px-3 py-2 text-sm capitalize">{exp.status || 'N/A'}</td>
                               <td className="border border-gray-300 px-3 py-2">
                                 <div className="flex gap-2">
-                                  <button
-                                    onClick={() => handleEditExpense(exp)}
-                                    className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
-                                    title="Edit"
-                                  >
-                                    <PencilIcon className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => handleDeleteExpense(exp._id, e)}
-                                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                                    title="Delete"
-                                  >
-                                    <TrashIcon className="w-4 h-4" />
-                                  </button>
+                                  {canAccessExpenses && (
+                                    <>
+                                      <button
+                                        onClick={() => handleEditExpense(exp)}
+                                        className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
+                                        title="Edit"
+                                      >
+                                        <PencilIcon className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={(e) => handleDeleteExpense(exp._id, e)}
+                                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                        title="Delete"
+                                      >
+                                        <TrashIcon className="w-4 h-4" />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </tr>

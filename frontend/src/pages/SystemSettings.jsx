@@ -25,6 +25,12 @@ const SystemSettings = () => {
   const { user } = useAuth();
   const { updateCurrency } = useCurrency();
   const location = useLocation();
+  const permissions = usePermissions();
+  
+  // Role-based access control
+  const isMasterAdmin = permissions.role === ROLES.MASTER_ADMIN;
+  const isSystemAdmin = permissions.role === ROLES.SYSTEM_ADMIN;
+  const canAccessSystemSettings = isMasterAdmin || isSystemAdmin;
   
   // Get active tab from route
   const getActiveTab = () => {
@@ -39,6 +45,18 @@ const SystemSettings = () => {
   };
   
   const activeTab = getActiveTab();
+  
+  // Redirect unauthorized users
+  if (!canAccessSystemSettings) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="card p-6 shadow-md text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You do not have permission to access System Settings.</p>
+        </div>
+      </div>
+    );
+  }
   const [company, setCompany] = useState(null);
   const [users, setUsers] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -189,15 +207,15 @@ const SystemSettings = () => {
 
       {/* Main Content */}
       <div>
-            {/* Company Information */}
-            {activeTab === 'company' && company && (
+            {/* Company Information - Master Admin only */}
+            {activeTab === 'company' && isMasterAdmin && company && (
               <div className="card space-y-6 shadow-md">
                 <CompanyInformationTab company={company} onSave={handleSave} saving={saving} />
               </div>
             )}
 
-            {/* User Management */}
-            {activeTab === 'users' && (
+            {/* User Management - Master Admin and System Admin */}
+            {activeTab === 'users' && (isMasterAdmin || isSystemAdmin) && (
               <div className="card space-y-6 shadow-md">
                 <UserManagementTab 
                   users={users} 
@@ -215,38 +233,52 @@ const SystemSettings = () => {
               </div>
             )}
 
-            {/* Project Configuration */}
-            {activeTab === 'project' && company && (
+            {/* Project Configuration - Master Admin and System Admin */}
+            {activeTab === 'project' && (isMasterAdmin || isSystemAdmin) && company && (
               <div className="card space-y-6 shadow-md">
                 <ProjectConfigTab company={company} onSave={handleSave} saving={saving} />
               </div>
             )}
 
-            {/* Notifications */}
-            {activeTab === 'notifications' && company && (
+            {/* Notifications - Master Admin and System Admin */}
+            {activeTab === 'notifications' && (isMasterAdmin || isSystemAdmin) && company && (
               <div className="card space-y-6 shadow-md">
                 <NotificationConfigTab company={company} onSave={handleSave} saving={saving} />
               </div>
             )}
 
-            {/* Data & Backup */}
-            {activeTab === 'backup' && company && (
+            {/* Data & Backup - Master Admin only */}
+            {activeTab === 'backup' && isMasterAdmin && company && (
               <div className="card space-y-6 shadow-md">
                 <BackupTab company={company} onSave={handleSave} onBackup={handleCreateBackup} saving={saving} />
               </div>
             )}
 
-            {/* Audit Logs */}
-            {activeTab === 'audit' && (
+            {/* Audit Logs - Master Admin and System Admin */}
+            {activeTab === 'audit' && (isMasterAdmin || isSystemAdmin) && (
               <div className="card space-y-6 shadow-md">
                 <AuditLogsTab logs={auditLogs} onRefresh={fetchAuditLogs} />
               </div>
             )}
 
-            {/* PWA & Offline */}
-            {activeTab === 'pwa' && company && (
+            {/* PWA & Offline - Master Admin only */}
+            {activeTab === 'pwa' && isMasterAdmin && company && (
               <div className="card space-y-6 shadow-md">
                 <PWATab company={company} onSave={handleSave} saving={saving} />
+              </div>
+            )}
+            
+            {/* Access Denied for specific tab */}
+            {((activeTab === 'company' && !isMasterAdmin) ||
+              (activeTab === 'users' && !isMasterAdmin && !isSystemAdmin) ||
+              (activeTab === 'backup' && !isMasterAdmin) ||
+              (activeTab === 'pwa' && !isMasterAdmin) ||
+              (activeTab === 'project' && !isMasterAdmin && !isSystemAdmin) ||
+              (activeTab === 'notifications' && !isMasterAdmin && !isSystemAdmin) ||
+              (activeTab === 'audit' && !isMasterAdmin && !isSystemAdmin)) && (
+              <div className="card p-6 shadow-md text-center">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
+                <p className="text-gray-600">You do not have permission to access this section.</p>
               </div>
             )}
           </div>
@@ -557,7 +589,7 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
 const getRoleDescription = (role) => {
   const descriptions = {
     [ROLES.MASTER_ADMIN]: 'Full system access with all permissions. Can manage users, approve accounts, and delete projects.',
-    [ROLES.SYSTEM_ADMIN]: 'System administrator with project management capabilities. Can approve projects and view reports.',
+    [ROLES.SYSTEM_ADMIN]: 'System administrator with project management capabilities. Can approve projects and users, close/lock projects, and view reports.',
     [ROLES.REVENUE_OFFICER]: 'Manages revenue records and transactions. Can create, edit, and view revenue data.',
     [ROLES.DISBURSING_OFFICER]: 'Manages expense records and disbursements. Can create, edit, and view expense data.',
     [ROLES.BILLING_OFFICER]: 'Manages billing records and invoices. Can create, edit, and view billing data.',
@@ -584,8 +616,9 @@ const getActionDescription = (action) => {
 
 // User Management Tab Component
 const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate, onPendingUsersUpdate }) => {
-  const { role: currentUserRole } = usePermissions();
+  const { role: currentUserRole, canApprove } = usePermissions();
   const isMasterAdmin = currentUserRole === ROLES.MASTER_ADMIN;
+  const isSystemAdmin = currentUserRole === ROLES.SYSTEM_ADMIN;
   const [editingUser, setEditingUser] = useState(null);
   const [rejectingUser, setRejectingUser] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -818,13 +851,13 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
               <span>Roles & Permissions</span>
             </button>
           )}
-          <button
-            onClick={onRefresh}
-            disabled={loading}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            Refresh
-          </button>
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+        >
+          Refresh
+        </button>
         </div>
       </div>
 
@@ -886,8 +919,8 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
         </div>
       )}
 
-      {/* Pending Users Section - Only show if Master Admin */}
-      {isMasterAdmin && pendingUsers.length > 0 && (
+      {/* Pending Users Section - Show to Master Admin and System Admin (who can approve) */}
+      {(isMasterAdmin || (isSystemAdmin && canApprove)) && pendingUsers.length > 0 && (
         <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded">
           <h3 className="text-lg font-semibold text-yellow-800 mb-3">
             ⏳ Pending Approval ({pendingUsers.length})
@@ -1118,27 +1151,36 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                   </td>
                   <td className="border border-gray-300 px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleEdit(user)}
-                        disabled={loading}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleToggleStatus(user)}
-                        disabled={loading}
-                        className="text-green-600 hover:text-green-800 text-sm font-medium disabled:opacity-50"
-                      >
-                        {user.isActive ? 'Deactivate' : 'Activate'}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user)}
-                        disabled={loading}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
+                      {/* Edit - Master Admin only */}
+                      {isMasterAdmin && (
+                        <button
+                          onClick={() => handleEdit(user)}
+                          disabled={loading}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {/* Activate/Deactivate - Master Admin only */}
+                      {isMasterAdmin && (
+                        <button
+                          onClick={() => handleToggleStatus(user)}
+                          disabled={loading}
+                          className="text-green-600 hover:text-green-800 text-sm font-medium disabled:opacity-50"
+                        >
+                          {user.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                      )}
+                      {/* Delete - Master Admin only */}
+                      {isMasterAdmin && (
+                        <button
+                          onClick={() => handleDelete(user)}
+                          disabled={loading}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

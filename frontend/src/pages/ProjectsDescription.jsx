@@ -25,7 +25,9 @@ import { exportAPI } from '../services/api';
 import { TableSkeleton, FilterSkeleton } from '../components/skeletons';
 
 const ProjectsDescription = () => {
-  const { canViewReports, canCloseLockProject, canDeleteProject } = usePermissions();
+  const { canViewReports, canCloseLockProject, canDeleteProject, role } = usePermissions();
+  // Only Master Admin and System Admin can create/edit projects
+  const canCreateEditProject = role === 'master_admin' || role === 'system_admin';
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState('');
@@ -267,8 +269,8 @@ const ProjectsDescription = () => {
               </button>
             )}
 
-            {/* Add Project Button - Requires VIEW_REPORTS permission */}
-            {canViewReports && (
+            {/* Add Project Button - Only Master Admin and System Admin */}
+            {canCreateEditProject && (
               <Link
                 to="/projects/new"
                 className="flex-1 xs:flex-initial flex items-center justify-center gap-1 xs:gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-3 xs:px-4 py-2 rounded-lg font-semibold text-sm xs:text-base transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -375,7 +377,7 @@ const ProjectsDescription = () => {
                     <EyeIcon className="w-4 h-4" />
                     View
                   </button>
-                  {canViewReports && (
+                  {canCreateEditProject && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -565,7 +567,7 @@ const ProjectsDescription = () => {
                           >
                             <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
-                          {canViewReports && (
+                          {canCreateEditProject && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();

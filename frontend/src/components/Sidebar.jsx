@@ -69,12 +69,20 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
     return true;
   });
 
-  // Settings subcategories with nested structure
+  // Check if Projects menu should be shown (at least one subcategory is available)
+  const shouldShowProjects = projectsSubcategories.length > 0;
+
+  // Settings subcategories with nested structure - filtered by role
+  const isMasterAdmin = permissions.role === 'master_admin';
+  const isSystemAdmin = permissions.role === 'system_admin';
+  
   const settingsSubcategories = [
     {
       path: '/settings/account',
       label: 'Account Settings',
       icon: UserIcon,
+      // All users can access account settings
+      show: true,
       subcategories: [
         { path: '/settings/account/profile', label: 'Profile', icon: UserIcon },
         { path: '/settings/account/password', label: 'Password & Security', icon: LockClosedIcon },
@@ -86,17 +94,19 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
       path: '/settings/system',
       label: 'System Settings',
       icon: ShieldCheckIcon,
+      // Only Master Admin and System Admin can access system settings
+      show: isMasterAdmin || isSystemAdmin,
       subcategories: [
-        { path: '/settings/system/company', label: 'Company Information', icon: BuildingOfficeIcon },
-        { path: '/settings/system/users', label: 'User Management', icon: UserGroupIcon },
-        { path: '/settings/system/project', label: 'Project Configuration', icon: Cog6ToothIcon },
-        { path: '/settings/system/notifications', label: 'Notifications', icon: BellIcon },
-        { path: '/settings/system/backup', label: 'Data & Backup', icon: CloudArrowDownIcon },
-        { path: '/settings/system/audit', label: 'Audit Logs', icon: ClipboardDocumentListIcon },
-        { path: '/settings/system/pwa', label: 'PWA & Offline', icon: DevicePhoneMobileIcon },
-      ],
+        { path: '/settings/system/company', label: 'Company Information', icon: BuildingOfficeIcon, show: isMasterAdmin },
+        { path: '/settings/system/users', label: 'User Management', icon: UserGroupIcon, show: isMasterAdmin || isSystemAdmin },
+        { path: '/settings/system/project', label: 'Project Configuration', icon: Cog6ToothIcon, show: isMasterAdmin || isSystemAdmin },
+        { path: '/settings/system/notifications', label: 'Notifications', icon: BellIcon, show: isMasterAdmin || isSystemAdmin },
+        { path: '/settings/system/backup', label: 'Data & Backup', icon: CloudArrowDownIcon, show: isMasterAdmin },
+        { path: '/settings/system/audit', label: 'Audit Logs', icon: ClipboardDocumentListIcon, show: isMasterAdmin || isSystemAdmin },
+        { path: '/settings/system/pwa', label: 'PWA & Offline', icon: DevicePhoneMobileIcon, show: isMasterAdmin },
+      ].filter(sub => sub.show !== false), // Filter out hidden subcategories
     },
-  ];
+  ].filter(category => category.show !== false); // Filter out hidden categories
 
   // Handle navigation with sidebar expansion
   const handleNavClick = (path, e) => {
@@ -186,53 +196,55 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
               {isOpen && <span className="font-medium whitespace-nowrap">Dashboard</span>}
             </NavLink>
 
-            {/* Projects with Dropdown */}
-            <div className="space-y-1">
-              <button
-                onClick={handleProjectsClick}
-                className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
-                  isProjectsActive
-                    ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
-                    : 'text-gray-700 hover:bg-gray-100'
-                } ${!isOpen ? 'justify-center' : 'gap-3'}`}
-                title={!isOpen ? 'Projects' : ''}
-              >
-                <FolderIcon className="w-6 h-6 flex-shrink-0" style={{ minWidth: '24px' }} />
-                {isOpen && (
-                  <>
-                    <span className="font-medium flex-1 text-left whitespace-nowrap">Projects</span>
-                    {projectsOpen ? (
-                      <ChevronDownIcon className="w-5 h-5 flex-shrink-0" />
-                    ) : (
-                      <ChevronRightIcon className="w-5 h-5 flex-shrink-0" />
-                    )}
-                  </>
-                )}
-              </button>
+            {/* Projects with Dropdown - Only show if user has permission */}
+            {shouldShowProjects && (
+              <div className="space-y-1">
+                <button
+                  onClick={handleProjectsClick}
+                  className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
+                    isProjectsActive
+                      ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  } ${!isOpen ? 'justify-center' : 'gap-3'}`}
+                  title={!isOpen ? 'Projects' : ''}
+                >
+                  <FolderIcon className="w-6 h-6 flex-shrink-0" style={{ minWidth: '24px' }} />
+                  {isOpen && (
+                    <>
+                      <span className="font-medium flex-1 text-left whitespace-nowrap">Projects</span>
+                      {projectsOpen ? (
+                        <ChevronDownIcon className="w-5 h-5 flex-shrink-0" />
+                      ) : (
+                        <ChevronRightIcon className="w-5 h-5 flex-shrink-0" />
+                      )}
+                    </>
+                  )}
+                </button>
 
-              {/* Projects Subcategories Dropdown */}
-              {isOpen && projectsOpen && (
-                <div className="ml-4 space-y-1 animate-fade-in">
-                  {projectsSubcategories.map((sub) => {
-                    const IconComponent = sub.icon;
-                    return (
-                      <button
-                        key={sub.path}
-                        onClick={() => handleSubcategoryClick(sub.path)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm text-left ${
-                          location.pathname === sub.path
-                            ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        }`}
-                      >
-                        <IconComponent className="w-4 h-4 flex-shrink-0" />
-                        <span className="whitespace-nowrap">{sub.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                {/* Projects Subcategories Dropdown */}
+                {isOpen && projectsOpen && (
+                  <div className="ml-4 space-y-1 animate-fade-in">
+                    {projectsSubcategories.map((sub) => {
+                      const IconComponent = sub.icon;
+                      return (
+                        <button
+                          key={sub.path}
+                          onClick={() => handleSubcategoryClick(sub.path)}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm text-left ${
+                            location.pathname === sub.path
+                              ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          }`}
+                        >
+                          <IconComponent className="w-4 h-4 flex-shrink-0" />
+                          <span className="whitespace-nowrap">{sub.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Settings with Dropdown */}
             <div className="space-y-1">
@@ -378,51 +390,53 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
               <span className="font-medium">Dashboard</span>
             </NavLink>
 
-            {/* Projects with Dropdown */}
-            <div className="space-y-1">
-              <button
-                onClick={() => setProjectsOpen(!projectsOpen)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
-                  isProjectsActive
-                    ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <FolderIcon className="w-6 h-6" />
-                <span className="font-medium flex-1 text-left">Projects</span>
-                {projectsOpen ? (
-                  <ChevronDownIcon className="w-5 h-5" />
-                ) : (
-                  <ChevronRightIcon className="w-5 h-5" />
-                )}
-              </button>
+            {/* Projects with Dropdown - Only show if user has permission */}
+            {shouldShowProjects && (
+              <div className="space-y-1">
+                <button
+                  onClick={() => setProjectsOpen(!projectsOpen)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
+                    isProjectsActive
+                      ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <FolderIcon className="w-6 h-6" />
+                  <span className="font-medium flex-1 text-left">Projects</span>
+                  {projectsOpen ? (
+                    <ChevronDownIcon className="w-5 h-5" />
+                  ) : (
+                    <ChevronRightIcon className="w-5 h-5" />
+                  )}
+                </button>
 
-              {/* Projects Subcategories Dropdown */}
-              {projectsOpen && (
-                <div className="ml-4 space-y-1">
-                  {projectsSubcategories.map((sub) => {
-                    const IconComponent = sub.icon;
-                    return (
-                      <NavLink
-                        key={sub.path}
-                        to={sub.path}
-                        onClick={onClose}
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
-                            isActive
-                              ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
-                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                          }`
-                        }
-                      >
-                        <IconComponent className="w-4 h-4 flex-shrink-0" />
-                        <span>{sub.label}</span>
-                      </NavLink>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                {/* Projects Subcategories Dropdown */}
+                {projectsOpen && (
+                  <div className="ml-4 space-y-1">
+                    {projectsSubcategories.map((sub) => {
+                      const IconComponent = sub.icon;
+                      return (
+                        <NavLink
+                          key={sub.path}
+                          to={sub.path}
+                          onClick={onClose}
+                          className={({ isActive }) =>
+                            `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
+                              isActive
+                                ? 'bg-red-50 text-red-600 font-semibold border-l-2 border-red-600'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                          }
+                        >
+                          <IconComponent className="w-4 h-4 flex-shrink-0" />
+                          <span>{sub.label}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Settings with Dropdown */}
             <div className="space-y-1">

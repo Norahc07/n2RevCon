@@ -10,7 +10,9 @@ import { TableSkeleton, CardSkeleton, SkeletonBox } from '../components/skeleton
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { canDeleteProject } = usePermissions();
+  const { canDeleteProject, canAccessRevenue, canAccessExpenses, canAccessBilling, canAccessCollection, role } = usePermissions();
+  // Only Master Admin and System Admin can edit projects
+  const canCreateEditProject = role === 'master_admin' || role === 'system_admin';
   const [project, setProject] = useState(null);
   const [activeTab, setActiveTab] = useState('description');
   const [revenues, setRevenues] = useState([]);
@@ -582,16 +584,18 @@ const ProjectDetails = () => {
           <p className="text-gray-600">{project.projectCode}</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => {
-              // Navigate to AddProject with edit mode
-              navigate(`/projects/${id}/edit`);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition-colors border border-gray-300"
-          >
-            <PencilIcon className="w-5 h-5" />
-            Edit Project
-          </button>
+          {canCreateEditProject && (
+            <button
+              onClick={() => {
+                // Navigate to AddProject with edit mode
+                navigate(`/projects/${id}/edit`);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition-colors border border-gray-300"
+            >
+              <PencilIcon className="w-5 h-5" />
+              Edit Project
+            </button>
+          )}
           {canDeleteProject && (
             <button
               onClick={async () => {
@@ -722,13 +726,15 @@ const ProjectDetails = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-lg">Revenue Records</h3>
-                <button
-                  onClick={() => setShowAddRevenueModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                  Add Revenue
-                </button>
+                {canAccessRevenue && (
+                  <button
+                    onClick={() => setShowAddRevenueModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                    Add Revenue
+                  </button>
+                )}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -757,20 +763,24 @@ const ProjectDetails = () => {
                           <td className="px-4 py-3 border border-gray-300">{new Date(rev.date).toLocaleDateString()}</td>
                           <td className="px-4 py-3 border border-gray-300">
                             <div className="flex gap-3">
-                              <button
-                                onClick={() => setEditingRevenue({ ...rev })}
-                                className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                                title="Edit"
-                              >
-                                <PencilIcon className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteRevenue(rev._id)}
-                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete"
-                              >
-                                <TrashIcon className="w-5 h-5" />
-                              </button>
+                              {canAccessRevenue && (
+                                <>
+                                  <button
+                                    onClick={() => setEditingRevenue({ ...rev })}
+                                    className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                                    title="Edit"
+                                  >
+                                    <PencilIcon className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteRevenue(rev._id)}
+                                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Delete"
+                                  >
+                                    <TrashIcon className="w-5 h-5" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -784,13 +794,15 @@ const ProjectDetails = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-lg">Expense Records</h3>
-                <button
-                  onClick={() => setShowAddExpenseModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                  Add Expense
-                </button>
+                {canAccessExpenses && (
+                  <button
+                    onClick={() => setShowAddExpenseModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                    Add Expense
+                  </button>
+                )}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -819,20 +831,24 @@ const ProjectDetails = () => {
                           <td className="px-4 py-3 border border-gray-300">{new Date(exp.date).toLocaleDateString()}</td>
                           <td className="px-4 py-3 border border-gray-300">
                             <div className="flex gap-3">
-                              <button
-                                onClick={() => setEditingExpense({ ...exp })}
-                                className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                                title="Edit"
-                              >
-                                <PencilIcon className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteExpense(exp._id)}
-                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete"
-                              >
-                                <TrashIcon className="w-5 h-5" />
-                              </button>
+                              {canAccessExpenses && (
+                                <>
+                                  <button
+                                    onClick={() => setEditingExpense({ ...exp })}
+                                    className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                                    title="Edit"
+                                  >
+                                    <PencilIcon className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteExpense(exp._id)}
+                                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Delete"
+                                  >
+                                    <TrashIcon className="w-5 h-5" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -851,13 +867,15 @@ const ProjectDetails = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-lg">Billing Records</h3>
-                <button
-                  onClick={() => setShowAddBillingModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                  Add Billing
-                </button>
+                {canAccessBilling && (
+                  <button
+                    onClick={() => setShowAddBillingModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                    Add Billing
+                  </button>
+                )}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -901,27 +919,31 @@ const ProjectDetails = () => {
                           </td>
                           <td className="px-4 py-3 border border-gray-300">
                             <div className="flex gap-3">
-              <button
-                onClick={() => setEditingBilling({
-                  ...bill,
-                  billingDate: bill.billingDate ? new Date(bill.billingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-                  dueDate: bill.dueDate ? new Date(bill.dueDate).toISOString().split('T')[0] : '',
-                  amount: (bill.amount || 0).toString(),
-                  tax: (bill.tax || 0).toString(),
-                  totalAmount: (bill.totalAmount || 0).toString(),
-                })}
-                className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                title="Edit"
-              >
-                <PencilIcon className="w-5 h-5" />
-              </button>
-                              <button
-                                onClick={() => handleDeleteBilling(bill._id)}
-                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete"
-                              >
-                                <TrashIcon className="w-5 h-5" />
-                              </button>
+                              {canAccessBilling && (
+                                <>
+                                  <button
+                                    onClick={() => setEditingBilling({
+                                      ...bill,
+                                      billingDate: bill.billingDate ? new Date(bill.billingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                                      dueDate: bill.dueDate ? new Date(bill.dueDate).toISOString().split('T')[0] : '',
+                                      amount: (bill.amount || 0).toString(),
+                                      tax: (bill.tax || 0).toString(),
+                                      totalAmount: (bill.totalAmount || 0).toString(),
+                                    })}
+                                    className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                                    title="Edit"
+                                  >
+                                    <PencilIcon className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteBilling(bill._id)}
+                                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Delete"
+                                  >
+                                    <TrashIcon className="w-5 h-5" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -935,13 +957,15 @@ const ProjectDetails = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-lg">Collection Records</h3>
-                <button
-                  onClick={() => setShowAddCollectionModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                  Add Collection
-                </button>
+                {canAccessCollection && (
+                  <button
+                    onClick={() => setShowAddCollectionModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                    Add Collection
+                  </button>
+                )}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -981,20 +1005,24 @@ const ProjectDetails = () => {
                           </td>
                           <td className="px-4 py-3 border border-gray-300">
                             <div className="flex gap-3">
-                              <button
-                                onClick={() => setEditingCollection({ ...col })}
-                                className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                                title="Edit"
-                              >
-                                <PencilIcon className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCollection(col._id)}
-                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete"
-                              >
-                                <TrashIcon className="w-5 h-5" />
-                              </button>
+                              {canAccessCollection && (
+                                <>
+                                  <button
+                                    onClick={() => setEditingCollection({ ...col })}
+                                    className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                                    title="Edit"
+                                  >
+                                    <PencilIcon className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCollection(col._id)}
+                                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Delete"
+                                  >
+                                    <TrashIcon className="w-5 h-5" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
