@@ -4,7 +4,7 @@ import { companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { usePermissions } from '../hooks/usePermissions';
-import { getRoleDisplayName, ROLES } from '../config/permissions';
+import { getRoleDisplayName, ROLES, ACTIONS, ROLE_PERMISSIONS } from '../config/permissions';
 import toast from 'react-hot-toast';
 import {
   BuildingOfficeIcon,
@@ -18,6 +18,7 @@ import {
   XMarkIcon,
   ChevronUpIcon,
   ChevronDownIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 
 const SystemSettings = () => {
@@ -69,7 +70,8 @@ const SystemSettings = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await userAPI.getAll();
+      // Use useCache: false to bypass cache and get fresh data
+      const response = await userAPI.getAll({ useCache: false });
       setUsers(response.data.users || []);
     } catch (error) {
       toast.error('Failed to load users');
@@ -78,7 +80,8 @@ const SystemSettings = () => {
 
   const fetchPendingUsers = async () => {
     try {
-      const response = await userAPI.getPending();
+      // Use useCache: false to bypass cache and get fresh data
+      const response = await userAPI.getPending({ useCache: false });
       // Filter out any users that are not actually pending (safety check)
       const actualPendingUsers = (response.data.users || []).filter(
         user => user.accountStatus === 'pending' && user.emailVerified
@@ -550,6 +553,35 @@ const CompanyInformationTab = ({ company, onSave, saving }) => {
   );
 };
 
+// Helper function to get role description
+const getRoleDescription = (role) => {
+  const descriptions = {
+    [ROLES.MASTER_ADMIN]: 'Full system access with all permissions. Can manage users, approve accounts, and delete projects.',
+    [ROLES.SYSTEM_ADMIN]: 'System administrator with project management capabilities. Can approve projects and view reports.',
+    [ROLES.REVENUE_OFFICER]: 'Manages revenue records and transactions. Can create, edit, and view revenue data.',
+    [ROLES.DISBURSING_OFFICER]: 'Manages expense records and disbursements. Can create, edit, and view expense data.',
+    [ROLES.BILLING_OFFICER]: 'Manages billing records and invoices. Can create, edit, and view billing data.',
+    [ROLES.COLLECTING_OFFICER]: 'Manages collection records and payments. Can create, edit, and view collection data.',
+    [ROLES.VIEWER]: 'Read-only access. Can view reports and data but cannot make changes.',
+  };
+  return descriptions[role] || 'No description available.';
+};
+
+// Helper function to get action description
+const getActionDescription = (action) => {
+  const descriptions = {
+    [ACTIONS.REVENUE]: 'Manage Revenue',
+    [ACTIONS.EXPENSES]: 'Manage Expenses',
+    [ACTIONS.BILLING]: 'Manage Billing',
+    [ACTIONS.COLLECTION]: 'Manage Collections',
+    [ACTIONS.APPROVE]: 'Approve Projects/Users',
+    [ACTIONS.CLOSE_LOCK_PROJECT]: 'Close/Lock Projects',
+    [ACTIONS.DELETE_PROJECT]: 'Delete Projects',
+    [ACTIONS.VIEW_REPORTS]: 'View Reports',
+  };
+  return descriptions[action] || action;
+};
+
 // User Management Tab Component
 const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate, onPendingUsersUpdate }) => {
   const { role: currentUserRole } = usePermissions();
@@ -566,6 +598,7 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
   });
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [showRolesInfo, setShowRolesInfo] = useState(false);
 
   const handleEdit = (user) => {
     setEditingUser(user);
@@ -618,7 +651,10 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
       await userAPI.approveUser(userId);
       toast.success('User approved successfully');
       
-      // Refresh from server to ensure consistency
+      // Small delay to ensure backend has fully processed the update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Refresh from server to ensure consistency (cache already invalidated by approveUser)
       onRefresh();
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to approve user';
@@ -675,7 +711,10 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
       setRejectingUser(null);
       setRejectionReason('');
       
-      // Refresh from server to ensure consistency
+      // Small delay to ensure backend has fully processed the update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Refresh from server to ensure consistency (cache already invalidated by rejectUser)
       onRefresh();
     } catch (error) {
       // Revert optimistic update on error
@@ -769,14 +808,83 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
             <p className="text-sm text-gray-500">Manage system users and their permissions</p>
           </div>
         </div>
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-        >
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {isMasterAdmin && (
+            <button
+              onClick={() => setShowRolesInfo(!showRolesInfo)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <InformationCircleIcon className="w-5 h-5" />
+              <span>Roles & Permissions</span>
+            </button>
+          )}
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {/* Roles & Permissions Modal - Only visible to Master Admin */}
+      {isMasterAdmin && showRolesInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto m-4 relative">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+              <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <InformationCircleIcon className="w-7 h-7 text-blue-600" />
+                Roles & Permissions Guide
+              </h3>
+              <button
+                onClick={() => setShowRolesInfo(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
+                title="Close"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.values(ROLES).map((role) => {
+                const permissions = ROLE_PERMISSIONS[role] || {};
+                const roleDescription = getRoleDescription(role);
+                const allowedActions = Object.entries(permissions)
+                  .filter(([_, allowed]) => allowed)
+                  .map(([action]) => getActionDescription(action));
+                
+                return (
+                  <div key={role} className="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                      {getRoleDisplayName(role)}
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-3">{roleDescription}</p>
+                    
+                    <div className="mt-3">
+                      <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                        Permissions:
+                      </p>
+                      <ul className="space-y-1">
+                        {allowedActions.length > 0 ? (
+                          allowedActions.map((action, index) => (
+                            <li key={index} className="text-xs text-gray-600 flex items-start gap-1">
+                              <CheckCircleIcon className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                              <span>{action}</span>
+                            </li>
+                          ))
+                        ) : (
+                          <li className="text-xs text-gray-500 italic">No special permissions</li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pending Users Section - Only show if Master Admin */}
       {isMasterAdmin && pendingUsers.length > 0 && (

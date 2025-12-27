@@ -154,19 +154,37 @@ export const authAPI = {
 
 // User API
 export const userAPI = {
-  getAll: () => api.get('/users'),
-  getPending: () => api.get('/users/pending'),
+  getAll: (options = {}) => api.get('/users', options),
+  getPending: (options = {}) => api.get('/users/pending', options),
   getById: (id) => api.get(`/users/${id}`),
-  update: (id, data) => api.put(`/users/${id}`, data),
+  update: async (id, data) => {
+    const response = await api.put(`/users/${id}`, data);
+    invalidateCache('users');
+    return response;
+  },
   updatePassword: (id, data) => api.put(`/users/${id}/password`, data),
   requestPasswordChange: () => api.post(`/users/request-password-change`),
   changePasswordWithToken: (token, data) => api.put(`/users/change-password/${token}`, data),
-  approveUser: (id) => api.post(`/users/${id}/approve`),
-  rejectUser: (id, reason) => api.post(`/users/${id}/reject`, { reason }),
+  approveUser: async (id) => {
+    const response = await api.post(`/users/${id}/approve`);
+    // Invalidate users cache to ensure fresh data on next fetch
+    invalidateCache('users');
+    return response;
+  },
+  rejectUser: async (id, reason) => {
+    const response = await api.post(`/users/${id}/reject`, { reason });
+    // Invalidate users cache to ensure fresh data on next fetch
+    invalidateCache('users');
+    return response;
+  },
   getSessions: (id) => api.get(`/users/${id}/sessions`),
   logoutAllDevices: (id) => api.delete(`/users/${id}/sessions`),
   getLoginHistory: (id) => api.get(`/users/${id}/login-history`),
-  delete: (id) => api.delete(`/users/${id}`),
+  delete: async (id) => {
+    const response = await api.delete(`/users/${id}`);
+    invalidateCache('users');
+    return response;
+  },
 };
 
 // Project API

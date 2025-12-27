@@ -322,12 +322,6 @@
   stroke-width: 0;
 }
 
-/* Prevent any CSS from forcing black color on bars - let JavaScript set it */
-svg [class*="MuiBarElement"] rect,
-svg [class*="MuiBarElement"] path {
-  /* Don't force fill here - let the useEffect handle it */
-}
-
 /* Chart responsiveness */
 @media (max-width: 639px) {
   .chart-container {
