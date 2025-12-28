@@ -4,7 +4,7 @@ import { projectAPI, revenueAPI, expenseAPI, billingAPI, collectionAPI } from '.
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/currency';
 import { usePermissions } from '../hooks/usePermissions';
-import { PencilIcon, TrashIcon, XMarkIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, XMarkIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon, LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/outline';
 import { TableSkeleton, CardSkeleton, SkeletonBox } from '../components/skeletons';
 
 const ProjectDetails = () => {
@@ -13,6 +13,11 @@ const ProjectDetails = () => {
   const { canDeleteProject, canAccessRevenue, canAccessExpenses, canAccessBilling, canAccessCollection, role } = usePermissions();
   // Only Master Admin and System Admin can edit projects
   const canCreateEditProject = role === 'master_admin' || role === 'system_admin';
+  // Only Master Admin can lock/unlock projects
+  const canLockUnlockProject = role === 'master_admin';
+  // Viewer role should not see lock status
+  const isViewer = role === 'viewer';
+  const canSeeLockStatus = !isViewer;
   const [project, setProject] = useState(null);
   const [activeTab, setActiveTab] = useState('description');
   const [revenues, setRevenues] = useState([]);
@@ -90,6 +95,11 @@ const ProjectDetails = () => {
       fetchCollections();
     }
   }, [id, activeTab]);
+
+  // Check if project is locked - must be after project state is declared
+  const isProjectLocked = useMemo(() => {
+    return project?.isLocked || false;
+  }, [project]);
 
   // Pagination calculations - must be before any conditional returns
   const revenueTotalPages = Math.ceil(revenues.length / itemsPerPage);
@@ -218,6 +228,33 @@ const ProjectDetails = () => {
       fetchCollections();
     } catch (error) {
       toast.error('Failed to delete collection record');
+    }
+  };
+
+  // Lock/Unlock handlers
+  const handleLockProject = async () => {
+    if (!window.confirm(`Are you sure you want to lock "${project.projectName}"?\n\nOnce locked, the project and all its records (revenue, expenses, billings, collections) will be read-only and cannot be edited or deleted until unlocked.`)) {
+      return;
+    }
+    try {
+      await projectAPI.lock(id);
+      toast.success('Project locked successfully');
+      fetchProject();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to lock project');
+    }
+  };
+
+  const handleUnlockProject = async () => {
+    if (!window.confirm(`Are you sure you want to unlock "${project.projectName}"?\n\nThis will allow editing and deletion of the project and its records.`)) {
+      return;
+    }
+    try {
+      await projectAPI.unlock(id);
+      toast.success('Project unlocked successfully');
+      fetchProject();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to unlock project');
     }
   };
 
@@ -584,7 +621,30 @@ const ProjectDetails = () => {
           <p className="text-gray-600">{project.projectCode}</p>
         </div>
         <div className="flex gap-2">
-          {canCreateEditProject && (
+          {canLockUnlockProject && (
+            <>
+              {isProjectLocked ? (
+                <button
+                  onClick={handleUnlockProject}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  title="Unlock project to allow editing"
+                >
+                  <LockOpenIcon className="w-5 h-5" />
+                  Unlock Project
+                </button>
+              ) : (
+                <button
+                  onClick={handleLockProject}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition-colors border border-gray-300"
+                  title="Lock project to prevent editing"
+                >
+                  <LockClosedIcon className="w-5 h-5" />
+                  Lock Project
+                </button>
+              )}
+            </>
+          )}
+          {canCreateEditProject && !isProjectLocked && (
             <button
               onClick={() => {
                 // Navigate to AddProject with edit mode
@@ -596,7 +656,7 @@ const ProjectDetails = () => {
               Edit Project
             </button>
           )}
-          {canDeleteProject && (
+          {canDeleteProject && !isProjectLocked && (
             <button
               onClick={async () => {
                 const confirmMessage = `Are you sure you want to delete "${project.projectName}"?\n\nThis project will be moved to "Recently Deleted" and can be restored within 30 days. After 30 days, it will be permanently deleted.`;
@@ -627,13 +687,33 @@ const ProjectDetails = () => {
         </div>
         <div>
           <span className="text-sm text-gray-600">Status</span>
-          <p className="font-semibold capitalize">{project.status}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold capitalize">{project.status}</p>
+            {isProjectLocked && canSeeLockStatus && (
+              <span className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
+                <LockClosedIcon className="w-3 h-3 text-black" />
+                Locked
+              </span>
+            )}
+          </div>
         </div>
         <div>
           <span className="text-sm text-gray-600">Transaction Price</span>
           <p className="font-semibold">{formatCurrency(project.budget)}</p>
         </div>
       </div>
+
+      {/* Lock Warning Message */}
+      {isProjectLocked && canSeeLockStatus && (
+        <div className="card bg-yellow-50 border-l-4 border-yellow-500">
+          <div className="flex items-center gap-2">
+            <LockClosedIcon className="w-5 h-5 text-black" />
+            <p className="text-yellow-800 font-semibold">
+              This project is locked. All records (revenue, expenses, billings, collections) are read-only and cannot be edited or deleted until the project is unlocked.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="card">
@@ -726,7 +806,7 @@ const ProjectDetails = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-lg">Revenue Records</h3>
-                {canAccessRevenue && (
+                {canAccessRevenue && !isProjectLocked && (
                   <button
                     onClick={() => setShowAddRevenueModal(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -763,7 +843,7 @@ const ProjectDetails = () => {
                           <td className="px-4 py-3 border border-gray-300">{new Date(rev.date).toLocaleDateString()}</td>
                           <td className="px-4 py-3 border border-gray-300">
                             <div className="flex gap-3">
-                              {canAccessRevenue && (
+                              {canAccessRevenue && !isProjectLocked && (
                                 <>
                                   <button
                                     onClick={() => setEditingRevenue({ ...rev })}
@@ -794,7 +874,7 @@ const ProjectDetails = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-lg">Expense Records</h3>
-                {canAccessExpenses && (
+                {canAccessExpenses && !isProjectLocked && (
                   <button
                     onClick={() => setShowAddExpenseModal(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -831,7 +911,7 @@ const ProjectDetails = () => {
                           <td className="px-4 py-3 border border-gray-300">{new Date(exp.date).toLocaleDateString()}</td>
                           <td className="px-4 py-3 border border-gray-300">
                             <div className="flex gap-3">
-                              {canAccessExpenses && (
+                              {canAccessExpenses && !isProjectLocked && (
                                 <>
                                   <button
                                     onClick={() => setEditingExpense({ ...exp })}
@@ -867,7 +947,7 @@ const ProjectDetails = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-lg">Billing Records</h3>
-                {canAccessBilling && (
+                {canAccessBilling && !isProjectLocked && (
                   <button
                     onClick={() => setShowAddBillingModal(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -919,7 +999,7 @@ const ProjectDetails = () => {
                           </td>
                           <td className="px-4 py-3 border border-gray-300">
                             <div className="flex gap-3">
-                              {canAccessBilling && (
+                              {canAccessBilling && !isProjectLocked && (
                                 <>
                                   <button
                                     onClick={() => setEditingBilling({
@@ -957,7 +1037,7 @@ const ProjectDetails = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-lg">Collection Records</h3>
-                {canAccessCollection && (
+                {canAccessCollection && !isProjectLocked && (
                   <button
                     onClick={() => setShowAddCollectionModal(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -1005,7 +1085,7 @@ const ProjectDetails = () => {
                           </td>
                           <td className="px-4 py-3 border border-gray-300">
                             <div className="flex gap-3">
-                              {canAccessCollection && (
+                              {canAccessCollection && !isProjectLocked && (
                                 <>
                                   <button
                                     onClick={() => setEditingCollection({ ...col })}

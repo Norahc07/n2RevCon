@@ -70,6 +70,13 @@ export const createExpense = async (req, res) => {
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
       }
+      
+      // Check if project is locked
+      if (project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
+      }
     }
 
     const expenseData = {
@@ -97,6 +104,22 @@ export const createExpense = async (req, res) => {
  */
 export const updateExpense = async (req, res) => {
   try {
+    // Get existing expense to check its project
+    const existingExpense = await Expense.findById(req.params.id);
+    if (!existingExpense) {
+      return res.status(404).json({ message: 'Expense record not found' });
+    }
+
+    // Check if the existing expense's project is locked
+    if (existingExpense.projectId) {
+      const project = await Project.findById(existingExpense.projectId);
+      if (project && project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
+      }
+    }
+
     // Normalize projectId: convert empty string to null for general expenses
     if (req.body.projectId !== undefined) {
       req.body.projectId = req.body.projectId && req.body.projectId.trim() !== '' 
@@ -109,6 +132,13 @@ export const updateExpense = async (req, res) => {
       const project = await Project.findById(req.body.projectId);
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
+      }
+      
+      // Check if new project is locked
+      if (project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
       }
     }
 
@@ -139,10 +169,23 @@ export const updateExpense = async (req, res) => {
  */
 export const deleteExpense = async (req, res) => {
   try {
-    const expense = await Expense.findByIdAndDelete(req.params.id);
+    // Get expense to check if its project is locked
+    const expense = await Expense.findById(req.params.id);
     if (!expense) {
       return res.status(404).json({ message: 'Expense record not found' });
     }
+
+    // Check if project is locked
+    if (expense.projectId) {
+      const project = await Project.findById(expense.projectId);
+      if (project && project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
+      }
+    }
+
+    await Expense.findByIdAndDelete(req.params.id);
     res.json({ message: 'Expense record deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

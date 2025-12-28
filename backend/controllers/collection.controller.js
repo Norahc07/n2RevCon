@@ -1,5 +1,6 @@
 import Collection from '../models/Collection.model.js';
 import Billing from '../models/Billing.model.js';
+import Project from '../models/Project.model.js';
 
 /**
  * @route   GET /api/collections
@@ -67,6 +68,16 @@ export const createCollection = async (req, res) => {
       return res.status(404).json({ message: 'Billing record not found' });
     }
 
+    // Check if project is locked
+    if (billing.projectId) {
+      const project = await Project.findById(billing.projectId);
+      if (project && project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
+      }
+    }
+
     const collectionData = {
       ...req.body,
       projectId: billing.projectId,
@@ -93,16 +104,28 @@ export const createCollection = async (req, res) => {
  */
 export const updateCollection = async (req, res) => {
   try {
+    // Get existing collection to check if its project is locked
+    const existingCollection = await Collection.findById(req.params.id);
+    if (!existingCollection) {
+      return res.status(404).json({ message: 'Collection record not found' });
+    }
+
+    // Check if project is locked
+    if (existingCollection.projectId) {
+      const project = await Project.findById(existingCollection.projectId);
+      if (project && project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
+      }
+    }
+
     const collection = await Collection.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
     ).populate('billingId', 'invoiceNumber amount totalAmount')
      .populate('projectId', 'projectCode projectName');
-
-    if (!collection) {
-      return res.status(404).json({ message: 'Collection record not found' });
-    }
 
     res.json({ message: 'Collection record updated successfully', collection });
   } catch (error) {
@@ -117,10 +140,23 @@ export const updateCollection = async (req, res) => {
  */
 export const deleteCollection = async (req, res) => {
   try {
-    const collection = await Collection.findByIdAndDelete(req.params.id);
+    // Get collection to check if its project is locked
+    const collection = await Collection.findById(req.params.id);
     if (!collection) {
       return res.status(404).json({ message: 'Collection record not found' });
     }
+
+    // Check if project is locked
+    if (collection.projectId) {
+      const project = await Project.findById(collection.projectId);
+      if (project && project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
+      }
+    }
+
+    await Collection.findByIdAndDelete(req.params.id);
     res.json({ message: 'Collection record deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

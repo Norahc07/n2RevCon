@@ -23,6 +23,7 @@ import {
   CurrencyDollarIcon,
   ArrowTrendingDownIcon,
   ArrowRightIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -33,6 +34,9 @@ const ProjectsRevenueCosts = () => {
   const { canAccessRevenue, canAccessExpenses, canViewReports, canDeleteProject, role } = usePermissions();
   // Only Master Admin and System Admin can edit projects
   const canCreateEditProject = role === 'master_admin' || role === 'system_admin';
+  // Viewer role should not see lock status
+  const isViewer = role === 'viewer';
+  const canSeeLockStatus = !isViewer;
   const [projects, setProjects] = useState([]);
   const [allRevenues, setAllRevenues] = useState([]);
   const [allExpenses, setAllExpenses] = useState([]);
@@ -591,6 +595,16 @@ const ProjectsRevenueCosts = () => {
   // Handle update revenue
   const handleUpdateRevenue = async (e) => {
     e.preventDefault();
+    
+    // Check if project is locked (check both old and new projectId)
+    const oldProjectId = editingRevenue.projectId?._id || editingRevenue.projectId;
+    const newProjectId = editingRevenue.projectId || null;
+    
+    if ((oldProjectId && isProjectLocked(oldProjectId)) || (newProjectId && isProjectLocked(newProjectId))) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+      return;
+    }
+    
     try {
       await revenueAPI.update(editingRevenue._id, {
         projectId: editingRevenue.projectId || null, // Allow null for general revenues
@@ -606,13 +620,23 @@ const ProjectsRevenueCosts = () => {
       setEditingRevenue(null);
       fetchAllData();
     } catch (error) {
-      toast.error('Failed to update revenue record');
+      toast.error(error.response?.data?.message || 'Failed to update revenue record');
     }
   };
 
   // Handle update expense
   const handleUpdateExpense = async (e) => {
     e.preventDefault();
+    
+    // Check if project is locked (check both old and new projectId)
+    const oldProjectId = editingExpense.projectId?._id || editingExpense.projectId;
+    const newProjectId = editingExpense.projectId || null;
+    
+    if ((oldProjectId && isProjectLocked(oldProjectId)) || (newProjectId && isProjectLocked(newProjectId))) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+      return;
+    }
+    
     try {
       await expenseAPI.update(editingExpense._id, {
         projectId: editingExpense.projectId || null, // Allow null for general expenses
@@ -628,7 +652,7 @@ const ProjectsRevenueCosts = () => {
       setEditingExpense(null);
       fetchAllData();
     } catch (error) {
-      toast.error('Failed to update expense record');
+      toast.error(error.response?.data?.message || 'Failed to update expense record');
     }
   };
 
@@ -638,12 +662,23 @@ const ProjectsRevenueCosts = () => {
     if (!window.confirm('Are you sure you want to delete this revenue record?')) {
       return;
     }
+    
+    // Check if project is locked
+    const revenue = allRevenues.find(r => r._id === revenueId);
+    if (revenue) {
+      const projectId = revenue.projectId?._id || revenue.projectId;
+      if (projectId && isProjectLocked(projectId)) {
+        toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+        return;
+      }
+    }
+    
     try {
       await revenueAPI.delete(revenueId);
       toast.success('Revenue record deleted');
       fetchAllData();
     } catch (error) {
-      toast.error('Failed to delete revenue record');
+      toast.error(error.response?.data?.message || 'Failed to delete revenue record');
     }
   };
 
@@ -653,17 +688,34 @@ const ProjectsRevenueCosts = () => {
     if (!window.confirm('Are you sure you want to delete this expense record?')) {
       return;
     }
+    
+    // Check if project is locked
+    const expense = allExpenses.find(e => e._id === expenseId);
+    if (expense) {
+      const projectId = expense.projectId?._id || expense.projectId;
+      if (projectId && isProjectLocked(projectId)) {
+        toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+        return;
+      }
+    }
+    
     try {
       await expenseAPI.delete(expenseId);
       toast.success('Expense record deleted');
       fetchAllData();
     } catch (error) {
-      toast.error('Failed to delete expense record');
+      toast.error(error.response?.data?.message || 'Failed to delete expense record');
     }
   };
 
   // Handle add general expense to project
   const handleAddExpenseToProject = async (expenseId, projectId) => {
+    // Check if project is locked
+    if (isProjectLocked(projectId)) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+      return;
+    }
+    
     try {
       await expenseAPI.update(expenseId, {
         projectId: projectId,
@@ -677,6 +729,12 @@ const ProjectsRevenueCosts = () => {
 
   // Handle add general revenue to project
   const handleAddRevenueToProject = async (revenueId, projectId) => {
+    // Check if project is locked
+    if (isProjectLocked(projectId)) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+      return;
+    }
+    
     try {
       await revenueAPI.update(revenueId, {
         projectId: projectId,
@@ -688,9 +746,23 @@ const ProjectsRevenueCosts = () => {
     }
   };
 
+  // Helper function to check if a project is locked
+  const isProjectLocked = (projectId) => {
+    if (!projectId) return false; // General revenues/expenses are not locked
+    const project = projects.find(p => p._id === projectId);
+    return project?.isLocked || false;
+  };
+
   // Handle add revenue
   const handleAddRevenue = async (e) => {
     e.preventDefault();
+    
+    // Check if project is locked
+    if (newRevenue.projectId && isProjectLocked(newRevenue.projectId)) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+      return;
+    }
+    
     try {
       await revenueAPI.create({
         projectId: newRevenue.projectId || null, // Allow null for general revenues
@@ -716,13 +788,20 @@ const ProjectsRevenueCosts = () => {
       });
       fetchAllData();
     } catch (error) {
-      toast.error('Failed to add revenue record');
+      toast.error(error.response?.data?.message || 'Failed to add revenue record');
     }
   };
 
   // Handle add expense
   const handleAddExpense = async (e) => {
     e.preventDefault();
+    
+    // Check if project is locked
+    if (newExpense.projectId && isProjectLocked(newExpense.projectId)) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+      return;
+    }
+    
     try {
       await expenseAPI.create({
         projectId: newExpense.projectId || null, // Allow null for general expenses
@@ -1398,24 +1477,32 @@ const ProjectsRevenueCosts = () => {
                               <td className="border border-gray-300 px-3 py-2 text-sm capitalize">{rev.status || 'N/A'}</td>
                               <td className="border border-gray-300 px-3 py-2">
                                 <div className="flex gap-2">
-                                  {canAccessRevenue && (
-                                    <>
-                                      <button
-                                        onClick={() => handleEditRevenue(rev)}
-                                        className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
-                                        title="Edit"
-                                      >
-                                        <PencilIcon className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={(e) => handleDeleteRevenue(rev._id, e)}
-                                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                                        title="Delete"
-                                      >
-                                        <TrashIcon className="w-4 h-4" />
-                                      </button>
-                                    </>
-                                  )}
+                                  {canAccessRevenue && (() => {
+                                    const projectId = rev.projectId?._id || rev.projectId;
+                                    const locked = projectId ? isProjectLocked(projectId) : false;
+                                    return locked && canSeeLockStatus ? (
+                                      <span className="text-xs text-yellow-600 italic" title="Project is locked">
+                                        Locked
+                                      </span>
+                                    ) : locked && !canSeeLockStatus ? null : (
+                                      <>
+                                        <button
+                                          onClick={() => handleEditRevenue(rev)}
+                                          className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
+                                          title="Edit"
+                                        >
+                                          <PencilIcon className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          onClick={(e) => handleDeleteRevenue(rev._id, e)}
+                                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                          title="Delete"
+                                        >
+                                          <TrashIcon className="w-4 h-4" />
+                                        </button>
+                                      </>
+                                    );
+                                  })()}
                                 </div>
                               </td>
                             </tr>
@@ -1592,7 +1679,15 @@ const ProjectsRevenueCosts = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
           <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold">Edit Records - {editingProject.projectName}</h2>
+                {editingProject.isLocked && canSeeLockStatus && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                    <LockClosedIcon className="w-3 h-3 text-black" />
+                    Locked
+                  </span>
+                )}
+              </div>
               <button onClick={() => {
                 setShowEditModal(false);
                 setEditingProject(null);
@@ -1602,6 +1697,13 @@ const ProjectsRevenueCosts = () => {
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
+            {editingProject.isLocked && canSeeLockStatus && (
+              <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+                <p className="text-yellow-800 text-sm font-medium">
+                  This project is locked. All records are read-only and cannot be edited or deleted until the project is unlocked.
+                </p>
+              </div>
+            )}
 
             {/* Revenue Records Section */}
             <div className="mb-6">
@@ -1629,6 +1731,12 @@ const ProjectsRevenueCosts = () => {
                           <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(rev.date).toLocaleDateString()}</td>
                           <td className="border border-gray-300 px-3 py-2">
                             <div className="flex gap-2">
+                              {editingProject?.isLocked && canSeeLockStatus ? (
+                                <span className="text-xs text-yellow-600 italic" title="Project is locked">
+                                  Locked
+                                </span>
+                              ) : editingProject?.isLocked && !canSeeLockStatus ? null : (
+                                <>
                               <button
                                 onClick={() => handleEditRevenue(rev)}
                                 className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
@@ -1643,6 +1751,8 @@ const ProjectsRevenueCosts = () => {
                               >
                                 <TrashIcon className="w-4 h-4" />
                               </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1677,20 +1787,28 @@ const ProjectsRevenueCosts = () => {
                           <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(rev.date).toLocaleDateString()}</td>
                           <td className="border border-gray-300 px-3 py-2">
                             <div className="flex gap-2">
-                              <button
-                                onClick={() => handleAddRevenueToProject(rev._id, editingProject._id)}
-                                className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
-                                title="Add to Project"
-                              >
-                                <PlusIcon className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => handleDeleteRevenue(rev._id, e)}
-                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                                title="Delete"
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
+                              {editingProject.isLocked && canSeeLockStatus ? (
+                                <span className="text-xs text-yellow-600 italic" title="Project is locked">
+                                  Locked
+                                </span>
+                              ) : !editingProject.isLocked ? (
+                                <>
+                                  <button
+                                    onClick={() => handleAddRevenueToProject(rev._id, editingProject._id)}
+                                    className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                                    title="Add to Project"
+                                  >
+                                    <PlusIcon className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeleteRevenue(rev._id, e)}
+                                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                    title="Delete"
+                                  >
+                                    <TrashIcon className="w-4 h-4" />
+                                  </button>
+                                </>
+                              ) : null}
                             </div>
                           </td>
                         </tr>
@@ -1727,6 +1845,12 @@ const ProjectsRevenueCosts = () => {
                           <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(exp.date).toLocaleDateString()}</td>
                           <td className="border border-gray-300 px-3 py-2">
                             <div className="flex gap-2">
+                              {editingProject?.isLocked && canSeeLockStatus ? (
+                                <span className="text-xs text-yellow-600 italic" title="Project is locked">
+                                  Locked
+                                </span>
+                              ) : editingProject?.isLocked && !canSeeLockStatus ? null : (
+                                <>
                               <button
                                 onClick={() => handleEditExpense(exp)}
                                 className="p-1 text-black hover:text-gray-700 hover:bg-gray-50 rounded"
@@ -1741,6 +1865,8 @@ const ProjectsRevenueCosts = () => {
                               >
                                 <TrashIcon className="w-4 h-4" />
                               </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1775,20 +1901,28 @@ const ProjectsRevenueCosts = () => {
                           <td className="border border-gray-300 px-3 py-2 text-sm">{new Date(exp.date).toLocaleDateString()}</td>
                           <td className="border border-gray-300 px-3 py-2">
                             <div className="flex gap-2">
-                              <button
-                                onClick={() => handleAddExpenseToProject(exp._id, editingProject._id)}
-                                className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
-                                title="Add to Project"
-                              >
-                                <PlusIcon className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => handleDeleteExpense(exp._id, e)}
-                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                                title="Delete"
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
+                              {editingProject.isLocked && canSeeLockStatus ? (
+                                <span className="text-xs text-yellow-600 italic" title="Project is locked">
+                                  Locked
+                                </span>
+                              ) : !editingProject.isLocked ? (
+                                <>
+                                  <button
+                                    onClick={() => handleAddExpenseToProject(exp._id, editingProject._id)}
+                                    className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                                    title="Add to Project"
+                                  >
+                                    <PlusIcon className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeleteExpense(exp._id, e)}
+                                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                    title="Delete"
+                                  >
+                                    <TrashIcon className="w-4 h-4" />
+                                  </button>
+                                </>
+                              ) : null}
                             </div>
                           </td>
                         </tr>

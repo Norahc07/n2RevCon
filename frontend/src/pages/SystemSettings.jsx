@@ -1153,33 +1153,33 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                     <div className="flex items-center gap-3">
                       {/* Edit - Master Admin only */}
                       {isMasterAdmin && (
-                        <button
-                          onClick={() => handleEdit(user)}
-                          disabled={loading}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50"
-                        >
-                          Edit
-                        </button>
+                      <button
+                        onClick={() => handleEdit(user)}
+                        disabled={loading}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50"
+                      >
+                        Edit
+                      </button>
                       )}
                       {/* Activate/Deactivate - Master Admin only */}
                       {isMasterAdmin && (
-                        <button
-                          onClick={() => handleToggleStatus(user)}
-                          disabled={loading}
-                          className="text-green-600 hover:text-green-800 text-sm font-medium disabled:opacity-50"
-                        >
-                          {user.isActive ? 'Deactivate' : 'Activate'}
-                        </button>
+                      <button
+                        onClick={() => handleToggleStatus(user)}
+                        disabled={loading}
+                        className="text-green-600 hover:text-green-800 text-sm font-medium disabled:opacity-50"
+                      >
+                        {user.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
                       )}
                       {/* Delete - Master Admin only */}
                       {isMasterAdmin && (
-                        <button
-                          onClick={() => handleDelete(user)}
-                          disabled={loading}
-                          className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
-                        >
-                          Delete
-                        </button>
+                      <button
+                        onClick={() => handleDelete(user)}
+                        disabled={loading}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
                       )}
                     </div>
                   </td>

@@ -87,6 +87,19 @@ export const createProject = async (req, res) => {
  */
 export const updateProject = async (req, res) => {
   try {
+    // Check if project exists and is locked
+    const existingProject = await Project.findById(req.params.id);
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Prevent updates if project is locked (even for Master Admin)
+    if (existingProject.isLocked) {
+      return res.status(403).json({ 
+        message: 'Project is locked and cannot be edited. Please unlock the project first.' 
+      });
+    }
+
     const projectData = {
       ...req.body,
       updatedBy: req.user.id
@@ -98,10 +111,6 @@ export const updateProject = async (req, res) => {
       { new: true, runValidators: true }
     ).populate('createdBy', 'firstName lastName email')
      .populate('updatedBy', 'firstName lastName email');
-
-    if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
 
     res.json({ message: 'Project updated successfully', project });
   } catch (error) {
@@ -220,7 +229,7 @@ export const closeProject = async (req, res) => {
 /**
  * @route   POST /api/projects/:id/lock
  * @desc    Lock a project (prevent modifications)
- * @access  Private (Requires CLOSE_LOCK_PROJECT permission)
+ * @access  Private (Master Admin only - Requires DELETE_PROJECT permission)
  */
 export const lockProject = async (req, res) => {
   try {
@@ -250,7 +259,7 @@ export const lockProject = async (req, res) => {
 /**
  * @route   POST /api/projects/:id/unlock
  * @desc    Unlock a project (allow modifications)
- * @access  Private (Requires CLOSE_LOCK_PROJECT permission)
+ * @access  Private (Master Admin only - Requires DELETE_PROJECT permission)
  */
 export const unlockProject = async (req, res) => {
   try {

@@ -20,6 +20,8 @@ import {
   ChevronUpIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  LockClosedIcon,
+  LockOpenIcon,
 } from '@heroicons/react/24/outline';
 import { exportAPI } from '../services/api';
 import { TableSkeleton, FilterSkeleton } from '../components/skeletons';
@@ -28,6 +30,11 @@ const ProjectsDescription = () => {
   const { canViewReports, canCloseLockProject, canDeleteProject, role } = usePermissions();
   // Only Master Admin and System Admin can create/edit projects
   const canCreateEditProject = role === 'master_admin' || role === 'system_admin';
+  // Only Master Admin can lock/unlock projects
+  const canLockUnlockProject = role === 'master_admin';
+  // Viewer role should not see lock status
+  const isViewer = role === 'viewer';
+  const canSeeLockStatus = !isViewer;
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState('');
@@ -142,6 +149,36 @@ const ProjectsDescription = () => {
     } catch (error) {
       toast.error('Failed to delete project');
       console.error('Delete error:', error);
+    }
+  };
+
+  // Handle lock project
+  const handleLock = async (projectId, projectName, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to lock "${projectName}"?\n\nOnce locked, the project and all its records (revenue, expenses, billings, collections) will be read-only and cannot be edited or deleted until unlocked.`)) {
+      return;
+    }
+    try {
+      await projectAPI.lock(projectId);
+      toast.success('Project locked successfully');
+      fetchProjects();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to lock project');
+    }
+  };
+
+  // Handle unlock project
+  const handleUnlock = async (projectId, projectName, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to unlock "${projectName}"?\n\nThis will allow editing and deletion of the project and its records.`)) {
+      return;
+    }
+    try {
+      await projectAPI.unlock(projectId);
+      toast.success('Project unlocked successfully');
+      fetchProjects();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to unlock project');
     }
   };
 
@@ -317,7 +354,7 @@ const ProjectsDescription = () => {
                 {/* Card Header */}
                 <div className="flex items-start justify-between gap-2 mb-3 pb-3 border-b border-gray-200">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
                         {project.projectCode}
                       </span>
@@ -328,6 +365,12 @@ const ProjectsDescription = () => {
                       >
                         {project.status?.charAt(0).toUpperCase() + project.status?.slice(1) || 'N/A'}
                       </span>
+                      {project.isLocked && canSeeLockStatus && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                          <LockClosedIcon className="w-3 h-3 text-black" />
+                          Locked
+                        </span>
+                      )}
                     </div>
                     <h3 className="font-semibold text-gray-900 text-sm truncate">{project.projectName}</h3>
                   </div>
@@ -377,7 +420,30 @@ const ProjectsDescription = () => {
                     <EyeIcon className="w-4 h-4" />
                     View
                   </button>
-                  {canCreateEditProject && (
+                  {canLockUnlockProject && (
+                    <>
+                      {project.isLocked ? (
+                        <button
+                          onClick={(e) => handleUnlock(project._id, project.projectName, e)}
+                          className="flex-1 flex items-center justify-center gap-1 p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all duration-200 text-xs font-medium"
+                          title="Unlock project"
+                        >
+                          <LockOpenIcon className="w-4 h-4" />
+                          Unlock
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => handleLock(project._id, project.projectName, e)}
+                          className="flex-1 flex items-center justify-center gap-1 p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200 text-xs font-medium"
+                          title="Lock project"
+                        >
+                          <LockClosedIcon className="w-4 h-4" />
+                          Lock
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {canCreateEditProject && !project.isLocked && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -389,7 +455,7 @@ const ProjectsDescription = () => {
                       Edit
                     </button>
                   )}
-                  {canDeleteProject && (
+                  {canDeleteProject && !project.isLocked && (
                     <button
                       onClick={(e) => handleDelete(project._id, project.projectName, e)}
                       className="flex-1 flex items-center justify-center gap-1 p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 text-xs font-medium"
@@ -523,6 +589,7 @@ const ProjectsDescription = () => {
                         </div>
                       </td>
                       <td className="p-3 sm:p-4">
+                        <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(
                             project.status
@@ -530,6 +597,13 @@ const ProjectsDescription = () => {
                         >
                           {project.status?.charAt(0).toUpperCase() + project.status?.slice(1) || 'N/A'}
                         </span>
+                          {project.isLocked && canSeeLockStatus && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                              <LockClosedIcon className="w-3 h-3 text-black" />
+                              Locked
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-3 sm:p-4 hidden lg:table-cell">
                         <span className="font-medium text-sm text-gray-700">₱{(project.budget || 0).toLocaleString('en-US', {
@@ -567,7 +641,28 @@ const ProjectsDescription = () => {
                           >
                             <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
-                          {canCreateEditProject && (
+                          {canLockUnlockProject && (
+                            <>
+                              {project.isLocked ? (
+                                <button
+                                  onClick={(e) => handleUnlock(project._id, project.projectName, e)}
+                                  className="p-1.5 sm:p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                  title="Unlock project"
+                                >
+                                  <LockOpenIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={(e) => handleLock(project._id, project.projectName, e)}
+                                  className="p-1.5 sm:p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
+                                  title="Lock project"
+                                >
+                                  <LockClosedIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </button>
+                              )}
+                            </>
+                          )}
+                          {canCreateEditProject && !project.isLocked && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -579,7 +674,7 @@ const ProjectsDescription = () => {
                               <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                           )}
-                          {canDeleteProject && (
+                          {canDeleteProject && !project.isLocked && (
                             <button
                               onClick={(e) => handleDelete(project._id, project.projectName, e)}
                               className="p-1.5 sm:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"

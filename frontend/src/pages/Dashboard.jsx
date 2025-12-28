@@ -86,65 +86,64 @@ const Dashboard = () => {
     }
 
     const applyBarColors = () => {
-      // Calculate data inside effect to avoid dependency issues
-      const projectStatusData = [
-        { status: 'Pending', value: summary.projectStatus?.pending || 0, color: '#F59E0B' },
-        { status: 'Ongoing', value: summary.projectStatus?.ongoing || 0, color: '#3B82F6' },
-        { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' },
-      ].filter(item => item.value > 0);
+      // Color mapping for Project Status - in fixed order
+      const projectStatusColors = ['#F59E0B', '#3B82F6', '#10B981']; // Orange, Blue, Green
+      const projectStatusLabels = ['Pending', 'Ongoing', 'Completed'];
       
-      const projectStatusDataset = projectStatusData.map(item => ({
-        status: item.status,
-        count: item.value,
-        color: item.color,
-      }));
-
-      const paymentStatusData = [
-        { status: 'Paid', amount: summary.paymentStatus?.paid?.totalAmount || 0, color: '#10B981' },
-        { status: 'Unpaid', amount: summary.paymentStatus?.unpaid?.totalAmount || 0, color: '#EF4444' },
-        { status: 'Uncollectible', amount: summary.paymentStatus?.uncollectible?.totalAmount || 0, color: '#F59E0B' },
-      ].filter(item => item.amount > 0);
-      
-      const paymentStatusDataset = paymentStatusData.map(item => ({
-        status: item.status,
-        amount: item.amount,
-        color: item.color,
-      }));
+      // Color mapping for Payment Status - in fixed order
+      const paymentStatusColors = ['#10B981', '#EF4444', '#F59E0B']; // Green, Red, Orange
+      const paymentStatusLabels = ['Paid', 'Unpaid', 'Uncollectible'];
 
       // Apply Project Status bar colors
       if (projectStatusChartRef.current) {
         const chartContainer = projectStatusChartRef.current;
         
-        // Find all bar groups - try multiple selectors
+        // Find all bar groups - they should be in order left to right
         const barGroups = Array.from(chartContainer.querySelectorAll('g[class*="MuiBarElement"], g[class*="BarElement"]'));
         
-        // For vertical bar charts, bars are ordered left to right
-        // Match by index since dataset order should match bar order
+        // Also try finding bars by their rect elements directly
+        const allRects = Array.from(chartContainer.querySelectorAll('rect[class*="MuiBarElement"], rect[class*="BarElement"]'));
+        
+        // Get bars in order by their x position (left to right)
+        const barsWithPosition = allRects.map(rect => {
+          const transform = rect.getAttribute('transform') || '';
+          const xMatch = transform.match(/translate\(([^,]+)/);
+          const x = xMatch ? parseFloat(xMatch[1]) : parseFloat(rect.getAttribute('x') || '0');
+          return { element: rect, x: x };
+        }).sort((a, b) => a.x - b.x);
+        
+        // Apply colors to bars in order
+        barsWithPosition.forEach((bar, index) => {
+          if (index < projectStatusColors.length) {
+            const color = projectStatusColors[index];
+            const rect = bar.element;
+            
+            // Force apply color with multiple methods
+            rect.setAttribute('fill', color);
+            rect.style.cssText = `fill: ${color} !important; stroke: none !important;`;
+            rect.style.setProperty('fill', color, 'important');
+            rect.style.setProperty('stroke', 'none', 'important');
+            
+            // Also apply to parent group if exists
+            const parentGroup = rect.closest('g[class*="MuiBarElement"], g[class*="BarElement"]');
+            if (parentGroup) {
+              parentGroup.setAttribute('fill', color);
+              parentGroup.style.setProperty('fill', color, 'important');
+            }
+          }
+        });
+        
+        // Also apply to bar groups by index as fallback
         barGroups.forEach((group, index) => {
-          if (projectStatusDataset[index]?.color) {
-            const color = projectStatusDataset[index].color;
-            // Apply to all shapes in the group
+          if (index < projectStatusColors.length) {
+            const color = projectStatusColors[index];
             const shapes = group.querySelectorAll('rect, path, polygon');
             shapes.forEach(shape => {
-              // Remove any existing fill styles
-              shape.removeAttribute('fill');
-              shape.style.removeProperty('fill');
-              // Set new color
               shape.setAttribute('fill', color);
-              shape.style.setProperty('fill', color, 'important');
-              shape.style.setProperty('stroke', 'none', 'important');
-              // Also try setting on the shape's computed style
-              if (shape.style) {
-                shape.style.cssText += `; fill: ${color} !important; stroke: none !important;`;
-              }
+              shape.style.cssText = `fill: ${color} !important; stroke: none !important;`;
             });
-            // Set on group as well
             group.setAttribute('fill', color);
             group.style.setProperty('fill', color, 'important');
-            // Try setting style directly on group
-            if (group.style) {
-              group.style.cssText += `; fill: ${color} !important;`;
-            }
           }
         });
       }
@@ -153,36 +152,52 @@ const Dashboard = () => {
       if (paymentStatusChartRef.current) {
         const chartContainer = paymentStatusChartRef.current;
         
-        // Find all bar groups - try multiple selectors
+        // Find all bar groups - they should be in order left to right
         const barGroups = Array.from(chartContainer.querySelectorAll('g[class*="MuiBarElement"], g[class*="BarElement"]'));
         
-        // For vertical bar charts, bars are ordered left to right
-        // Match by index since dataset order should match bar order
+        // Also try finding bars by their rect elements directly
+        const allRects = Array.from(chartContainer.querySelectorAll('rect[class*="MuiBarElement"], rect[class*="BarElement"]'));
+        
+        // Get bars in order by their x position (left to right)
+        const barsWithPosition = allRects.map(rect => {
+          const transform = rect.getAttribute('transform') || '';
+          const xMatch = transform.match(/translate\(([^,]+)/);
+          const x = xMatch ? parseFloat(xMatch[1]) : parseFloat(rect.getAttribute('x') || '0');
+          return { element: rect, x: x };
+        }).sort((a, b) => a.x - b.x);
+        
+        // Apply colors to bars in order
+        barsWithPosition.forEach((bar, index) => {
+          if (index < paymentStatusColors.length) {
+            const color = paymentStatusColors[index];
+            const rect = bar.element;
+            
+            // Force apply color with multiple methods
+            rect.setAttribute('fill', color);
+            rect.style.cssText = `fill: ${color} !important; stroke: none !important;`;
+            rect.style.setProperty('fill', color, 'important');
+            rect.style.setProperty('stroke', 'none', 'important');
+            
+            // Also apply to parent group if exists
+            const parentGroup = rect.closest('g[class*="MuiBarElement"], g[class*="BarElement"]');
+            if (parentGroup) {
+              parentGroup.setAttribute('fill', color);
+              parentGroup.style.setProperty('fill', color, 'important');
+            }
+          }
+        });
+        
+        // Also apply to bar groups by index as fallback
         barGroups.forEach((group, index) => {
-          if (paymentStatusDataset[index]?.color) {
-            const color = paymentStatusDataset[index].color;
-            // Apply to all shapes in the group
+          if (index < paymentStatusColors.length) {
+            const color = paymentStatusColors[index];
             const shapes = group.querySelectorAll('rect, path, polygon');
             shapes.forEach(shape => {
-              // Remove any existing fill styles
-              shape.removeAttribute('fill');
-              shape.style.removeProperty('fill');
-              // Set new color
               shape.setAttribute('fill', color);
-              shape.style.setProperty('fill', color, 'important');
-              shape.style.setProperty('stroke', 'none', 'important');
-              // Also try setting on the shape's computed style
-              if (shape.style) {
-                shape.style.cssText += `; fill: ${color} !important; stroke: none !important;`;
-              }
+              shape.style.cssText = `fill: ${color} !important; stroke: none !important;`;
             });
-            // Set on group as well
             group.setAttribute('fill', color);
             group.style.setProperty('fill', color, 'important');
-            // Try setting style directly on group
-            if (group.style) {
-              group.style.cssText += `; fill: ${color} !important;`;
-            }
           }
         });
       }
@@ -192,44 +207,76 @@ const Dashboard = () => {
     // Use requestAnimationFrame to ensure DOM is ready
     requestAnimationFrame(() => {
       applyBarColors();
+      // Apply more frequently to catch MUI's style updates
+      timeouts.push(setTimeout(applyBarColors, 10));
+      timeouts.push(setTimeout(applyBarColors, 25));
       timeouts.push(setTimeout(applyBarColors, 50));
       timeouts.push(setTimeout(applyBarColors, 100));
       timeouts.push(setTimeout(applyBarColors, 200));
       timeouts.push(setTimeout(applyBarColors, 300));
       timeouts.push(setTimeout(applyBarColors, 500));
+      timeouts.push(setTimeout(applyBarColors, 750));
       timeouts.push(setTimeout(applyBarColors, 1000));
+      timeouts.push(setTimeout(applyBarColors, 1500));
       timeouts.push(setTimeout(applyBarColors, 2000));
+      timeouts.push(setTimeout(applyBarColors, 3000));
     });
     
     // Also apply with regular timeouts as fallback
+    timeouts.push(setTimeout(applyBarColors, 50));
     timeouts.push(setTimeout(applyBarColors, 100));
+    timeouts.push(setTimeout(applyBarColors, 200));
     timeouts.push(setTimeout(applyBarColors, 300));
     timeouts.push(setTimeout(applyBarColors, 500));
     timeouts.push(setTimeout(applyBarColors, 1000));
 
-    // Use MutationObserver to watch for style changes
+    // Use MutationObserver to watch for style changes - apply colors immediately when detected
     if (projectStatusChartRef.current) {
-      const observer = new MutationObserver(() => {
-        applyBarColors();
+      const observer = new MutationObserver((mutations) => {
+        // Check if any mutation affects fill or style
+        const hasRelevantChange = mutations.some(mutation => {
+          if (mutation.type === 'attributes') {
+            return mutation.attributeName === 'fill' || mutation.attributeName === 'style';
+          }
+          return mutation.type === 'childList';
+        });
+        if (hasRelevantChange) {
+          // Apply colors immediately and also after a short delay
+          applyBarColors();
+          setTimeout(applyBarColors, 10);
+          setTimeout(applyBarColors, 50);
+        }
       });
       observer.observe(projectStatusChartRef.current, {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['style', 'fill'],
+        attributeFilter: ['style', 'fill', 'class'],
       });
       observers.push(observer);
     }
 
     if (paymentStatusChartRef.current) {
-      const observer = new MutationObserver(() => {
-        applyBarColors();
+      const observer = new MutationObserver((mutations) => {
+        // Check if any mutation affects fill or style
+        const hasRelevantChange = mutations.some(mutation => {
+          if (mutation.type === 'attributes') {
+            return mutation.attributeName === 'fill' || mutation.attributeName === 'style';
+          }
+          return mutation.type === 'childList';
+        });
+        if (hasRelevantChange) {
+          // Apply colors immediately and also after a short delay
+          applyBarColors();
+          setTimeout(applyBarColors, 10);
+          setTimeout(applyBarColors, 50);
+        }
       });
       observer.observe(paymentStatusChartRef.current, {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['style', 'fill'],
+        attributeFilter: ['style', 'fill', 'class'],
       });
       observers.push(observer);
     }
@@ -505,7 +552,7 @@ const Dashboard = () => {
     },
   ].filter(item => item.value > 0);
 
-  // Prepare data for Payment Status Bar Chart (by amount, not count) with colors
+  // Prepare data for Payment Status Bar Chart (by amount, not count) with colors - always in fixed order
   const paymentStatusData = [
     { 
       status: 'Paid', 
@@ -524,6 +571,13 @@ const Dashboard = () => {
     },
   ].filter(item => item.amount > 0);
   
+  // Create a map for quick lookup by status
+  const paymentStatusColorMap = {
+    'Paid': '#10B981',        // Green
+    'Unpaid': '#EF4444',     // Red
+    'Uncollectible': '#F59E0B' // Orange
+  };
+  
   // Prepare dataset for Payment Status chart
   const paymentStatusDataset = paymentStatusData.map(item => ({
     status: item.status,
@@ -540,12 +594,19 @@ const Dashboard = () => {
   // Colors array for per-bar coloring
   const paymentStatusColors = paymentStatusData.map(item => item.color);
   
-  // Prepare data for Project Status with colors
+  // Prepare data for Project Status with colors - always in fixed order
   const projectStatusDataWithColors = [
     { status: 'Pending', value: summary.projectStatus?.pending || 0, color: '#F59E0B' }, // Orange/Amber
     { status: 'Ongoing', value: summary.projectStatus?.ongoing || 0, color: '#3B82F6' }, // Blue
     { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' }, // Green
   ].filter(item => item.value > 0);
+  
+  // Create a map for quick lookup by status
+  const projectStatusColorMap = {
+    'Pending': '#F59E0B',    // Orange
+    'Ongoing': '#3B82F6',     // Blue
+    'Completed': '#10B981'   // Green
+  };
   
   // Prepare dataset for Project Status chart
   const projectStatusDataset = projectStatusDataWithColors.map(item => ({
@@ -823,8 +884,8 @@ const Dashboard = () => {
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    },
-                    legend: { hidden: true }
+                  },
+                  legend: { hidden: true }
                 }}
                 height={250}
                 layout="vertical"
@@ -870,8 +931,8 @@ const Dashboard = () => {
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
-                    },
-                    legend: { hidden: true }
+                  },
+                  legend: { hidden: true }
                 }}
                 height={250}
                 layout="vertical"

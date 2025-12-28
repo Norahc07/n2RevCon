@@ -22,6 +22,7 @@ import {
   PlusIcon,
   DocumentTextIcon,
   CurrencyDollarIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -34,6 +35,9 @@ const ProjectsBillingCollections = () => {
   const { canDeleteProject, canAccessBilling, canAccessCollection, canViewReports, role } = usePermissions();
   // Only Master Admin and System Admin can edit projects
   const canCreateEditProject = role === 'master_admin' || role === 'system_admin';
+  // Viewer role should not see lock status
+  const isViewer = role === 'viewer';
+  const canSeeLockStatus = !isViewer;
   
   // Redirect if user doesn't have VIEW_REPORTS permission
   useEffect(() => {
@@ -593,6 +597,14 @@ const ProjectsBillingCollections = () => {
   // Handle update billing
   const handleUpdateBilling = async (e) => {
     e.preventDefault();
+    
+    // Check if project is locked
+    const projectId = editingBilling.projectId?._id || editingBilling.projectId;
+    if (projectId && isProjectLocked(projectId)) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+      return;
+    }
+    
     try {
       const amount = parseFloat(editingBilling.amount) || 0;
       const tax = parseFloat(editingBilling.tax) || 0;
@@ -613,13 +625,21 @@ const ProjectsBillingCollections = () => {
       setEditingBilling(null);
       fetchAllData();
     } catch (error) {
-      toast.error('Failed to update billing record');
+      toast.error(error.response?.data?.message || 'Failed to update billing record');
     }
   };
 
   // Handle update collection
   const handleUpdateCollection = async (e) => {
     e.preventDefault();
+    
+    // Check if project is locked
+    const projectId = editingCollection.projectId?._id || editingCollection.projectId;
+    if (projectId && isProjectLocked(projectId)) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+      return;
+    }
+    
     try {
       await collectionAPI.update(editingCollection._id, {
         billingId: editingCollection.billingId,
@@ -635,7 +655,7 @@ const ProjectsBillingCollections = () => {
       setEditingCollection(null);
       fetchAllData();
     } catch (error) {
-      toast.error('Failed to update collection record');
+      toast.error(error.response?.data?.message || 'Failed to update collection record');
     }
   };
 
@@ -645,12 +665,23 @@ const ProjectsBillingCollections = () => {
     if (!window.confirm('Are you sure you want to delete this billing record?')) {
       return;
     }
+    
+    // Check if project is locked
+    const billing = allBillings.find(b => b._id === billingId);
+    if (billing) {
+      const projectId = billing.projectId?._id || billing.projectId;
+      if (projectId && isProjectLocked(projectId)) {
+        toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+        return;
+      }
+    }
+    
     try {
       await billingAPI.delete(billingId);
       toast.success('Billing record deleted');
       fetchAllData();
     } catch (error) {
-      toast.error('Failed to delete billing record');
+      toast.error(error.response?.data?.message || 'Failed to delete billing record');
     }
   };
 
@@ -660,12 +691,23 @@ const ProjectsBillingCollections = () => {
     if (!window.confirm('Are you sure you want to delete this collection record?')) {
       return;
     }
+    
+    // Check if project is locked
+    const collection = allCollections.find(c => c._id === collectionId);
+    if (collection) {
+      const projectId = collection.projectId?._id || collection.projectId;
+      if (projectId && isProjectLocked(projectId)) {
+        toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+        return;
+      }
+    }
+    
     try {
       await collectionAPI.delete(collectionId);
       toast.success('Collection record deleted');
       fetchAllData();
     } catch (error) {
-      toast.error('Failed to delete collection record');
+      toast.error(error.response?.data?.message || 'Failed to delete collection record');
     }
   };
 
@@ -683,6 +725,13 @@ const ProjectsBillingCollections = () => {
     }
   };
 
+  // Helper function to check if a project is locked
+  const isProjectLocked = (projectId) => {
+    if (!projectId) return false;
+    const project = projects.find(p => p._id === projectId);
+    return project?.isLocked || false;
+  };
+
   // Handle add billing
   const handleAddBilling = async (e) => {
     e.preventDefault();
@@ -690,6 +739,13 @@ const ProjectsBillingCollections = () => {
       toast.error('Please select a project');
       return;
     }
+    
+    // Check if project is locked
+    if (isProjectLocked(newBilling.projectId)) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
+      return;
+    }
+    
     try {
       const amount = parseFloat(newBilling.amount) || 0;
       const tax = parseFloat(newBilling.tax) || 0;
@@ -732,6 +788,12 @@ const ProjectsBillingCollections = () => {
     e.preventDefault();
     if (!newCollection.projectId) {
       toast.error('Please select a project');
+      return;
+    }
+    
+    // Check if project is locked
+    if (isProjectLocked(newCollection.projectId)) {
+      toast.error('This project is locked and cannot be modified. Please unlock the project first.');
       return;
     }
     if (!newCollection.billingId) {
@@ -838,14 +900,14 @@ const ProjectsBillingCollections = () => {
         )}
         {/* Master Admin and users with both permissions see type selection modal */}
         {(role === ROLES.MASTER_ADMIN || (canAccessBilling && canAccessCollection)) && (
-          <button
-            onClick={() => setShowAddTypeModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            <PlusIcon className="w-5 h-5" />
-            <span className="hidden sm:inline">Add Billing/Collection</span>
-            <span className="sm:hidden">Add</span>
-          </button>
+        <button
+          onClick={() => setShowAddTypeModal(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+        >
+          <PlusIcon className="w-5 h-5" />
+          <span className="hidden sm:inline">Add Billing/Collection</span>
+          <span className="sm:hidden">Add</span>
+        </button>
         )}
       </div>
 
@@ -954,7 +1016,7 @@ const ProjectsBillingCollections = () => {
         <div className="mb-4 border-t border-gray-200 pt-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <FunnelIcon className="w-5 h-5 text-gray-600" />
+          <FunnelIcon className="w-5 h-5 text-gray-600" />
               <h3 className="text-sm font-semibold text-gray-800">Filters</h3>
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -962,7 +1024,7 @@ const ProjectsBillingCollections = () => {
               >
                 {showFilters ? 'Hide' : 'Show'} Filters
               </button>
-            </div>
+        </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleExportCurrentFilter}
@@ -996,94 +1058,94 @@ const ProjectsBillingCollections = () => {
           </div>
           {showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-lg">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Year</label>
-                <div className="relative">
-                  <select
-                    value={filterYear}
-                    onChange={(e) => setFilterYear(e.target.value)}
-                    onFocus={() => setFocusedDropdown('year')}
-                    onBlur={() => setFocusedDropdown(null)}
-                    className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
-                  >
-                    <option value="">All Years</option>
-                    {availableYears.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                  {focusedDropdown === 'year' ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Month</label>
-                <div className="relative">
-                  <select
-                    value={filterMonth}
-                    onChange={(e) => setFilterMonth(e.target.value)}
-                    onFocus={() => setFocusedDropdown('month')}
-                    onBlur={() => setFocusedDropdown(null)}
-                    disabled={!filterYear}
-                    className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
-                  >
-                    <option value="">All Months</option>
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
-                    <option value="4">April</option>
-                    <option value="5">May</option>
-                    <option value="6">June</option>
-                    <option value="7">July</option>
-                    <option value="8">August</option>
-                    <option value="9">September</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
-                  </select>
-                  {focusedDropdown === 'month' ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
-                <div className="relative">
-                  <select
-                    value={selectedProject}
-                    onChange={(e) => setSelectedProject(e.target.value)}
-                    onFocus={() => setFocusedDropdown('project')}
-                    onBlur={() => setFocusedDropdown(null)}
-                    className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
-                  >
-                    <option value="all">All Projects</option>
-                    {projects.map((project) => (
-                      <option key={project._id} value={project._id}>
-                        {project.projectName} ({project.projectCode})
-                      </option>
-                    ))}
-                  </select>
-                  {focusedDropdown === 'project' ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                  )}
-                </div>
-              </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Year</label>
+            <div className="relative">
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                onFocus={() => setFocusedDropdown('year')}
+                onBlur={() => setFocusedDropdown(null)}
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+              >
+                <option value="">All Years</option>
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+              {focusedDropdown === 'year' ? (
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Month</label>
+            <div className="relative">
+              <select
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                onFocus={() => setFocusedDropdown('month')}
+                onBlur={() => setFocusedDropdown(null)}
+                disabled={!filterYear}
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none cursor-pointer bg-white"
+              >
+                <option value="">All Months</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              {focusedDropdown === 'month' ? (
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Project</label>
+            <div className="relative">
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                onFocus={() => setFocusedDropdown('project')}
+                onBlur={() => setFocusedDropdown(null)}
+                className="w-full px-3 pr-8 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer bg-white"
+              >
+                <option value="all">All Projects</option>
+                {projects.map((project) => (
+                  <option key={project._id} value={project._id}>
+                    {project.projectName} ({project.projectCode})
+                  </option>
+                ))}
+              </select>
+              {focusedDropdown === 'project' ? (
+                <ChevronUpIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              )}
+            </div>
+          </div>
               <div className="flex items-end">
-                <button
-                  onClick={handleApplyFilters}
-                  className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
-                >
-                  Apply Filter
-                </button>
-              </div>
+            <button
+              onClick={handleApplyFilters}
+              className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg h-[38px] flex items-center justify-center"
+            >
+              Apply Filter
+            </button>
+          </div>
             </div>
           )}
         </div>
@@ -1227,7 +1289,7 @@ const ProjectsBillingCollections = () => {
                     <td className="border border-gray-300 px-4 py-3">
                       <div className="flex items-center gap-3">
                         {/* Edit button - Only Master Admin and System Admin can edit projects */}
-                        {canCreateEditProject && (
+                        {canCreateEditProject && !item.project.isLocked && (
                         <button
                           onClick={(e) => handleEditProject(item.project, e)}
                           className="p-2 text-black hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
@@ -1237,7 +1299,7 @@ const ProjectsBillingCollections = () => {
                         </button>
                         )}
                         {/* Delete button - requires DELETE_PROJECT permission (Master Admin only) */}
-                        {canDeleteProject && (
+                        {canDeleteProject && !item.project.isLocked && (
                           <button
                             onClick={(e) => handleDelete(item.project._id, item.projectName, e)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -1345,7 +1407,15 @@ const ProjectsBillingCollections = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
           <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
             <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold">Edit Records - {editingProject.projectName}</h2>
+                {editingProject.isLocked && canSeeLockStatus && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                    <LockClosedIcon className="w-3 h-3 text-black" />
+                    Locked
+                  </span>
+                )}
+              </div>
               <button onClick={() => {
                 setShowEditModal(false);
                 setEditingProject(null);
@@ -1355,6 +1425,13 @@ const ProjectsBillingCollections = () => {
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
+            {editingProject.isLocked && canSeeLockStatus && (
+              <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+                <p className="text-yellow-800 text-sm font-medium">
+                  This project is locked. All records are read-only and cannot be edited or deleted until the project is unlocked.
+                </p>
+              </div>
+            )}
 
             {/* Billing Records Section */}
             <div className="mb-6">
@@ -1397,7 +1474,11 @@ const ProjectsBillingCollections = () => {
                           </td>
                           <td className="border border-gray-300 px-3 py-2">
                             <div className="flex gap-2">
-                              {canAccessBilling && (
+                              {canAccessBilling && (editingProject.isLocked && canSeeLockStatus ? (
+                                <span className="text-xs text-yellow-600 italic" title="Project is locked">
+                                  Locked
+                                </span>
+                              ) : editingProject.isLocked && !canSeeLockStatus ? null : (
                                 <>
                               <button
                                 onClick={() => handleEditBilling(bill)}
@@ -1414,7 +1495,7 @@ const ProjectsBillingCollections = () => {
                                 <TrashIcon className="w-4 h-4" />
                               </button>
                                 </>
-                              )}
+                              ))}
                             </div>
                           </td>
                         </tr>
@@ -1462,7 +1543,11 @@ const ProjectsBillingCollections = () => {
                           </td>
                           <td className="border border-gray-300 px-3 py-2">
                             <div className="flex gap-2">
-                              {canAccessCollection && (
+                              {canAccessCollection && (editingProject.isLocked && canSeeLockStatus ? (
+                                <span className="text-xs text-yellow-600 italic" title="Project is locked">
+                                  Locked
+                                </span>
+                              ) : editingProject.isLocked && !canSeeLockStatus ? null : (
                                 <>
                               <button
                                 onClick={() => handleEditCollection(col)}
@@ -1479,7 +1564,7 @@ const ProjectsBillingCollections = () => {
                                 <TrashIcon className="w-4 h-4" />
                               </button>
                                 </>
-                              )}
+                              ))}
                             </div>
                           </td>
                         </tr>

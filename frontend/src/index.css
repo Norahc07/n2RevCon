@@ -311,15 +311,30 @@
   stroke-width: 0;
 }
 
-/* Remove any currentColor inheritance that might cause black bars */
-.MuiBarElement-root * {
-  fill: inherit;
-}
-
 /* More specific targeting for bar elements - allow fill to be set via attribute or style */
 [class*="MuiBarElement"] rect,
 [class*="MuiBarElement"] path {
   stroke-width: 0;
+}
+
+/* Force remove any currentColor or black fill that MUI might apply */
+/* Target all possible bar element selectors */
+svg g[class*="MuiBarElement"] rect,
+svg g[class*="MuiBarElement"] path,
+svg g[class*="MuiBarElement"] polygon,
+svg rect[class*="MuiBarElement"],
+svg path[class*="MuiBarElement"],
+svg polygon[class*="MuiBarElement"],
+svg [class*="BarElement"] rect,
+svg [class*="BarElement"] path,
+svg [class*="BarElement"] polygon {
+  stroke: none !important;
+}
+
+/* Prevent black color inheritance */
+svg g[class*="MuiBarElement"],
+svg [class*="BarElement"] {
+  fill: none !important;
 }
 
 /* Chart responsiveness */

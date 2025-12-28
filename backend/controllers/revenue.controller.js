@@ -66,8 +66,15 @@ export const createRevenue = async (req, res) => {
     // Verify project exists only if projectId is provided
     if (projectId) {
       const project = await Project.findById(projectId);
-      if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+      }
+      
+      // Check if project is locked
+      if (project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
       }
     }
 
@@ -80,7 +87,7 @@ export const createRevenue = async (req, res) => {
 
     const revenue = await Revenue.create(revenueData);
     if (revenue.projectId) {
-      await revenue.populate('projectId', 'projectCode projectName');
+    await revenue.populate('projectId', 'projectCode projectName');
     }
 
     res.status(201).json({ message: 'Revenue record created successfully', revenue });
@@ -96,6 +103,22 @@ export const createRevenue = async (req, res) => {
  */
 export const updateRevenue = async (req, res) => {
   try {
+    // Get existing revenue to check its project
+    const existingRevenue = await Revenue.findById(req.params.id);
+    if (!existingRevenue) {
+      return res.status(404).json({ message: 'Revenue record not found' });
+    }
+
+    // Check if the existing revenue's project is locked
+    if (existingRevenue.projectId) {
+      const project = await Project.findById(existingRevenue.projectId);
+      if (project && project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
+      }
+    }
+
     // Normalize projectId: convert empty string to null for general revenues
     if (req.body.projectId !== undefined) {
       req.body.projectId = req.body.projectId && req.body.projectId.trim() !== '' 
@@ -108,6 +131,13 @@ export const updateRevenue = async (req, res) => {
       const project = await Project.findById(req.body.projectId);
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
+      }
+      
+      // Check if new project is locked
+      if (project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
       }
     }
 
@@ -138,10 +168,23 @@ export const updateRevenue = async (req, res) => {
  */
 export const deleteRevenue = async (req, res) => {
   try {
-    const revenue = await Revenue.findByIdAndDelete(req.params.id);
+    // Get revenue to check if its project is locked
+    const revenue = await Revenue.findById(req.params.id);
     if (!revenue) {
       return res.status(404).json({ message: 'Revenue record not found' });
     }
+
+    // Check if project is locked
+    if (revenue.projectId) {
+      const project = await Project.findById(revenue.projectId);
+      if (project && project.isLocked) {
+        return res.status(403).json({ 
+          message: 'Project is locked and cannot be modified. Please unlock the project first.' 
+        });
+      }
+    }
+
+    await Revenue.findByIdAndDelete(req.params.id);
     res.json({ message: 'Revenue record deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

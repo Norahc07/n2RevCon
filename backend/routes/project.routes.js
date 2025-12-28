@@ -67,11 +67,11 @@ router.post('/:id/restore', requirePermission(ACTIONS.VIEW_REPORTS), restoreProj
 // Close project - requires CLOSE_LOCK_PROJECT permission
 router.post('/:id/close', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), closeProject);
 
-// Lock project - requires CLOSE_LOCK_PROJECT permission
-router.post('/:id/lock', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), lockProject);
+// Lock project - requires DELETE_PROJECT permission (Master Admin only)
+router.post('/:id/lock', requirePermission(ACTIONS.DELETE_PROJECT), lockProject);
 
-// Unlock project - requires CLOSE_LOCK_PROJECT permission
-router.post('/:id/unlock', requirePermission(ACTIONS.CLOSE_LOCK_PROJECT), unlockProject);
+// Unlock project - requires DELETE_PROJECT permission (Master Admin only)
+router.post('/:id/unlock', requirePermission(ACTIONS.DELETE_PROJECT), unlockProject);
 
 // Delete project (soft delete) - requires DELETE_PROJECT permission (Master Admin only)
 router.delete('/:id', requirePermission(ACTIONS.DELETE_PROJECT), deleteProject);

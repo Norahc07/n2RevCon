@@ -217,6 +217,16 @@ export const projectAPI = {
     invalidateCache('projects');
     return response;
   },
+  lock: async (id) => {
+    const response = await api.post(`/projects/${id}/lock`);
+    invalidateCache('projects');
+    return response;
+  },
+  unlock: async (id) => {
+    const response = await api.post(`/projects/${id}/unlock`);
+    invalidateCache('projects');
+    return response;
+  },
 };
 
 // Revenue API
