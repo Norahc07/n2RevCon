@@ -331,11 +331,6 @@ svg [class*="BarElement"] polygon {
   stroke: none !important;
 }
 
-/* Prevent black color inheritance */
-svg g[class*="MuiBarElement"],
-svg [class*="BarElement"] {
-  fill: none !important;
-}
 
 /* Chart responsiveness */
 @media (max-width: 639px) {

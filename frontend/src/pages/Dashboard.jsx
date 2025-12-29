@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { dashboardAPI, projectAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { PieChart } from '@mui/x-charts/PieChart';
@@ -27,6 +27,19 @@ import {
 } from '../utils/pushNotifications';
 import { CardSkeleton, ChartSkeleton } from '../components/skeletons';
 
+// Fixed color constants for bar charts
+const PROJECT_STATUS_COLORS = {
+  Pending: '#F59E0B',     // Amber
+  Ongoing: '#3B82F6',     // Blue
+  Completed: '#10B981',   // Green
+};
+
+const PAYMENT_STATUS_COLORS = {
+  Paid: '#10B981',          // Green
+  Unpaid: '#EF4444',        // Red
+  Uncollectible: '#F59E0B', // Amber
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [summary, setSummary] = useState(null);
@@ -37,8 +50,6 @@ const Dashboard = () => {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [requestingPermission, setRequestingPermission] = useState(false);
   const [focusedYearDropdown, setFocusedYearDropdown] = useState(false);
-  const projectStatusChartRef = useRef(null);
-  const paymentStatusChartRef = useRef(null);
 
   // Define functions before using them in useEffect
   const fetchProjects = useCallback(async () => {
@@ -70,222 +81,6 @@ const Dashboard = () => {
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
-
-  // Apply colors to bars after chart renders (fixes MUI override issue)
-  // Must be before any early returns to follow Rules of Hooks
-  useEffect(() => {
-    // Declare arrays before early return to ensure cleanup function has access
-    const timeouts = [];
-    const observers = [];
-
-    if (!summary) {
-      return () => {
-        timeouts.forEach(timeout => clearTimeout(timeout));
-        observers.forEach(observer => observer.disconnect());
-      };
-    }
-
-    const applyBarColors = () => {
-      // Color mapping for Project Status - in fixed order
-      const projectStatusColors = ['#F59E0B', '#3B82F6', '#10B981']; // Orange, Blue, Green
-      const projectStatusLabels = ['Pending', 'Ongoing', 'Completed'];
-      
-      // Color mapping for Payment Status - in fixed order
-      const paymentStatusColors = ['#10B981', '#EF4444', '#F59E0B']; // Green, Red, Orange
-      const paymentStatusLabels = ['Paid', 'Unpaid', 'Uncollectible'];
-
-      // Apply Project Status bar colors
-      if (projectStatusChartRef.current) {
-        const chartContainer = projectStatusChartRef.current;
-        
-        // Find all bar groups - they should be in order left to right
-        const barGroups = Array.from(chartContainer.querySelectorAll('g[class*="MuiBarElement"], g[class*="BarElement"]'));
-        
-        // Also try finding bars by their rect elements directly
-        const allRects = Array.from(chartContainer.querySelectorAll('rect[class*="MuiBarElement"], rect[class*="BarElement"]'));
-        
-        // Get bars in order by their x position (left to right)
-        const barsWithPosition = allRects.map(rect => {
-          const transform = rect.getAttribute('transform') || '';
-          const xMatch = transform.match(/translate\(([^,]+)/);
-          const x = xMatch ? parseFloat(xMatch[1]) : parseFloat(rect.getAttribute('x') || '0');
-          return { element: rect, x: x };
-        }).sort((a, b) => a.x - b.x);
-        
-        // Apply colors to bars in order
-        barsWithPosition.forEach((bar, index) => {
-          if (index < projectStatusColors.length) {
-            const color = projectStatusColors[index];
-            const rect = bar.element;
-            
-            // Force apply color with multiple methods
-            rect.setAttribute('fill', color);
-            rect.style.cssText = `fill: ${color} !important; stroke: none !important;`;
-            rect.style.setProperty('fill', color, 'important');
-            rect.style.setProperty('stroke', 'none', 'important');
-            
-            // Also apply to parent group if exists
-            const parentGroup = rect.closest('g[class*="MuiBarElement"], g[class*="BarElement"]');
-            if (parentGroup) {
-              parentGroup.setAttribute('fill', color);
-              parentGroup.style.setProperty('fill', color, 'important');
-            }
-          }
-        });
-        
-        // Also apply to bar groups by index as fallback
-        barGroups.forEach((group, index) => {
-          if (index < projectStatusColors.length) {
-            const color = projectStatusColors[index];
-            const shapes = group.querySelectorAll('rect, path, polygon');
-            shapes.forEach(shape => {
-              shape.setAttribute('fill', color);
-              shape.style.cssText = `fill: ${color} !important; stroke: none !important;`;
-            });
-            group.setAttribute('fill', color);
-            group.style.setProperty('fill', color, 'important');
-          }
-        });
-      }
-
-      // Apply Payment Status bar colors
-      if (paymentStatusChartRef.current) {
-        const chartContainer = paymentStatusChartRef.current;
-        
-        // Find all bar groups - they should be in order left to right
-        const barGroups = Array.from(chartContainer.querySelectorAll('g[class*="MuiBarElement"], g[class*="BarElement"]'));
-        
-        // Also try finding bars by their rect elements directly
-        const allRects = Array.from(chartContainer.querySelectorAll('rect[class*="MuiBarElement"], rect[class*="BarElement"]'));
-        
-        // Get bars in order by their x position (left to right)
-        const barsWithPosition = allRects.map(rect => {
-          const transform = rect.getAttribute('transform') || '';
-          const xMatch = transform.match(/translate\(([^,]+)/);
-          const x = xMatch ? parseFloat(xMatch[1]) : parseFloat(rect.getAttribute('x') || '0');
-          return { element: rect, x: x };
-        }).sort((a, b) => a.x - b.x);
-        
-        // Apply colors to bars in order
-        barsWithPosition.forEach((bar, index) => {
-          if (index < paymentStatusColors.length) {
-            const color = paymentStatusColors[index];
-            const rect = bar.element;
-            
-            // Force apply color with multiple methods
-            rect.setAttribute('fill', color);
-            rect.style.cssText = `fill: ${color} !important; stroke: none !important;`;
-            rect.style.setProperty('fill', color, 'important');
-            rect.style.setProperty('stroke', 'none', 'important');
-            
-            // Also apply to parent group if exists
-            const parentGroup = rect.closest('g[class*="MuiBarElement"], g[class*="BarElement"]');
-            if (parentGroup) {
-              parentGroup.setAttribute('fill', color);
-              parentGroup.style.setProperty('fill', color, 'important');
-            }
-          }
-        });
-        
-        // Also apply to bar groups by index as fallback
-        barGroups.forEach((group, index) => {
-          if (index < paymentStatusColors.length) {
-            const color = paymentStatusColors[index];
-            const shapes = group.querySelectorAll('rect, path, polygon');
-            shapes.forEach(shape => {
-              shape.setAttribute('fill', color);
-              shape.style.cssText = `fill: ${color} !important; stroke: none !important;`;
-            });
-            group.setAttribute('fill', color);
-            group.style.setProperty('fill', color, 'important');
-          }
-        });
-      }
-    };
-
-    // Apply immediately and after delays to catch MUI's style application
-    // Use requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(() => {
-      applyBarColors();
-      // Apply more frequently to catch MUI's style updates
-      timeouts.push(setTimeout(applyBarColors, 10));
-      timeouts.push(setTimeout(applyBarColors, 25));
-      timeouts.push(setTimeout(applyBarColors, 50));
-      timeouts.push(setTimeout(applyBarColors, 100));
-      timeouts.push(setTimeout(applyBarColors, 200));
-      timeouts.push(setTimeout(applyBarColors, 300));
-      timeouts.push(setTimeout(applyBarColors, 500));
-      timeouts.push(setTimeout(applyBarColors, 750));
-      timeouts.push(setTimeout(applyBarColors, 1000));
-      timeouts.push(setTimeout(applyBarColors, 1500));
-      timeouts.push(setTimeout(applyBarColors, 2000));
-      timeouts.push(setTimeout(applyBarColors, 3000));
-    });
-    
-    // Also apply with regular timeouts as fallback
-    timeouts.push(setTimeout(applyBarColors, 50));
-    timeouts.push(setTimeout(applyBarColors, 100));
-    timeouts.push(setTimeout(applyBarColors, 200));
-    timeouts.push(setTimeout(applyBarColors, 300));
-    timeouts.push(setTimeout(applyBarColors, 500));
-    timeouts.push(setTimeout(applyBarColors, 1000));
-
-    // Use MutationObserver to watch for style changes - apply colors immediately when detected
-    if (projectStatusChartRef.current) {
-      const observer = new MutationObserver((mutations) => {
-        // Check if any mutation affects fill or style
-        const hasRelevantChange = mutations.some(mutation => {
-          if (mutation.type === 'attributes') {
-            return mutation.attributeName === 'fill' || mutation.attributeName === 'style';
-          }
-          return mutation.type === 'childList';
-        });
-        if (hasRelevantChange) {
-          // Apply colors immediately and also after a short delay
-          applyBarColors();
-          setTimeout(applyBarColors, 10);
-          setTimeout(applyBarColors, 50);
-        }
-      });
-      observer.observe(projectStatusChartRef.current, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style', 'fill', 'class'],
-      });
-      observers.push(observer);
-    }
-
-    if (paymentStatusChartRef.current) {
-      const observer = new MutationObserver((mutations) => {
-        // Check if any mutation affects fill or style
-        const hasRelevantChange = mutations.some(mutation => {
-          if (mutation.type === 'attributes') {
-            return mutation.attributeName === 'fill' || mutation.attributeName === 'style';
-          }
-          return mutation.type === 'childList';
-        });
-        if (hasRelevantChange) {
-          // Apply colors immediately and also after a short delay
-          applyBarColors();
-          setTimeout(applyBarColors, 10);
-          setTimeout(applyBarColors, 50);
-        }
-      });
-      observer.observe(paymentStatusChartRef.current, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style', 'fill', 'class'],
-      });
-      observers.push(observer);
-    }
-
-    return () => {
-      timeouts.forEach(timeout => clearTimeout(timeout));
-      observers.forEach(observer => observer.disconnect());
-    };
-  }, [summary]);
 
   // Check and show notification permission prompt
   useEffect(() => {
@@ -552,77 +347,67 @@ const Dashboard = () => {
     },
   ].filter(item => item.value > 0);
 
-  // Prepare data for Payment Status Bar Chart (by amount, not count) with colors - always in fixed order
+  // Prepare data for Payment Status (for legend display)
   const paymentStatusData = [
-    { 
-      status: 'Paid', 
+    {
+      status: 'Paid',
       amount: summary.paymentStatus?.paid?.totalAmount || 0,
-      color: '#10B981' // Green
+      color: PAYMENT_STATUS_COLORS.Paid,
     },
-    { 
-      status: 'Unpaid', 
+    {
+      status: 'Unpaid',
       amount: summary.paymentStatus?.unpaid?.totalAmount || 0,
-      color: '#EF4444' // Red
+      color: PAYMENT_STATUS_COLORS.Unpaid,
     },
-    { 
-      status: 'Uncollectible', 
+    {
+      status: 'Uncollectible',
       amount: summary.paymentStatus?.uncollectible?.totalAmount || 0,
-      color: '#F59E0B' // Orange/Amber
+      color: PAYMENT_STATUS_COLORS.Uncollectible,
     },
   ].filter(item => item.amount > 0);
   
-  // Create a map for quick lookup by status
-  const paymentStatusColorMap = {
-    'Paid': '#10B981',        // Green
-    'Unpaid': '#EF4444',     // Red
-    'Uncollectible': '#F59E0B' // Orange
-  };
+  // Create single series with all data points (for proper centering)
+  const paymentStatusSeries = [
+    {
+      data: [
+        summary.paymentStatus?.paid?.totalAmount || 0,
+        summary.paymentStatus?.unpaid?.totalAmount || 0,
+        summary.paymentStatus?.uncollectible?.totalAmount || 0,
+      ],
+      valueFormatter: (value) => formatCurrencyForChart(value || 0),
+    },
+  ];
   
-  // Prepare dataset for Payment Status chart
-  const paymentStatusDataset = paymentStatusData.map(item => ({
-    status: item.status,
-    amount: item.amount,
-    color: item.color,
-  }));
-  
-  // Create single series with dataKey
-  const paymentStatusSeries = [{
-    dataKey: 'amount',
-    valueFormatter: (value) => formatCurrencyForChart(value || 0),
-  }];
-  
-  // Colors array for per-bar coloring
-  const paymentStatusColors = paymentStatusData.map(item => item.color);
-  
-  // Prepare data for Project Status with colors - always in fixed order
+  // Prepare data for Project Status (for legend display)
   const projectStatusDataWithColors = [
-    { status: 'Pending', value: summary.projectStatus?.pending || 0, color: '#F59E0B' }, // Orange/Amber
-    { status: 'Ongoing', value: summary.projectStatus?.ongoing || 0, color: '#3B82F6' }, // Blue
-    { status: 'Completed', value: summary.projectStatus?.completed || 0, color: '#10B981' }, // Green
+    {
+      status: 'Pending',
+      value: summary.projectStatus?.pending || 0,
+      color: PROJECT_STATUS_COLORS.Pending,
+    },
+    {
+      status: 'Ongoing',
+      value: summary.projectStatus?.ongoing || 0,
+      color: PROJECT_STATUS_COLORS.Ongoing,
+    },
+    {
+      status: 'Completed',
+      value: summary.projectStatus?.completed || 0,
+      color: PROJECT_STATUS_COLORS.Completed,
+    },
   ].filter(item => item.value > 0);
   
-  // Create a map for quick lookup by status
-  const projectStatusColorMap = {
-    'Pending': '#F59E0B',    // Orange
-    'Ongoing': '#3B82F6',     // Blue
-    'Completed': '#10B981'   // Green
-  };
-  
-  // Prepare dataset for Project Status chart
-  const projectStatusDataset = projectStatusDataWithColors.map(item => ({
-    status: item.status,
-    count: item.value,
-    color: item.color,
-  }));
-  
-  // Create single series with dataKey
-  const projectStatusSeries = [{
-    dataKey: 'count',
-    valueFormatter: (value) => value?.toString() || '0',
-  }];
-  
-  // Colors array for per-bar coloring
-  const projectStatusColors = projectStatusDataWithColors.map(item => item.color);
+  // Create single series with all data points (for proper centering)
+  const projectStatusSeries = [
+    {
+      data: [
+        summary.projectStatus?.pending || 0,
+        summary.projectStatus?.ongoing || 0,
+        summary.projectStatus?.completed || 0,
+      ],
+      valueFormatter: (value) => value?.toString() || '0',
+    },
+  ];
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -868,27 +653,59 @@ const Dashboard = () => {
           </div>
           {projectStatusDataWithColors.length > 0 ? (
             <div className="w-full flex flex-col items-center">
-              <div ref={projectStatusChartRef} className="w-full overflow-x-auto chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
+              <div className="w-full overflow-x-auto chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
               <BarChart
-                dataset={projectStatusDataset}
                 xAxis={[{
                   scaleType: 'band',
-                  dataKey: 'status',
-                    categoryGapRatio: 0.3,
+                  data: ['Pending', 'Ongoing', 'Completed'],
+                  barGapRatio: 0.2,
+                  categoryGapRatio: 0.4,
                 }]}
                 series={projectStatusSeries}
                 yAxis={[{
                     valueFormatter: (value) => value?.toString() || '0',
                 }]}
-                  colors={projectStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
                   },
-                  legend: { hidden: true }
+                  legend: { hidden: true },
+                  tooltip: {
+                    itemContent: (itemData) => {
+                      const labels = ['Pending', 'Ongoing', 'Completed'];
+                      const index = itemData?.dataIndex ?? 0;
+                      const label = labels[index] || itemData?.label || 'Unknown';
+                      const value = itemData?.value ?? 0;
+                      
+                      return (
+                        <div>
+                          <span style={{ fontSize: '0.875rem' }}>{label}: <strong>{value}</strong></span>
+                        </div>
+                      );
+                    },
+                    sx: {
+                      '& .MuiChartsTooltip-mark': {
+                        display: 'none !important',
+                      },
+                    },
+                  },
                 }}
                 height={250}
                 layout="vertical"
+                sx={{
+                  '& .MuiBarElement-root:nth-of-type(1)': {
+                    fill: PROJECT_STATUS_COLORS.Pending,
+                    '&:hover': { fill: PROJECT_STATUS_COLORS.Pending },
+                  },
+                  '& .MuiBarElement-root:nth-of-type(2)': {
+                    fill: PROJECT_STATUS_COLORS.Ongoing,
+                    '&:hover': { fill: PROJECT_STATUS_COLORS.Ongoing },
+                  },
+                  '& .MuiBarElement-root:nth-of-type(3)': {
+                    fill: PROJECT_STATUS_COLORS.Completed,
+                    '&:hover': { fill: PROJECT_STATUS_COLORS.Completed },
+                  },
+                }}
               />
             </div>
               
@@ -915,27 +732,60 @@ const Dashboard = () => {
           </div>
           {paymentStatusData.length > 0 ? (
             <div className="w-full flex flex-col items-center">
-              <div ref={paymentStatusChartRef} className="w-full chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
+              <div className="w-full chart-container" style={{ minHeight: '200px', height: 'clamp(200px, 40vw, 300px)' }}>
               <BarChart
-                dataset={paymentStatusDataset}
                 xAxis={[{
                   scaleType: 'band',
-                  dataKey: 'status',
-                    categoryGapRatio: 0.3,
+                  data: ['Paid', 'Unpaid', 'Uncollectible'],
+                  barGapRatio: 0.2,
+                  categoryGapRatio: 0.4,
                 }]}
                 series={paymentStatusSeries}
                 yAxis={[{
                     valueFormatter: (value) => formatCurrencyForChart(value || 0)
                 }]}
-                  colors={paymentStatusColors}
                 slotProps={{
                   bar: {
                     clipPath: 'inset(0px round 4px)',
                   },
-                  legend: { hidden: true }
+                  legend: { hidden: true },
+                  tooltip: {
+                    itemContent: (itemData) => {
+                      const labels = ['Paid', 'Unpaid', 'Uncollectible'];
+                      const index = itemData?.dataIndex ?? 0;
+                      const label = labels[index] || itemData?.label || 'Unknown';
+                      const value = itemData?.value ?? 0;
+                      const formattedValue = formatCurrencyForChart(value);
+                      
+                      return (
+                        <div>
+                          <span style={{ fontSize: '0.875rem' }}>{label}: <strong>{formattedValue}</strong></span>
+                        </div>
+                      );
+                    },
+                    sx: {
+                      '& .MuiChartsTooltip-mark': {
+                        display: 'none !important',
+                      },
+                    },
+                  },
                 }}
                 height={250}
                 layout="vertical"
+                sx={{
+                  '& .MuiBarElement-root:nth-of-type(1)': {
+                    fill: PAYMENT_STATUS_COLORS.Paid,
+                    '&:hover': { fill: PAYMENT_STATUS_COLORS.Paid },
+                  },
+                  '& .MuiBarElement-root:nth-of-type(2)': {
+                    fill: PAYMENT_STATUS_COLORS.Unpaid,
+                    '&:hover': { fill: PAYMENT_STATUS_COLORS.Unpaid },
+                  },
+                  '& .MuiBarElement-root:nth-of-type(3)': {
+                    fill: PAYMENT_STATUS_COLORS.Uncollectible,
+                    '&:hover': { fill: PAYMENT_STATUS_COLORS.Uncollectible },
+                  },
+                }}
               />
             </div>
               
