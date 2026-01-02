@@ -1,9 +1,7 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
-    {
-      "source": "/N2RevConLogo.png",
-      "destination": "/N2RevConLogo.png"
-    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
