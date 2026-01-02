@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/N2RevConLogo.png",
+      "destination": "/N2RevConLogo.png"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
