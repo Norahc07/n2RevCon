@@ -25,6 +25,7 @@ import {
   ClipboardDocumentListIcon,
   LinkIcon,
 } from '@heroicons/react/24/outline';
+import logoImage from '../assets/N2RevConLogo.png';
 
 const Sidebar = ({ isOpen, onClose, onToggle }) => {
   const { user } = useAuth();
@@ -360,20 +361,16 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
           <div className="p-4 border-b-2 border-gray-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <img 
-                src="/N2RevConLogo.png" 
+                src={logoImage}
                 alt="N2 RevCon Logo" 
                 className="h-8 w-auto"
                 style={{ display: 'block' }}
-                onLoad={() => console.log('Logo loaded successfully in Sidebar')}
                 onError={(e) => {
-                  console.error('Failed to load logo in Sidebar:', e.target.src);
-                  // Try without query parameter
-                  if (e.target.src.includes('?v=')) {
-                    console.log('Retrying without query parameter...');
+                  // Fallback to public path if imported image fails
+                  if (!e.target.src.includes('/N2RevConLogo.png')) {
                     e.target.src = '/N2RevConLogo.png';
                   } else {
-                    console.error('Logo failed to load after retry');
-                    // Show fallback text
+                    // Show fallback text if both fail
                     e.target.style.display = 'none';
                     const parent = e.target.parentElement;
                     if (parent && !parent.querySelector('.logo-fallback')) {

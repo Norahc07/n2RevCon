@@ -10,6 +10,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
+import logoImage from '../assets/N2RevConLogo.png';
 
 const Navbar = ({ onMenuClick, sidebarOpen }) => {
   const { user, logout } = useAuth();
@@ -129,20 +130,16 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
             {/* Logo and Name */}
             <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 min-w-0">
               <img 
-                src="/N2RevConLogo.png" 
+                src={logoImage}
                 alt="N2 RevCon Logo" 
                 className="h-5 xs:h-6 sm:h-8 w-auto flex-shrink-0"
                 style={{ display: 'block' }}
-                onLoad={() => console.log('Logo loaded successfully in Navbar')}
                 onError={(e) => {
-                  console.error('Failed to load logo in Navbar:', e.target.src);
-                  // Try without query parameter
-                  if (e.target.src.includes('?v=')) {
-                    console.log('Retrying without query parameter...');
+                  // Fallback to public path if imported image fails
+                  if (!e.target.src.includes('/N2RevConLogo.png')) {
                     e.target.src = '/N2RevConLogo.png';
                   } else {
-                    console.error('Logo failed to load after retry');
-                    // Show fallback text
+                    // Show fallback text if both fail
                     e.target.style.display = 'none';
                     const parent = e.target.parentElement;
                     if (parent && !parent.querySelector('.logo-fallback')) {
