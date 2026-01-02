@@ -966,8 +966,9 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleApprove(user)}
-                    disabled={loading}
+                    disabled={loading || !user.emailVerified}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm font-medium"
+                    title={!user.emailVerified ? 'User must verify their email before approval' : 'Approve user'}
                   >
                     Approve
                   </button>
