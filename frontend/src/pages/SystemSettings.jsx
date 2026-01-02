@@ -978,6 +978,11 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                   <p className="font-semibold text-gray-800">{user.firstName} {user.lastName}</p>
                   <p className="text-sm text-gray-600">{user.email}</p>
                   <p className="text-xs text-gray-500">Registered: {new Date(user.createdAt).toLocaleDateString()}</p>
+                  <p className="text-xs mt-1">
+                    <span className={`px-2 py-0.5 rounded ${user.emailVerified === true ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                      Email: {user.emailVerified === true ? 'Verified ✓' : 'Not Verified'}
+                    </span>
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <button
