@@ -981,12 +981,30 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleApprove(user)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Approve button clicked', { 
+                        userId: user.id || user._id, 
+                        emailVerified: user.emailVerified, 
+                        loading, 
+                        disabled: loading || !(user.emailVerified === true)
+                      });
+                      if (!loading && user.emailVerified === true) {
+                        handleApprove(user);
+                      } else {
+                        console.warn('Button click ignored:', { loading, emailVerified: user.emailVerified });
+                        if (user.emailVerified !== true) {
+                          toast.error('User must verify their email before approval');
+                        }
+                      }
+                    }}
                     disabled={loading || !(user.emailVerified === true)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                    title={user.emailVerified !== true ? 'User must verify their email before approval' : 'Approve user'}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                    title={user.emailVerified !== true ? 'User must verify their email before approval' : loading ? 'Processing...' : 'Approve user'}
+                    style={{ pointerEvents: loading || !(user.emailVerified === true) ? 'none' : 'auto' }}
                   >
-                    Approve
+                    {loading ? 'Processing...' : 'Approve'}
                   </button>
                   <button
                     onClick={() => setRejectingUser(user)}
