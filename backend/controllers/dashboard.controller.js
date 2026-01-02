@@ -160,12 +160,14 @@ export const getDashboardSummary = async (req, res) => {
       { $sort: { total: -1 } }
     ]);
 
-    // Billing status (filtered by year)
+    // Billing status (filtered by year if not viewing all)
+    const billingMatch = {};
+    if (shouldFilterByYear) {
+      billingMatch.billingDate = { $gte: startDate, $lte: endDate };
+    }
     const billingStatus = await Billing.aggregate([
       {
-        $match: {
-          billingDate: { $gte: startDate, $lte: endDate }
-        }
+        $match: billingMatch
       },
       {
         $group: {
@@ -176,12 +178,14 @@ export const getDashboardSummary = async (req, res) => {
       }
     ]);
 
-    // Collection/Payment status (filtered by year)
+    // Collection/Payment status (filtered by year if not viewing all)
+    const paymentMatch = {};
+    if (shouldFilterByYear) {
+      paymentMatch.collectionDate = { $gte: startDate, $lte: endDate };
+    }
     const paymentStatus = await Collection.aggregate([
       {
-        $match: {
-          collectionDate: { $gte: startDate, $lte: endDate }
-        }
+        $match: paymentMatch
       },
       {
         $group: {
