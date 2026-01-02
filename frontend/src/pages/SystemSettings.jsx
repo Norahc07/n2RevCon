@@ -70,10 +70,16 @@ const SystemSettings = () => {
     fetchCompany();
     if (activeTab === 'users') {
       fetchUsers();
-      fetchPendingUsers();
     }
     if (activeTab === 'audit') fetchAuditLogs();
   }, [activeTab]);
+
+  // Fetch pending users after users are loaded
+  useEffect(() => {
+    if (activeTab === 'users' && users.length > 0) {
+      fetchPendingUsers();
+    }
+  }, [users, activeTab]);
 
   const fetchCompany = async () => {
     try {
@@ -102,17 +108,31 @@ const SystemSettings = () => {
       // Use useCache: false to bypass cache and get fresh data
       const response = await userAPI.getPending({ useCache: false });
       // Filter out any users that are not actually pending (safety check)
-      const actualPendingUsers = (response.data.users || []).filter(
+      const apiPendingUsers = (response.data.users || []).filter(
         user => user.accountStatus === 'pending' && user.emailVerified
       );
-      setPendingUsers(actualPendingUsers);
+      
+      // Also check the main users array for any pending users that might not be in the API response
+      // This ensures we catch all pending users, including those that might have pending status but weren't returned by the API
+      const allPendingFromTable = users.filter(
+        user => user.accountStatus === 'pending'
+      );
+      
+      // Combine both sources and remove duplicates
+      const combinedPending = [...apiPendingUsers, ...allPendingFromTable];
+      const uniquePending = combinedPending.filter((user, index, self) =>
+        index === self.findIndex((u) => (u.id || u._id) === (user.id || user._id))
+      );
+      
+      setPendingUsers(uniquePending);
     } catch (error) {
       // Only show error if user has permission (not a 403)
       if (error.response?.status !== 403) {
         toast.error('Failed to load pending users');
       }
-      // Set empty array on error to clear stale data
-      setPendingUsers([]);
+      // Fallback: check users array for pending status
+      const pendingFromTable = users.filter(user => user.accountStatus === 'pending');
+      setPendingUsers(pendingFromTable);
     }
   };
 

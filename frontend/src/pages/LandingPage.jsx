@@ -149,6 +149,10 @@ const LandingPage = () => {
                 src="/N2RevConLogo.png" 
                 alt="N2 RevCon Logo" 
                 className="h-8 md:h-10 w-auto"
+                onError={(e) => {
+                  // For landing page, keep public path but add error handling
+                  console.error('Failed to load logo:', e.target.src);
+                }}
               />
               <h1 className="text-lg md:text-2xl font-bold text-accent">N2 RevCon</h1>
             </div>

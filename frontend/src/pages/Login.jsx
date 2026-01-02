@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import logoImage from '../assets/N2RevConLogo.png';
 
 const Login = () => {
   const [formData, setFormData] = useState({ 
@@ -189,9 +190,14 @@ const Login = () => {
             <div className="text-center">
               <div className="bg-white rounded-2xl p-8 mb-6 inline-block shadow-lg">
                 <img 
-                  src="/N2RevConLogo.png" 
+                  src={logoImage}
                   alt="N2 RevCon Logo" 
                   className="h-24 w-auto mx-auto"
+                  onError={(e) => {
+                    if (!e.target.src.includes('/N2RevConLogo.png')) {
+                      e.target.src = '/N2RevConLogo.png';
+                    }
+                  }}
                 />
               </div>
               <h1 className="text-4xl font-bold text-white mb-4">N2 RevCon</h1>
@@ -208,9 +214,14 @@ const Login = () => {
               <div className="lg:hidden text-center mb-4 xs:mb-6">
                 <div className="bg-white rounded-xl xs:rounded-2xl p-4 xs:p-6 mb-3 xs:mb-4 inline-block shadow-lg border-2 border-gray-200">
                   <img 
-                    src="/N2RevConLogo.png" 
+                    src={logoImage}
                     alt="N2 RevCon Logo" 
                     className="h-12 xs:h-16 w-auto mx-auto"
+                    onError={(e) => {
+                      if (!e.target.src.includes('/N2RevConLogo.png')) {
+                        e.target.src = '/N2RevConLogo.png';
+                      }
+                    }}
                   />
                 </div>
                 <h1 className="text-xl xs:text-2xl font-bold text-accent mb-2">N2 RevCon</h1>

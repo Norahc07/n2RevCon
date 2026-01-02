@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import logoImage from '../assets/N2RevConLogo.png';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -53,9 +54,14 @@ const ForgotPassword = () => {
           <div className="lg:hidden text-center mb-6">
             <div className="bg-white rounded-2xl p-6 mb-4 inline-block shadow-lg border-2 border-gray-200">
               <img 
-                src="/N2RevConLogo.png" 
+                src={logoImage}
                 alt="N2 RevCon Logo" 
                 className="h-16 w-auto mx-auto"
+                onError={(e) => {
+                  if (!e.target.src.includes('/N2RevConLogo.png')) {
+                    e.target.src = '/N2RevConLogo.png';
+                  }
+                }}
               />
             </div>
             <h1 className="text-2xl font-bold text-accent mb-2">N2 RevCon</h1>
