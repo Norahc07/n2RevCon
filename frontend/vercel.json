@@ -1,7 +1,15 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api|assets|.*\\.(ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|css|js|json|xml|txt|pdf|zip|mp4|webm|swf|flv|manifest|sw)).*)",
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    },
+    {
+      "source": "/(.*\\.(ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|css|js|json|xml|txt|pdf|zip|mp4|webm|swf|flv|manifest|sw))",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
