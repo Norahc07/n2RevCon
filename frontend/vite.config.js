@@ -44,7 +44,8 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        globIgnores: ['**/node_modules/**/*'],
         runtimeCaching: [
           {
             urlPattern: /\/api\/.*/i,
