@@ -21,15 +21,8 @@
   "icons": [
     {
       "src": "/N2RevConLogo.png",
-      "sizes": "any",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/N2RevConLogo.png",
-      "sizes": "any",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ]
 }
