@@ -688,22 +688,43 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
       setLoading(true);
       const userId = user.id || user._id;
       
-      // Make API call (no optimistic update to avoid UI flicker if it fails)
-      await userAPI.approveUser(userId);
-      toast.success('User approved successfully');
+      // Make API call (cache will be invalidated by approveUser)
+      const response = await userAPI.approveUser(userId);
       
-      // Small delay to ensure backend has fully processed the update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Refresh from server to ensure consistency (cache already invalidated by approveUser)
-      onRefresh();
+      // Verify the response indicates success
+      if (response?.data?.user?.accountStatus === 'approved') {
+        toast.success('User approved successfully');
+        
+        // Wait a moment to ensure backend has fully processed and database is updated
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Wait a moment to ensure backend has fully processed and database is updated
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Use onRefresh which calls both fetchUsers and fetchPendingUsers
+        if (onRefresh) {
+          await onRefresh();
+        }
+        
+        // Additional small delay to ensure UI updates properly
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } else {
+        // If response doesn't show approved status, refresh to check
+        if (onRefresh) {
+          await onRefresh();
+        }
+        toast.success('User approval processed');
+      }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to approve user';
       
       // If user is already approved, treat it as success and refresh
       if (errorMessage.includes('already') && errorMessage.includes('approved')) {
         toast.success('User is already approved');
-        onRefresh();
+        // Refresh to get current state
+        if (onRefresh) {
+          await onRefresh();
+        }
         return;
       }
       
@@ -714,8 +735,10 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
         toast.error(errorMessage);
       }
       
-      // Refresh to get current state from server
-      onRefresh();
+      // Always refresh to get current state from server, even on error
+      if (onRefresh) {
+        await onRefresh();
+      }
     } finally {
       setLoading(false);
     }
