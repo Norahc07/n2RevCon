@@ -365,11 +365,19 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                 className="h-8 w-auto"
                 onError={(e) => {
                   console.error('Failed to load logo in Sidebar:', e.target.src);
-                  // Try alternative path
-                  if (!e.target.src.includes('N2RevConLogo')) {
+                  // Try without query parameter
+                  if (e.target.src.includes('?v=')) {
                     e.target.src = '/N2RevConLogo.png';
                   } else {
+                    // If still fails, show fallback text
                     e.target.style.display = 'none';
+                    const parent = e.target.parentElement;
+                    if (parent && !parent.querySelector('.logo-fallback')) {
+                      const fallback = document.createElement('span');
+                      fallback.className = 'logo-fallback text-red-600 font-bold text-lg';
+                      fallback.textContent = 'N2';
+                      parent.appendChild(fallback);
+                    }
                   }
                 }}
               />

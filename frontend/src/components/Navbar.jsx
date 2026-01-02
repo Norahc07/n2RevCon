@@ -134,11 +134,19 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
                 className="h-5 xs:h-6 sm:h-8 w-auto flex-shrink-0"
                 onError={(e) => {
                   console.error('Failed to load logo:', e.target.src);
-                  // Try alternative path
-                  if (!e.target.src.includes('N2RevConLogo')) {
+                  // Try without query parameter
+                  if (e.target.src.includes('?v=')) {
                     e.target.src = '/N2RevConLogo.png';
                   } else {
+                    // If still fails, show fallback text
                     e.target.style.display = 'none';
+                    const parent = e.target.parentElement;
+                    if (parent && !parent.querySelector('.logo-fallback')) {
+                      const fallback = document.createElement('span');
+                      fallback.className = 'logo-fallback text-red-600 font-bold text-sm xs:text-base sm:text-lg';
+                      fallback.textContent = 'N2';
+                      parent.appendChild(fallback);
+                    }
                   }
                 }}
               />
