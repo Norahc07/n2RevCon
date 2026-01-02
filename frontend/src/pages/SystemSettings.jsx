@@ -1002,10 +1002,14 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                       }
                     }}
                     disabled={loading}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                    title={loading ? 'Processing...' : user.emailVerified === true ? 'Approve user' : 'User must verify their email before approval (will show error)'}
+                    className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium ${
+                      user.emailVerified === true 
+                        ? 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800' 
+                        : 'bg-yellow-500 text-white hover:bg-yellow-600 active:bg-yellow-700'
+                    }`}
+                    title={loading ? 'Processing...' : user.emailVerified === true ? 'Approve user' : 'User must verify their email before approval (will show error if clicked)'}
                   >
-                    {loading ? 'Processing...' : 'Approve'}
+                    {loading ? 'Processing...' : user.emailVerified === true ? 'Approve' : 'Approve (Email Not Verified)'}
                   </button>
                   <button
                     onClick={() => setRejectingUser(user)}
