@@ -683,8 +683,8 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
   };
 
   const handleApprove = async (user) => {
-    // Check if email is verified before attempting approval
-    if (!user.emailVerified) {
+    // Check if email is verified before attempting approval (use strict equality)
+    if (user.emailVerified !== true) {
       toast.error('Cannot approve user: Email must be verified before approval');
       return;
     }
