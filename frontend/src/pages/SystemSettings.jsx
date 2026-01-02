@@ -2117,9 +2117,20 @@ const GuestAccessTab = () => {
 
       {/* Generate Modal */}
       {showGenerateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Generate Guest Link</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 my-auto shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Generate Guest Link</h3>
+              <button
+                onClick={() => {
+                  setShowGenerateModal(false);
+                  setFormData({ type: 'researcher', name: '', description: '', expiresInDays: '' });
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
             <form onSubmit={handleGenerateLink} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -2200,63 +2211,97 @@ const GuestAccessTab = () => {
 
       {/* Generated Link Modal */}
       {generatedLink && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-800">Guest Link Generated Successfully!</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8">
+          <div className="bg-white rounded-lg p-8 max-w-3xl w-full mx-4 my-auto shadow-2xl">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800">Guest Link Generated Successfully!</h3>
+                <p className="text-sm text-gray-500 mt-1">Share this link or QR code with your guests</p>
+              </div>
               <button
                 onClick={() => setGeneratedLink(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full"
+                title="Close"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Access URL Section */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Access URL</label>
-                <div className="flex gap-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <span className="flex items-center gap-2">
+                    Access URL
+                    <span className="text-xs font-normal text-gray-500">(Click to copy)</span>
+                  </span>
+                </label>
+                <div className="flex gap-3">
                   <input
                     type="text"
                     value={generatedLink.accessUrl}
                     readOnly
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50"
+                    onClick={() => copyToClipboard(generatedLink.accessUrl)}
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors font-mono text-sm"
                   />
                   <button
                     onClick={() => copyToClipboard(generatedLink.accessUrl)}
-                    className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg font-semibold flex items-center gap-2"
                   >
-                    Copy
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copy Link
                   </button>
                 </div>
               </div>
 
+              {/* QR Code Section */}
               {generatedLink.qrCodeDataUrl && (
-                <div className="text-center">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">QR Code</label>
-                  <div className="bg-white p-4 rounded-lg border-2 border-gray-300 inline-block">
-                    <img 
-                      src={generatedLink.qrCodeDataUrl} 
-                      alt="QR Code" 
-                      className="w-64 h-64"
-                    />
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-gray-200">
+                  <div className="text-center">
+                    <label className="block text-sm font-semibold text-gray-700 mb-4">
+                      QR Code
+                    </label>
+                    <div className="bg-white p-6 rounded-xl border-2 border-gray-300 inline-block shadow-lg mb-4">
+                      <img 
+                        src={generatedLink.qrCodeDataUrl} 
+                        alt="QR Code" 
+                        className="w-64 h-64"
+                      />
+                    </div>
+                    <button
+                      onClick={() => downloadQRCode(generatedLink.qrCodeDataUrl, generatedLink.name)}
+                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md hover:shadow-lg font-semibold flex items-center gap-2 mx-auto"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download QR Code
+                    </button>
+                    <p className="text-xs text-gray-500 mt-2">PNG format, ready to print or share</p>
                   </div>
-                  <button
-                    onClick={() => downloadQRCode(generatedLink.qrCodeDataUrl, generatedLink.name)}
-                    className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    Download QR Code
-                  </button>
                 </div>
               )}
 
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> Share this link or QR code with your guests. 
-                  {generatedLink.type === 'researcher' 
-                    ? ' Researchers will see a demo view without actual company data.'
-                    : ' Clients will see actual company data with view-only access.'}
-                </p>
+              {/* Info Section */}
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <InformationCircleIcon className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-800 mb-1">Important Information</p>
+                    <p className="text-sm text-blue-700">
+                      {generatedLink.type === 'researcher' 
+                        ? 'Researchers will see a demo view with sample data only. No actual company information will be displayed.'
+                        : 'Clients will see actual company data with view-only access. They cannot edit, add, or delete any information.'}
+                    </p>
+                    {generatedLink.expiresAt && (
+                      <p className="text-xs text-blue-600 mt-2">
+                        This link will expire on: {new Date(generatedLink.expiresAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
