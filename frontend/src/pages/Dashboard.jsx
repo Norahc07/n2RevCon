@@ -288,13 +288,25 @@ const Dashboard = () => {
   const revenueData = summary.revenueVsExpenses?.revenue || [];
   const expenseData = summary.revenueVsExpenses?.expenses || [];
   
-  // Get all unique projects from both revenue and expense data
+  // Get all unique projects from both revenue and expense data (including General Revenue/Expense)
   const allProjectIds = new Set();
+  const generalRevenueKey = 'GENERAL_REVENUE';
+  const generalExpenseKey = 'GENERAL_EXPENSE';
+  
   revenueData.forEach(item => {
-    if (item._id) allProjectIds.add(item._id.toString());
+    if (item._id) {
+      allProjectIds.add(item._id.toString());
+    } else if (item.projectName === 'General Revenue' || item.projectCode === 'GEN') {
+      allProjectIds.add(generalRevenueKey);
+    }
   });
+  
   expenseData.forEach(item => {
-    if (item._id) allProjectIds.add(item._id.toString());
+    if (item._id) {
+      allProjectIds.add(item._id.toString());
+    } else if (item.projectName === 'General Expense' || item.projectCode === 'GEN') {
+      allProjectIds.add(generalExpenseKey);
+    }
   });
   
   // Create a map for quick lookup
@@ -302,6 +314,8 @@ const Dashboard = () => {
   revenueData.forEach(item => {
     if (item._id) {
       revenueMap.set(item._id.toString(), item);
+    } else if (item.projectName === 'General Revenue' || item.projectCode === 'GEN') {
+      revenueMap.set(generalRevenueKey, item);
     }
   });
   
@@ -309,13 +323,28 @@ const Dashboard = () => {
   expenseData.forEach(item => {
     if (item._id) {
       expenseMap.set(item._id.toString(), item);
+    } else if (item.projectName === 'General Expense' || item.projectCode === 'GEN') {
+      expenseMap.set(generalExpenseKey, item);
     }
   });
   
-  // Build the chart data
+  // Build the chart data (including General Revenue/Expense)
   const revenueVsExpensesData = Array.from(allProjectIds).map(projectId => {
     const revenueItem = revenueMap.get(projectId);
     const expenseItem = expenseMap.get(projectId);
+    
+    // Handle General Revenue/Expense
+    if (projectId === generalRevenueKey || projectId === generalExpenseKey) {
+      const isGeneralRevenue = projectId === generalRevenueKey;
+      return {
+        project: isGeneralRevenue ? 'General Revenue' : 'General Expense',
+        projectName: isGeneralRevenue ? 'General Revenue' : 'General Expense',
+        Revenue: isGeneralRevenue ? (revenueItem?.total || 0) : 0,
+        Expenses: !isGeneralRevenue ? (expenseItem?.total || 0) : 0,
+      };
+    }
+    
+    // Handle regular projects
     const projectName = revenueItem?.projectName || expenseItem?.projectName || 'Unknown Project';
     const projectCode = revenueItem?.projectCode || expenseItem?.projectCode || 'N/A';
     const displayName = projectCode !== 'N/A' ? `${projectCode}` : projectName;

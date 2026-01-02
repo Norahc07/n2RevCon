@@ -235,8 +235,17 @@ export const getDashboardSummary = async (req, res) => {
       }
     ]);
 
+    const totalRevenueAmount = totalRevenue[0]?.total || 0;
+    const totalExpensesAmount = totalExpenses[0]?.total || 0;
+    
+    // Log totals for debugging
+    console.log(`[Dashboard] Totals - Revenue: ${totalRevenueAmount}, Expenses: ${totalExpensesAmount}, Net: ${totalRevenueAmount - totalExpensesAmount}, viewAll: ${viewAll}`);
+    console.log(`[Dashboard] Revenue data points: ${revenueData.length}, Expense data points: ${expenseData.length}`);
+    console.log(`[Dashboard] Billing status items: ${billingStatus.length}, Payment status items: ${paymentStatus.length}`);
+    
     res.json({
-      year: currentYear,
+      year: viewAll ? 'all' : currentYear,
+      viewAll: viewAll === true || viewAll === 'true',
       projectStatus: projectStatus.reduce((acc, item) => {
         acc[item._id] = item.count;
         return acc;
@@ -254,8 +263,9 @@ export const getDashboardSummary = async (req, res) => {
         return acc;
       }, {}),
       totals: {
-        revenue: totalRevenue[0]?.total || 0,
-        expenses: totalExpenses[0]?.total || 0
+        revenue: totalRevenueAmount,
+        expenses: totalExpensesAmount,
+        netProfit: totalRevenueAmount - totalExpensesAmount
       }
     });
   } catch (error) {
