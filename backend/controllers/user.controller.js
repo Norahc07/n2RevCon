@@ -2,6 +2,7 @@ import User from '../models/User.model.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { sendPasswordChangeEmail, sendAccountApprovalEmail, sendAccountRejectionEmail } from '../services/email.service.js';
+import { hasPermission, ACTIONS } from '../config/permissions.js';
 
 /**
  * @route   GET /api/users
@@ -355,10 +356,14 @@ export const deleteUser = async (req, res) => {
  */
 export const getPendingUsers = async (req, res) => {
   try {
-    // Check if user is master_admin
+    // Check if user is master_admin or system_admin with approve permission
     const currentUser = await User.findById(req.user.id);
-    if (currentUser.role !== 'master_admin') {
-      return res.status(403).json({ message: 'Only Master Admin can view pending users' });
+    const isMasterAdmin = currentUser.role === 'master_admin';
+    const isSystemAdmin = currentUser.role === 'system_admin';
+    const canApprove = hasPermission(currentUser.role, ACTIONS.APPROVE);
+    
+    if (!isMasterAdmin && !(isSystemAdmin && canApprove)) {
+      return res.status(403).json({ message: 'Only Master Admin or System Admin with approve permission can view pending users' });
     }
 
     const pendingUsers = await User.find({ 

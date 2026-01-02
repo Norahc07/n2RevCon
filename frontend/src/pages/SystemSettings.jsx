@@ -929,13 +929,14 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
       )}
 
       {/* Pending Users Section - Show to Master Admin and System Admin (who can approve) */}
-      {(isMasterAdmin || (isSystemAdmin && canApprove)) && pendingUsers.length > 0 && (
+      {(isMasterAdmin || (isSystemAdmin && canApprove)) && (
         <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded">
           <h3 className="text-lg font-semibold text-yellow-800 mb-3">
-            ⏳ Pending Approval ({pendingUsers.length})
+            ⏳ Pending Approval {pendingUsers.length > 0 && `(${pendingUsers.length})`}
           </h3>
-          <div className="space-y-3">
-            {pendingUsers.map((user) => (
+          {pendingUsers.length > 0 ? (
+            <div className="space-y-3">
+              {pendingUsers.map((user) => (
               <div key={user.id || user._id} className="bg-white p-4 rounded-lg border border-yellow-200 flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-gray-800">{user.firstName} {user.lastName}</p>
@@ -959,8 +960,13 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white p-4 rounded-lg border border-yellow-200">
+              <p className="text-gray-600 text-sm">No pending users at this time. All users have been processed.</p>
+            </div>
+          )}
         </div>
       )}
 
