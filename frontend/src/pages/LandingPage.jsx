@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import PWAInstallButton from '../components/PWAInstallButton';
+import logoImage from '../assets/N2RevConLogo.png';
 
 // Typing Animation Component
 const TypingAnimation = ({ text, speed = 100, deleteSpeed = 50, delay = 2000, startDelay = 0, syncDelay = 0 }) => {
@@ -146,12 +147,16 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3">
               <img 
-                src="/N2RevConLogo.png" 
+                src={logoImage}
                 alt="N2 RevCon Logo" 
                 className="h-8 md:h-10 w-auto"
                 onError={(e) => {
-                  // For landing page, keep public path but add error handling
-                  console.error('Failed to load logo:', e.target.src);
+                  // Fallback to public path if imported image fails
+                  if (!e.target.src.includes('/N2RevConLogo.png')) {
+                    e.target.src = '/N2RevConLogo.png';
+                  } else {
+                    console.error('Failed to load logo:', e.target.src);
+                  }
                 }}
               />
               <h1 className="text-lg md:text-2xl font-bold text-accent">N2 RevCon</h1>
