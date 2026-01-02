@@ -1064,6 +1064,7 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
       display: inline-block;
       padding: 18px 48px;
       background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      background-color: #DC2626;
       color: #ffffff !important;
       text-decoration: none;
       border-radius: 12px;
@@ -1072,6 +1073,7 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
       box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35), 0 2px 8px rgba(220, 38, 38, 0.2);
       transition: all 0.3s ease;
       letter-spacing: 0.3px;
+      border: none;
     }
     .verify-button:hover {
       transform: translateY(-3px);
@@ -1234,7 +1236,7 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
         <!--[if mso]>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="160">
           <tr>
-            <td style="text-align: center; padding: 16px;">
+            <td style="text-align: center; padding: 16px; background: white; border-radius: 16px;">
               <span style="color: #DC2626; font-size: 24px; font-weight: 700;">n2 RevCon</span>
             </td>
           </tr>
@@ -1263,8 +1265,8 @@ const generateEmailVerificationTemplate = (userName, verificationUrl) => {
       </p>
       
       <div class="button-container">
-        <a href="${verificationUrl}" class="verify-button">
-          Verify Email Address
+        <a href="${verificationUrl}" class="verify-button" style="color: #ffffff !important; text-decoration: none; background-color: #DC2626; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);">
+          <span style="color: #ffffff !important;">Verify Email Address</span>
         </a>
       </div>
       
