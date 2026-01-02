@@ -363,13 +363,17 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                 src="/N2RevConLogo.png?v=2" 
                 alt="N2 RevCon Logo" 
                 className="h-8 w-auto"
+                style={{ display: 'block' }}
+                onLoad={() => console.log('Logo loaded successfully in Sidebar')}
                 onError={(e) => {
                   console.error('Failed to load logo in Sidebar:', e.target.src);
                   // Try without query parameter
                   if (e.target.src.includes('?v=')) {
+                    console.log('Retrying without query parameter...');
                     e.target.src = '/N2RevConLogo.png';
                   } else {
-                    // If still fails, show fallback text
+                    console.error('Logo failed to load after retry');
+                    // Show fallback text
                     e.target.style.display = 'none';
                     const parent = e.target.parentElement;
                     if (parent && !parent.querySelector('.logo-fallback')) {
