@@ -198,7 +198,7 @@ const ResetPassword = () => {
           <div className="lg:hidden text-center mb-6">
             <div className="bg-white rounded-2xl p-6 mb-4 inline-block shadow-lg border-2 border-gray-200">
               <img 
-                src="/n2RevConLogo.png" 
+                src="/N2RevConLogo.png" 
                 alt="N2 RevCon Logo" 
                 className="h-16 w-auto mx-auto"
               />

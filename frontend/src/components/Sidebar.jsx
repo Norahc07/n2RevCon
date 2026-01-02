@@ -364,7 +364,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                 alt="N2 RevCon Logo" 
                 className="h-8 w-auto"
                 onError={(e) => {
-                  console.error('Failed to load logo:', e.target.src);
+                  // Silently handle error - don't show broken image
                   e.target.style.display = 'none';
                 }}
               />

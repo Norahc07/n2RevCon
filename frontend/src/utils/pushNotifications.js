@@ -170,8 +170,8 @@ export const showLocalNotification = (title, options = {}) => {
   }
 
   const notification = new Notification(title, {
-    icon: '/n2RevConLogo.png',
-    badge: '/n2RevConLogo.png',
+    icon: '/N2RevConLogo.png',
+    badge: '/N2RevConLogo.png',
     ...options
   });
 

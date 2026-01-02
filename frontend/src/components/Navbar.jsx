@@ -133,7 +133,7 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
                 alt="N2 RevCon Logo" 
                 className="h-5 xs:h-6 sm:h-8 w-auto flex-shrink-0"
                 onError={(e) => {
-                  console.error('Failed to load logo:', e.target.src);
+                  // Silently handle error - don't show broken image
                   e.target.style.display = 'none';
                 }}
               />

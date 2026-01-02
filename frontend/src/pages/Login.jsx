@@ -189,7 +189,7 @@ const Login = () => {
             <div className="text-center">
               <div className="bg-white rounded-2xl p-8 mb-6 inline-block shadow-lg">
                 <img 
-                  src="/n2RevConLogo.png" 
+                  src="/N2RevConLogo.png" 
                   alt="N2 RevCon Logo" 
                   className="h-24 w-auto mx-auto"
                 />
@@ -208,7 +208,7 @@ const Login = () => {
               <div className="lg:hidden text-center mb-4 xs:mb-6">
                 <div className="bg-white rounded-xl xs:rounded-2xl p-4 xs:p-6 mb-3 xs:mb-4 inline-block shadow-lg border-2 border-gray-200">
                   <img 
-                    src="/n2RevConLogo.png" 
+                    src="/N2RevConLogo.png" 
                     alt="N2 RevCon Logo" 
                     className="h-12 xs:h-16 w-auto mx-auto"
                   />
