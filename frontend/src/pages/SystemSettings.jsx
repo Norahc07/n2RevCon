@@ -114,9 +114,13 @@ const SystemSettings = () => {
       
       // Also check the main users array for any pending users that might not be in the API response
       // This ensures we catch all pending users, including those that might have pending status but weren't returned by the API
-      const allPendingFromTable = users.filter(
-        user => user.accountStatus === 'pending'
-      );
+      // Make sure emailVerified is included (default to false if not present)
+      const allPendingFromTable = users
+        .filter(user => user.accountStatus === 'pending')
+        .map(user => ({
+          ...user,
+          emailVerified: user.emailVerified !== undefined ? user.emailVerified : false
+        }));
       
       // Combine both sources and remove duplicates
       const combinedPending = [...apiPendingUsers, ...allPendingFromTable];
@@ -130,8 +134,13 @@ const SystemSettings = () => {
       if (error.response?.status !== 403) {
         toast.error('Failed to load pending users');
       }
-      // Fallback: check users array for pending status
-      const pendingFromTable = users.filter(user => user.accountStatus === 'pending');
+      // Fallback: check users array for pending status and ensure emailVerified is set
+      const pendingFromTable = users
+        .filter(user => user.accountStatus === 'pending')
+        .map(user => ({
+          ...user,
+          emailVerified: user.emailVerified !== undefined ? user.emailVerified : false
+        }));
       setPendingUsers(pendingFromTable);
     }
   };
@@ -973,9 +982,9 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleApprove(user)}
-                    disabled={loading || !user.emailVerified}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm font-medium"
-                    title={!user.emailVerified ? 'User must verify their email before approval' : 'Approve user'}
+                    disabled={loading || !(user.emailVerified === true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                    title={user.emailVerified !== true ? 'User must verify their email before approval' : 'Approve user'}
                   >
                     Approve
                   </button>
