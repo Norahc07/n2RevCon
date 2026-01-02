@@ -129,7 +129,7 @@ const Navbar = ({ onMenuClick, sidebarOpen }) => {
             {/* Logo and Name */}
             <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 min-w-0">
               <img 
-                src="/N2RevConLogo.png" 
+                src="/N2RevConLogo.png?v=2" 
                 alt="N2 RevCon Logo" 
                 className="h-5 xs:h-6 sm:h-8 w-auto flex-shrink-0"
                 onError={(e) => {

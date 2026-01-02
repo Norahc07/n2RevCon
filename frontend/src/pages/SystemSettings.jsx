@@ -935,8 +935,8 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
             ⏳ Pending Approval {pendingUsers.length > 0 && `(${pendingUsers.length})`}
           </h3>
           {pendingUsers.length > 0 ? (
-            <div className="space-y-3">
-              {pendingUsers.map((user) => (
+          <div className="space-y-3">
+            {pendingUsers.map((user) => (
               <div key={user.id || user._id} className="bg-white p-4 rounded-lg border border-yellow-200 flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-gray-800">{user.firstName} {user.lastName}</p>
@@ -960,8 +960,8 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                   </button>
                 </div>
               </div>
-              ))}
-            </div>
+            ))}
+          </div>
           ) : (
             <div className="bg-white p-4 rounded-lg border border-yellow-200">
               <p className="text-gray-600 text-sm">No pending users at this time. All users have been processed.</p>
