@@ -192,13 +192,17 @@ export const getDashboardSummary = async (req, res) => {
       }
     ]);
 
-    // Total revenue and expenses
+    // Total revenue and expenses (only filter by year if not viewing all)
+    const totalRevenueMatch = {
+      status: { $ne: 'cancelled' }
+    };
+    if (shouldFilterByYear) {
+      totalRevenueMatch.date = { $gte: startDate, $lte: endDate };
+    }
+
     const totalRevenue = await Revenue.aggregate([
       {
-        $match: {
-          date: { $gte: startDate, $lte: endDate },
-          status: { $ne: 'cancelled' }
-        }
+        $match: totalRevenueMatch
       },
       {
         $group: {
@@ -208,12 +212,16 @@ export const getDashboardSummary = async (req, res) => {
       }
     ]);
 
+    const totalExpensesMatch = {
+      status: { $ne: 'cancelled' }
+    };
+    if (shouldFilterByYear) {
+      totalExpensesMatch.date = { $gte: startDate, $lte: endDate };
+    }
+
     const totalExpenses = await Expense.aggregate([
       {
-        $match: {
-          date: { $gte: startDate, $lte: endDate },
-          status: { $ne: 'cancelled' }
-        }
+        $match: totalExpensesMatch
       },
       {
         $group: {

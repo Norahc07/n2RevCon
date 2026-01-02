@@ -170,17 +170,19 @@ const Dashboard = () => {
     localStorage.setItem('notification-prompt-dismissed', new Date().toISOString());
   };
 
-  // Get available years from projects (exclude 2026 and beyond)
+  // Get available years from projects (exclude 2026 and beyond, use current year as max)
   const availableYears = useMemo(() => {
     if (!projects || projects.length === 0) {
       return [new Date().getFullYear()]; // Fallback to current year
     }
+    const currentYear = new Date().getFullYear();
+    const maxYear = currentYear; // Use current year as maximum, not hardcoded 2025
     const years = new Set();
     projects.forEach((project) => {
       if (project.startDate) {
         try {
           const startYear = new Date(project.startDate).getFullYear();
-          if (!isNaN(startYear) && startYear <= 2025) {
+          if (!isNaN(startYear) && startYear <= maxYear) {
             years.add(startYear);
           }
         } catch (e) {
@@ -190,23 +192,23 @@ const Dashboard = () => {
       if (project.endDate) {
         try {
           const endYear = new Date(project.endDate).getFullYear();
-          if (!isNaN(endYear) && endYear <= 2025) {
+          if (!isNaN(endYear) && endYear <= maxYear) {
             years.add(endYear);
           }
         } catch (e) {
           console.warn('Invalid endDate:', project.endDate);
         }
       }
-      // Also add years in between start and end dates (but cap at 2025)
+      // Also add years in between start and end dates (but cap at current year)
       if (project.startDate && project.endDate) {
         try {
           const startYear = new Date(project.startDate).getFullYear();
           const endYear = new Date(project.endDate).getFullYear();
           if (!isNaN(startYear) && !isNaN(endYear)) {
             const minYear = Math.min(startYear, endYear);
-            const maxYear = Math.min(Math.max(startYear, endYear), 2025); // Cap at 2025
-            for (let y = minYear; y <= maxYear; y++) {
-              if (y <= 2025) {
+            const maxYearInRange = Math.min(Math.max(startYear, endYear), maxYear); // Cap at current year
+            for (let y = minYear; y <= maxYearInRange; y++) {
+              if (y <= maxYear) {
                 years.add(y);
               }
             }
@@ -216,8 +218,8 @@ const Dashboard = () => {
         }
       }
     });
-    const sortedYears = Array.from(years).filter(y => y <= 2025).sort((a, b) => b - a);
-    return sortedYears.length > 0 ? sortedYears : [new Date().getFullYear()];
+    const sortedYears = Array.from(years).filter(y => y <= maxYear).sort((a, b) => b - a);
+    return sortedYears.length > 0 ? sortedYears : [currentYear];
   }, [projects]);
 
   if (loading) {
