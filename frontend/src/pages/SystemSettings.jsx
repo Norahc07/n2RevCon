@@ -107,26 +107,28 @@ const SystemSettings = () => {
     try {
       // Use useCache: false to bypass cache and get fresh data
       const response = await userAPI.getPending({ useCache: false });
-      // Filter out any users that are not actually pending (safety check)
+      // Get all pending users from API (don't filter by emailVerified here - show all pending)
       const apiPendingUsers = (response.data.users || []).filter(
-        user => user.accountStatus === 'pending' && user.emailVerified
+        user => user.accountStatus === 'pending'
       );
       
       // Also check the main users array for any pending users that might not be in the API response
       // This ensures we catch all pending users, including those that might have pending status but weren't returned by the API
-      // Make sure emailVerified is included (default to false if not present)
-      const allPendingFromTable = users
-        .filter(user => user.accountStatus === 'pending')
-        .map(user => ({
-          ...user,
-          emailVerified: user.emailVerified !== undefined ? user.emailVerified : false
-        }));
+      const allPendingFromTable = users.filter(user => user.accountStatus === 'pending');
       
-      // Combine both sources and remove duplicates
+      // Combine both sources and remove duplicates, preserving emailVerified from API response
       const combinedPending = [...apiPendingUsers, ...allPendingFromTable];
-      const uniquePending = combinedPending.filter((user, index, self) =>
-        index === self.findIndex((u) => (u.id || u._id) === (user.id || user._id))
-      );
+      const uniquePending = combinedPending.filter((user, index, self) => {
+        const userId = user.id || user._id;
+        const firstIndex = self.findIndex((u) => (u.id || u._id) === userId);
+        // If this is the first occurrence, keep it; otherwise prefer API response (which has emailVerified)
+        if (index === firstIndex) {
+          return true;
+        }
+        // If we have an API user with same ID, prefer that one (it has emailVerified)
+        const apiUser = apiPendingUsers.find(u => (u.id || u._id) === userId);
+        return apiUser ? false : true;
+      });
       
       setPendingUsers(uniquePending);
     } catch (error) {
@@ -134,13 +136,8 @@ const SystemSettings = () => {
       if (error.response?.status !== 403) {
         toast.error('Failed to load pending users');
       }
-      // Fallback: check users array for pending status and ensure emailVerified is set
-      const pendingFromTable = users
-        .filter(user => user.accountStatus === 'pending')
-        .map(user => ({
-          ...user,
-          emailVerified: user.emailVerified !== undefined ? user.emailVerified : false
-        }));
+      // Fallback: check users array for pending status
+      const pendingFromTable = users.filter(user => user.accountStatus === 'pending');
       setPendingUsers(pendingFromTable);
     }
   };
@@ -993,21 +990,20 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
                         userId: user.id || user._id, 
                         emailVerified: user.emailVerified, 
                         loading, 
-                        disabled: loading || !(user.emailVerified === true)
+                        accountStatus: user.accountStatus
                       });
-                      if (!loading && user.emailVerified === true) {
+                      
+                      // Always allow click - handleApprove will check emailVerified
+                      if (!loading) {
                         handleApprove(user);
                       } else {
-                        console.warn('Button click ignored:', { loading, emailVerified: user.emailVerified });
-                        if (user.emailVerified !== true) {
-                          toast.error('User must verify their email before approval');
-                        }
+                        console.warn('Button click ignored: loading is true');
+                        toast.info('Please wait, processing...');
                       }
                     }}
-                    disabled={loading || !(user.emailVerified === true)}
+                    disabled={loading}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                    title={user.emailVerified !== true ? 'User must verify their email before approval' : loading ? 'Processing...' : 'Approve user'}
-                    style={{ pointerEvents: loading || !(user.emailVerified === true) ? 'none' : 'auto' }}
+                    title={loading ? 'Processing...' : user.emailVerified === true ? 'Approve user' : 'User must verify their email before approval (will show error)'}
                   >
                     {loading ? 'Processing...' : 'Approve'}
                   </button>
