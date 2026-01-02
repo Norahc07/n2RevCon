@@ -674,6 +674,12 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
   };
 
   const handleApprove = async (user) => {
+    // Check if email is verified before attempting approval
+    if (!user.emailVerified) {
+      toast.error('Cannot approve user: Email must be verified before approval');
+      return;
+    }
+
     if (!window.confirm(`Approve ${user.firstName} ${user.lastName}? They will be able to log in after approval.`)) {
       return;
     }
@@ -682,34 +688,7 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
       setLoading(true);
       const userId = user.id || user._id;
       
-      // Optimistically update the UI immediately
-      const updatedUser = { ...user, accountStatus: 'approved' };
-      
-      // Remove from pending users immediately
-      if (onPendingUsersUpdate) {
-        onPendingUsersUpdate((prevPendingUsers) => 
-          prevPendingUsers.filter(u => (u.id || u._id) !== userId)
-        );
-      }
-      
-      // Add to active users immediately
-      if (onUsersUpdate) {
-        onUsersUpdate((prevUsers) => {
-          // Check if user already exists in the list
-          const userExists = prevUsers.some(u => (u.id || u._id) === userId);
-          if (userExists) {
-            // Update existing user
-            return prevUsers.map(u => 
-              (u.id || u._id) === userId ? updatedUser : u
-            );
-          } else {
-            // Add new user to the list
-            return [...prevUsers, updatedUser];
-          }
-        });
-      }
-      
-      // Make API call
+      // Make API call (no optimistic update to avoid UI flicker if it fails)
       await userAPI.approveUser(userId);
       toast.success('User approved successfully');
       
@@ -724,14 +703,19 @@ const UserManagementTab = ({ users, pendingUsers = [], onRefresh, onUsersUpdate,
       // If user is already approved, treat it as success and refresh
       if (errorMessage.includes('already') && errorMessage.includes('approved')) {
         toast.success('User is already approved');
-        // Refresh to update the UI
         onRefresh();
-      } else {
-        // For other errors, show error and refresh
-        toast.error(errorMessage);
-        // Refresh to get correct state
-        onRefresh();
+        return;
       }
+      
+      // If error is about email verification, show specific message
+      if (errorMessage.includes('verify their email')) {
+        toast.error('Cannot approve user: Email must be verified before approval');
+      } else {
+        toast.error(errorMessage);
+      }
+      
+      // Refresh to get current state from server
+      onRefresh();
     } finally {
       setLoading(false);
     }
