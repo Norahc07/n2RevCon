@@ -364,8 +364,13 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                 alt="N2 RevCon Logo" 
                 className="h-8 w-auto"
                 onError={(e) => {
-                  // Silently handle error - don't show broken image
-                  e.target.style.display = 'none';
+                  console.error('Failed to load logo in Sidebar:', e.target.src);
+                  // Try alternative path
+                  if (!e.target.src.includes('N2RevConLogo')) {
+                    e.target.src = '/N2RevConLogo.png';
+                  } else {
+                    e.target.style.display = 'none';
+                  }
                 }}
               />
               <h1 className="text-xl font-bold text-accent">N2 RevCon</h1>
