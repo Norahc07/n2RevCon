@@ -2117,8 +2117,19 @@ const GuestAccessTab = () => {
 
       {/* Generate Modal */}
       {showGenerateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 my-auto shadow-2xl">
+        <div 
+          className="fixed bg-black bg-opacity-50 flex items-start justify-center z-[9999] overflow-y-auto" 
+          style={{ 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            width: '100vw', 
+            height: '100vh',
+            minHeight: '100vh'
+          }}
+        >
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 my-8 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-800">Generate Guest Link</h3>
               <button
@@ -2211,8 +2222,19 @@ const GuestAccessTab = () => {
 
       {/* Generated Link Modal */}
       {generatedLink && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8">
-          <div className="bg-white rounded-lg p-8 max-w-3xl w-full mx-4 my-auto shadow-2xl">
+        <div 
+          className="fixed bg-black bg-opacity-50 flex items-start justify-center z-[9999] overflow-y-auto" 
+          style={{ 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            width: '100vw', 
+            height: '100vh',
+            minHeight: '100vh'
+          }}
+        >
+          <div className="bg-white rounded-lg p-8 max-w-3xl w-full mx-4 my-8 shadow-2xl">
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
               <div>
                 <h3 className="text-2xl font-bold text-gray-800">Guest Link Generated Successfully!</h3>
