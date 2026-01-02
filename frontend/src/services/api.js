@@ -38,6 +38,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Check for guest token (for guest access)
+    const guestToken = localStorage.getItem('guestToken') || sessionStorage.getItem('guestToken');
+    if (guestToken && !token) {
+      config.headers['x-guest-token'] = guestToken;
+    }
 
     // Check cache for GET requests
     if (config.method === 'get' && config.useCache !== false) {
@@ -357,6 +363,28 @@ export const exportAPI = {
   exportRevenueCosts: (params) => api.get('/export/revenue-costs', { params, responseType: 'blob' }),
   exportBillingCollections: (params) => api.get('/export/billing-collections', { params, responseType: 'blob' }),
   exportSummary: () => api.get('/export/summary', { responseType: 'blob' }),
+};
+
+// Guest API
+export const guestAPI = {
+  generateLink: async (data) => {
+    const response = await api.post('/guest/generate-link', data);
+    invalidateCache('guest');
+    return response;
+  },
+  getAllLinks: () => api.get('/guest/links', { useCache: false }),
+  verifyToken: (token) => api.get(`/guest/verify/${token}`, { useCache: false }),
+  toggleLink: async (id) => {
+    const response = await api.put(`/guest/links/${id}/toggle`);
+    invalidateCache('guest');
+    return response;
+  },
+  deleteLink: async (id) => {
+    const response = await api.delete(`/guest/links/${id}`);
+    invalidateCache('guest');
+    return response;
+  },
+  getQRCode: (token) => `${API_URL}/guest/qrcode/${token}`,
 };
 
 export default api;

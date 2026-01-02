@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { companyAPI, userAPI } from '../services/api';
+import { companyAPI, userAPI, guestAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -41,6 +41,7 @@ const SystemSettings = () => {
     if (path.includes('/backup')) return 'backup';
     if (path.includes('/audit')) return 'audit';
     if (path.includes('/pwa')) return 'pwa';
+    if (path.includes('/guest')) return 'guest';
     return 'company'; // default
   };
   
@@ -267,12 +268,20 @@ const SystemSettings = () => {
                 <PWATab company={company} onSave={handleSave} saving={saving} />
               </div>
             )}
+
+            {/* Guest Access - Master Admin only */}
+            {activeTab === 'guest' && isMasterAdmin && (
+              <div className="card space-y-6 shadow-md">
+                <GuestAccessTab />
+              </div>
+            )}
             
             {/* Access Denied for specific tab */}
             {((activeTab === 'company' && !isMasterAdmin) ||
               (activeTab === 'users' && !isMasterAdmin && !isSystemAdmin) ||
               (activeTab === 'backup' && !isMasterAdmin) ||
               (activeTab === 'pwa' && !isMasterAdmin) ||
+              (activeTab === 'guest' && !isMasterAdmin) ||
               (activeTab === 'project' && !isMasterAdmin && !isSystemAdmin) ||
               (activeTab === 'notifications' && !isMasterAdmin && !isSystemAdmin) ||
               (activeTab === 'audit' && !isMasterAdmin && !isSystemAdmin)) && (
@@ -1997,6 +2006,382 @@ const PWATab = ({ company, onSave, saving }) => {
           {saving ? 'Saving...' : 'Save PWA Settings'}
         </button>
       </form>
+    </div>
+  );
+};
+
+// Guest Access Tab Component
+const GuestAccessTab = () => {
+  const [guestLinks, setGuestLinks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [formData, setFormData] = useState({
+    type: 'researcher',
+    name: '',
+    description: '',
+    expiresInDays: ''
+  });
+  const [generatedLink, setGeneratedLink] = useState(null);
+
+  useEffect(() => {
+    fetchGuestLinks();
+  }, []);
+
+  const fetchGuestLinks = async () => {
+    try {
+      setLoading(true);
+      const response = await guestAPI.getAllLinks();
+      setGuestLinks(response.data.guestLinks || []);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to load guest links');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateLink = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const response = await guestAPI.generateLink({
+        type: formData.type,
+        name: formData.name,
+        description: formData.description,
+        expiresInDays: formData.expiresInDays ? parseInt(formData.expiresInDays) : null
+      });
+      
+      setGeneratedLink(response.data.guestLink);
+      setFormData({ type: 'researcher', name: '', description: '', expiresInDays: '' });
+      setShowGenerateModal(false);
+      toast.success('Guest link generated successfully!');
+      fetchGuestLinks();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to generate guest link');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleLink = async (id) => {
+    try {
+      await guestAPI.toggleLink(id);
+      toast.success('Guest link status updated');
+      fetchGuestLinks();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update guest link');
+    }
+  };
+
+  const handleDeleteLink = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this guest link? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await guestAPI.deleteLink(id);
+      toast.success('Guest link deleted successfully');
+      fetchGuestLinks();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete guest link');
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
+  const downloadQRCode = (dataUrl, name) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `qrcode-${name}-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between pb-4 border-b-2 border-gray-200">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Guest Access Management</h2>
+          <p className="text-sm text-gray-500">Generate and manage guest access links for researchers and clients</p>
+        </div>
+        <button
+          onClick={() => setShowGenerateModal(true)}
+          className="px-4 py-2 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+        >
+          Generate New Link
+        </button>
+      </div>
+
+      {/* Generate Modal */}
+      {showGenerateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Generate Guest Link</h3>
+            <form onSubmit={handleGenerateLink} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Link Type *
+                </label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  required
+                >
+                  <option value="researcher">Researcher (Demo View - No Actual Data)</option>
+                  <option value="client">Client (Actual Data View)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="e.g., Research Paper Chapter 4"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  rows="3"
+                  placeholder="Optional description"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Expires In (Days) - Optional
+                </label>
+                <input
+                  type="number"
+                  value={formData.expiresInDays}
+                  onChange={(e) => setFormData({ ...formData, expiresInDays: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
+                  placeholder="Leave empty for no expiration"
+                  min="1"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-700 hover:via-red-600 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+                >
+                  {loading ? 'Generating...' : 'Generate Link'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowGenerateModal(false);
+                    setFormData({ type: 'researcher', name: '', description: '', expiresInDays: '' });
+                  }}
+                  disabled={loading}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Generated Link Modal */}
+      {generatedLink && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">Guest Link Generated Successfully!</h3>
+              <button
+                onClick={() => setGeneratedLink(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Access URL</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={generatedLink.accessUrl}
+                    readOnly
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50"
+                  />
+                  <button
+                    onClick={() => copyToClipboard(generatedLink.accessUrl)}
+                    className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              {generatedLink.qrCodeDataUrl && (
+                <div className="text-center">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">QR Code</label>
+                  <div className="bg-white p-4 rounded-lg border-2 border-gray-300 inline-block">
+                    <img 
+                      src={generatedLink.qrCodeDataUrl} 
+                      alt="QR Code" 
+                      className="w-64 h-64"
+                    />
+                  </div>
+                  <button
+                    onClick={() => downloadQRCode(generatedLink.qrCodeDataUrl, generatedLink.name)}
+                    className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Download QR Code
+                  </button>
+                </div>
+              )}
+
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> Share this link or QR code with your guests. 
+                  {generatedLink.type === 'researcher' 
+                    ? ' Researchers will see a demo view without actual company data.'
+                    : ' Clients will see actual company data with view-only access.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Guest Links List */}
+      {loading && guestLinks.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600 mx-auto"></div>
+          <p className="text-gray-500 mt-4">Loading guest links...</p>
+        </div>
+      ) : guestLinks.length === 0 ? (
+        <div className="text-center py-8 bg-gray-50 rounded-lg">
+          <p className="text-gray-500">No guest links generated yet.</p>
+          <button
+            onClick={() => setShowGenerateModal(true)}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Generate Your First Link
+          </button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Name</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Type</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Access URL</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Status</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Access Count</th>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {guestLinks.map((link) => (
+                <tr key={link.id} className="hover:bg-gray-50">
+                  <td className="border border-gray-300 px-4 py-3">
+                    <div>
+                      <p className="font-semibold">{link.name}</p>
+                      {link.description && (
+                        <p className="text-sm text-gray-500">{link.description}</p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="border border-gray-300 px-4 py-3">
+                    <span className={`px-2 py-1 rounded text-sm ${
+                      link.type === 'researcher' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {link.type === 'researcher' ? 'Researcher' : 'Client'}
+                    </span>
+                  </td>
+                  <td className="border border-gray-300 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={link.accessUrl}
+                        readOnly
+                        className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-gray-50"
+                      />
+                      <button
+                        onClick={() => copyToClipboard(link.accessUrl)}
+                        className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </td>
+                  <td className="border border-gray-300 px-4 py-3">
+                    {link.expiresAt && new Date(link.expiresAt) < new Date() ? (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-sm">
+                        Expired
+                      </span>
+                    ) : link.isActive ? (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm flex items-center gap-1">
+                        <CheckCircleIcon className="w-4 h-4" />
+                        Active
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
+                        Inactive
+                      </span>
+                    )}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-3 text-center">
+                    {link.accessCount || 0}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={guestAPI.getQRCode(link.token)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
+                        title="View QR Code"
+                      >
+                        QR
+                      </a>
+                      <button
+                        onClick={() => handleToggleLink(link.id)}
+                        className={`px-2 py-1 text-xs rounded ${
+                          link.isActive
+                            ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                      >
+                        {link.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLink(link.id)}
+                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

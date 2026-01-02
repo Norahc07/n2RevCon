@@ -23,6 +23,7 @@ import {
   BellIcon,
   CloudArrowDownIcon,
   ClipboardDocumentListIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 
 const Sidebar = ({ isOpen, onClose, onToggle }) => {
@@ -104,6 +105,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
         { path: '/settings/system/backup', label: 'Data & Backup', icon: CloudArrowDownIcon, show: isMasterAdmin },
         { path: '/settings/system/audit', label: 'Audit Logs', icon: ClipboardDocumentListIcon, show: isMasterAdmin || isSystemAdmin },
         { path: '/settings/system/pwa', label: 'PWA & Offline', icon: DevicePhoneMobileIcon, show: isMasterAdmin },
+        { path: '/settings/system/guest', label: 'Guest Access', icon: LinkIcon, show: isMasterAdmin },
       ].filter(sub => sub.show !== false), // Filter out hidden subcategories
     },
   ].filter(category => category.show !== false); // Filter out hidden categories

@@ -29,6 +29,7 @@ import ChangePassword from './pages/ChangePassword';
 import Security from './pages/Security';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import GuestView from './pages/GuestView';
 
 function App() {
   const { user } = useAuth();
@@ -77,6 +78,9 @@ function App() {
         <Route path="/security" element={<Security />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
+        
+        {/* Guest access routes - no authentication required */}
+        <Route path="/guest/:type/:token" element={<GuestView />} />
           
           <Route
             path="/*"
@@ -108,6 +112,7 @@ function App() {
                     <Route path="/settings/system/backup" element={<SystemSettings />} />
                     <Route path="/settings/system/audit" element={<SystemSettings />} />
                     <Route path="/settings/system/pwa" element={<SystemSettings />} />
+                    <Route path="/settings/system/guest" element={<SystemSettings />} />
                     <Route path="/settings" element={<Navigate to="/settings/account/profile" replace />} />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>

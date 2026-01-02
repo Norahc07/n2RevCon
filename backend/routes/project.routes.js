@@ -14,21 +14,23 @@ import {
   unlockProject
 } from '../controllers/project.controller.js';
 import { authenticate, requirePermission, requireAnyPermission, ACTIONS } from '../middleware/auth.middleware.js';
+import { authenticateOptionalGuest } from '../middleware/guestAuth.middleware.js';
 import { validate, sanitizeInput } from '../middleware/validation.middleware.js';
 
 const router = express.Router();
 
-// All routes require authentication
-router.use(authenticate);
-
+// View-only routes - allow both regular auth and guest auth
 // Get all projects - requires VIEW_REPORTS permission
-router.get('/', requirePermission(ACTIONS.VIEW_REPORTS), getAllProjects);
+router.get('/', authenticateOptionalGuest, requirePermission(ACTIONS.VIEW_REPORTS), getAllProjects);
 
 // Get deleted projects - requires VIEW_REPORTS permission
-router.get('/deleted', requirePermission(ACTIONS.VIEW_REPORTS), getDeletedProjects);
+router.get('/deleted', authenticateOptionalGuest, requirePermission(ACTIONS.VIEW_REPORTS), getDeletedProjects);
 
 // Get project by ID - requires VIEW_REPORTS permission
-router.get('/:id', requirePermission(ACTIONS.VIEW_REPORTS), getProjectById);
+router.get('/:id', authenticateOptionalGuest, requirePermission(ACTIONS.VIEW_REPORTS), getProjectById);
+
+// All write operations require regular authentication (no guest access)
+router.use(authenticate);
 
 // Create project - requires VIEW_REPORTS permission (anyone who can view can create projects)
 // Note: You may want to restrict this further based on your business logic
