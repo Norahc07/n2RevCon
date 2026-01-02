@@ -2027,6 +2027,18 @@ const GuestAccessTab = () => {
     fetchGuestLinks();
   }, []);
 
+  // Prevent body scroll when modals are open
+  useEffect(() => {
+    if (showGenerateModal || generatedLink) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showGenerateModal, generatedLink]);
+
   const fetchGuestLinks = async () => {
     try {
       setLoading(true);
@@ -2118,15 +2130,22 @@ const GuestAccessTab = () => {
       {/* Generate Modal */}
       {showGenerateModal && (
         <div 
-          className="fixed bg-black bg-opacity-50 flex items-start justify-center z-[9999] overflow-y-auto" 
+          className="fixed flex items-start justify-center z-[9999]" 
           style={{ 
+            position: 'fixed',
             top: 0, 
             left: 0, 
             right: 0, 
             bottom: 0, 
             width: '100vw', 
             height: '100vh',
-            minHeight: '100vh'
+            minHeight: '100vh',
+            maxHeight: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            margin: 0,
+            padding: 0,
+            overflowY: 'auto',
+            overflowX: 'hidden'
           }}
         >
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 my-8 shadow-2xl">
@@ -2223,15 +2242,22 @@ const GuestAccessTab = () => {
       {/* Generated Link Modal */}
       {generatedLink && (
         <div 
-          className="fixed bg-black bg-opacity-50 flex items-start justify-center z-[9999] overflow-y-auto" 
+          className="fixed flex items-start justify-center z-[9999]" 
           style={{ 
+            position: 'fixed',
             top: 0, 
             left: 0, 
             right: 0, 
             bottom: 0, 
             width: '100vw', 
             height: '100vh',
-            minHeight: '100vh'
+            minHeight: '100vh',
+            maxHeight: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            margin: 0,
+            padding: 0,
+            overflowY: 'auto',
+            overflowX: 'hidden'
           }}
         >
           <div className="bg-white rounded-lg p-8 max-w-3xl w-full mx-4 my-8 shadow-2xl">
