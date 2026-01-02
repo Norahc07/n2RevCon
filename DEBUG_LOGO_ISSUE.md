@@ -71,7 +71,7 @@
 ### Check the Response:
 1. Click on the `N2RevConLogo.png` entry
 2. Look at the **"Headers"** tab:
-   - Check **"Request URL"**: Should be `https://n2-rev-con.vercel.app/N2RevConLogo.png?v=2`
+   - Check **"Request URL"**: Should be `https://n2-rev-con.vercel.app/N2RevConLogo.png`
    - Check **"Status Code"**: Should be `200`
 3. Look at the **"Preview"** tab:
    - You should see the logo image

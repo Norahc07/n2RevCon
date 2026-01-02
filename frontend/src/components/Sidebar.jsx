@@ -360,7 +360,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
           <div className="p-4 border-b-2 border-gray-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <img 
-                src="/N2RevConLogo.png?v=2" 
+                src="/N2RevConLogo.png" 
                 alt="N2 RevCon Logo" 
                 className="h-8 w-auto"
                 style={{ display: 'block' }}
