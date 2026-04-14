@@ -44,7 +44,12 @@ export const AuthProvider = ({ children }) => {
       toast.success('Login successful');
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed';
+      const data = error.response?.data;
+      let message = data?.message || 'Login failed';
+      if (Array.isArray(data?.errors) && data.errors.length > 0) {
+        const first = data.errors[0]?.msg || data.errors[0]?.message;
+        if (first) message = first;
+      }
       toast.error(message);
       return { success: false, error: message };
     }

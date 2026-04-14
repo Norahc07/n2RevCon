@@ -56,19 +56,31 @@ async function wipeAndSeed() {
 
     console.log('\n🌱 Starting to seed new data (2019-2025, 30+ projects per year)...\n');
 
-    // Get or create a test user
-    let testUser = await User.findOne({ email: 'admin@n2revcon.com' });
+    // Get or create seed admin (must match User.model role enum + login guards)
+    const seedAdminEmail = 'admin@n2revcon.com';
+    const seedAdminPassword = 'admin123456';
+    let testUser = await User.findOne({ email: seedAdminEmail });
     if (!testUser) {
       testUser = await User.create({
         firstName: 'Admin',
         lastName: 'User',
-        email: 'admin@n2revcon.com',
-        password: 'admin123456',
-        role: 'admin',
+        email: seedAdminEmail,
+        password: seedAdminPassword,
+        role: 'master_admin',
+        emailVerified: true,
+        accountStatus: 'approved',
       });
       console.log('✅ Created admin user');
     } else {
-      console.log('✅ Using existing admin user');
+      console.log('✅ Using existing admin user (syncing verified/approved role and seed password)');
+      testUser.password = seedAdminPassword;
+      testUser.emailVerified = true;
+      testUser.accountStatus = 'approved';
+      testUser.isActive = true;
+      if (!['master_admin', 'system_admin'].includes(testUser.role)) {
+        testUser.role = 'master_admin';
+      }
+      await testUser.save();
     }
 
     const userId = testUser._id;

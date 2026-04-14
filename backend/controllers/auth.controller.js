@@ -13,6 +13,12 @@ const generateToken = (id) => {
   });
 };
 
+/** Match stored emails (schema uses lowercase) — avoids 401 when login casing differs */
+const normalizeEmail = (value) => {
+  if (value == null || typeof value !== 'string') return '';
+  return value.trim().toLowerCase();
+};
+
 /**
  * @route   POST /api/auth/register
  * @desc    Register a new user - Requires email verification and admin approval
@@ -20,7 +26,8 @@ const generateToken = (id) => {
  */
 export const register = async (req, res) => {
   try {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, password } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -128,7 +135,8 @@ async function notifyAdminsOfNewRegistration(newUser) {
  */
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password } = req.body;
 
     // Find user and include password
     const user = await User.findOne({ email }).select('+password');
@@ -320,7 +328,7 @@ export const logout = async (req, res) => {
  */
 export const forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     if (!email) {
       return res.status(400).json({ message: 'Email is required' });
@@ -328,7 +336,7 @@ export const forgotPassword = async (req, res) => {
 
     console.log('🔍 Forgot password request for email:', email);
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email });
     if (!user) {
       // Don't reveal if email exists for security
       console.log('⚠️  User not found (or email doesn\'t exist)');
@@ -593,7 +601,7 @@ export const verifyEmail = async (req, res) => {
  */
 export const resendVerificationEmail = async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     const user = await User.findOne({ email });
     if (!user) {

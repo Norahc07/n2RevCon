@@ -24,19 +24,31 @@ async function seedData() {
   try {
     console.log('🌱 Starting to seed data...');
 
-    // Get or create a test user
-    let testUser = await User.findOne({ email: 'test@n2revcon.com' });
+    // Get or create a test user (role must match User.model enum; login requires verified + approved)
+    const seedEmail = 'test@n2revcon.com';
+    const seedPassword = 'test123456';
+    let testUser = await User.findOne({ email: seedEmail });
     if (!testUser) {
       testUser = await User.create({
         firstName: 'Test',
         lastName: 'User',
-        email: 'test@n2revcon.com',
-        password: 'test123456',
-        role: 'admin',
+        email: seedEmail,
+        password: seedPassword,
+        role: 'master_admin',
+        emailVerified: true,
+        accountStatus: 'approved',
       });
       console.log('✅ Created test user');
     } else {
-      console.log('✅ Using existing test user');
+      console.log('✅ Using existing test user (syncing verified/approved role and seed password)');
+      testUser.password = seedPassword;
+      testUser.emailVerified = true;
+      testUser.accountStatus = 'approved';
+      testUser.isActive = true;
+      if (!['master_admin', 'system_admin'].includes(testUser.role)) {
+        testUser.role = 'master_admin';
+      }
+      await testUser.save();
     }
 
     const userId = testUser._id;

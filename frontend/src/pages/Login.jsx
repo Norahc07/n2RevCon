@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -14,6 +15,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [showResendButton, setShowResendButton] = useState(false);
   const { login } = useAuth();
@@ -311,22 +313,37 @@ const Login = () => {
                   <label className="block text-xs xs:text-sm font-semibold text-gray-700 mb-1.5 xs:mb-2">
                     Password <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="password"
-                    name="password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={`w-full px-3 xs:px-4 py-2.5 xs:py-3 text-sm xs:text-base border-2 rounded-lg focus:outline-none transition-colors duration-200 ${
-                      errors.password && touched.password
-                        ? 'border-red-500 focus:border-red-500'
-                        : formData.password && !errors.password
-                        ? 'border-green-500 focus:border-green-500'
-                        : 'border-gray-300 focus:border-red-600'
-                    }`}
-                    placeholder="Enter your password"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      autoComplete="current-password"
+                      className={`w-full pl-3 xs:pl-4 pr-11 xs:pr-12 py-2.5 xs:py-3 text-sm xs:text-base border-2 rounded-lg focus:outline-none transition-colors duration-200 ${
+                        errors.password && touched.password
+                          ? 'border-red-500 focus:border-red-500'
+                          : formData.password && !errors.password
+                          ? 'border-green-500 focus:border-green-500'
+                          : 'border-gray-300 focus:border-red-600'
+                      }`}
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-2.5 xs:right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-800 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon className="w-5 h-5 xs:w-6 xs:h-6" />
+                      ) : (
+                        <EyeIcon className="w-5 h-5 xs:w-6 xs:h-6" />
+                      )}
+                    </button>
+                  </div>
                   {errors.password && touched.password && (
                     <p className="mt-1 text-xs xs:text-sm text-red-600 animate-fade-in">{errors.password}</p>
                   )}
