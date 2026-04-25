@@ -1,0 +1,15 @@
+{
+  "name": "n2revcon-pwa",
+  "private": true,
+  "description": "Root workspace — npm scripts forward to backend/frontend folders",
+  "scripts": {
+    "wipe-data-keep-users": "npm run wipe-data-keep-users --prefix backend",
+    "list-accounts": "npm run list-accounts --prefix backend",
+    "ensure-admin": "npm run ensure-admin --prefix backend",
+    "wipe-and-seed": "npm run wipe-and-seed --prefix backend",
+    "seed": "npm run seed --prefix backend",
+    "server": "npm run server --prefix backend",
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend"
+  }
+}

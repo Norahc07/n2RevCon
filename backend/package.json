@@ -12,6 +12,8 @@
     "seed-all": "node scripts/seedDataForAllUsers.js",
     "wipe-and-seed": "node scripts/wipeAndSeed.js",
     "ensure-admin": "node scripts/ensureDevAdmin.js",
+    "wipe-data-keep-users": "node scripts/wipeAllDataKeepUsers.js",
+    "list-accounts": "node scripts/listAllAccounts.js",
     "fix-roles": "node scripts/fixUserRoles.js",
     "migrate-roles": "node scripts/migrateUserRoles.js",
     "remove-2026": "node scripts/remove2026Data.js",
